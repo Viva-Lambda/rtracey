@@ -53,8 +53,8 @@ struct SceneGroup {
     }
     return hg;
   }
-  __host__ __device__ Hittable **to_hittable_list() {
-    Hittable **hs = new Hittable *[group_size];
+  __host__ __device__ Hittable **
+  to_hittable_list(Hittable **&hs) {
     for (int i = 0; i < group_size; i++) {
       ScenePrim pr;
       get(i, pr);
@@ -92,7 +92,8 @@ struct SceneGroup {
     return hs;
   }
   __host__ __device__ HittableGroup to_hittable() {
-    Hittable **hs = to_hittable_list();
+    Hittable **hs;
+    hs = to_hittable_list(hs);
     Texture *t = tparam.to_texture();
     return to_h_group(hs, t);
   }
