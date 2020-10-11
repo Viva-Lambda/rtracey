@@ -45,9 +45,9 @@ struct SceneGroup {
       HittableGroup hgs(hs, group_size);
       Hittable *h = static_cast<Hittable *>(&hgs);
       ConstantMedium cm(h, density, t);
-      Hittable **hs = new Hittable *[1];
-      hs[0] = static_cast<Hittable *>(&cm);
-      hg = HittableGroup(hs, 1);
+      Hittable **hss = new Hittable *[1];
+      hss[0] = static_cast<Hittable *>(&cm);
+      hg = HittableGroup(hss, 1);
       break;
     }
     }

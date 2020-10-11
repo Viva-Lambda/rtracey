@@ -65,8 +65,9 @@ __global__ void make_empty_c_box(SceneObjects sobjs) {
   if (threadIdx.x == 0 && blockIdx.x == 0) {
     SceneGroup sg;
     sobjs.fill_group(sg, 0);
-    HittableGroup hg = sg.to_hittable();
-    ScenePrim sp = sobjs.get_primitive(0, 0);
+    // Hittable **hg = sg.to_hittable_list();
+    ScenePrim sp = sobjs.get_primitive(1, 0);
+    Hittable *hi = sp.to_hittable();
   }
 }
 
