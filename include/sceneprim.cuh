@@ -1,4 +1,6 @@
-#pragma once
+#ifndef SCENEPRIM_CUH
+#define SCENEPRIM_CUH
+
 #include <aarect.cuh>
 #include <hittable.cuh>
 #include <material.cuh>
@@ -52,62 +54,20 @@ struct ScenePrim {
         radius(ht.radius), htype(ht.htype),
         group_index(gindex), group_id(gid) {}
 
-  __host__ __device__ SolidColor to_solid() {
-    SolidColor sc(cval);
-    return sc;
+  __host__ __device__ ImageParam to_img_param() {
+    ImageParam imp(width, height, bytes_per_pixel,
+                   image_index);
+    return imp;
   }
-  __host__ __device__ CheckerTexture to_checker() {
-    CheckerTexture ct(cval);
-    return ct;
+  __host__ __device__ TextureParam to_texture_param() {
+    ImageParam imp = to_img_param();
+    TextureParam tp(ttype, cval, scale, imp);
+    return tp;
   }
-  __device__ NoiseTexture to_noise(curandState *loc) {
-    NoiseTexture nt(scale, loc);
-    return nt;
-  }
-  __host__ __device__ ImageTexture
-  to_image(unsigned char *&td) {
-    ImageTexture img(td, width, height,
-                     width * bytes_per_pixel,
-                     bytes_per_pixel, image_index);
-    return img;
-  }
-  __host__ __device__ Lambertian to_lambert(Texture *&t) {
-    Lambertian lamb(t);
-    return lamb;
-  }
-  __host__ __device__ Lambertian to_lambert(Color c) {
-    Lambertian lamb(c);
-    return lamb;
-  }
-  __host__ __device__ Metal to_metal(Color c) {
-    Metal mm(c, fuzz_ref_idx);
-    return mm;
-  }
-  __host__ __device__ Metal to_metal(Texture *&t) {
-    Metal mm(t, fuzz_ref_idx);
-    return mm;
-  }
-  __host__ __device__ Dielectric to_dielectric() {
-    Dielectric dd(fuzz_ref_idx);
-    return dd;
-  }
-  __host__ __device__ DiffuseLight
-  to_diffuse_light(Color c) {
-    DiffuseLight dl(c);
-    return dl;
-  }
-  __host__ __device__ DiffuseLight
-  to_diffuse_light(Texture *&t) {
-    DiffuseLight dl(t);
-    return dl;
-  }
-  __host__ __device__ Isotropic to_isotropic(Color c) {
-    Isotropic iso(c);
-    return iso;
-  }
-  __host__ __device__ Isotropic to_isotropic(Texture *&t) {
-    Isotropic iso(t);
-    return iso;
+  __host__ __device__ MaterialParam to_material_param() {
+    TextureParam tp = to_texture_param();
+    MaterialParam mp(tp, mtype, fuzz_ref_idx);
+    return mp;
   }
   __host__ __device__ Sphere to_sphere(Material *&mt) {
     Point3 cent(p1x, p1y, p1z);
@@ -138,63 +98,30 @@ struct ScenePrim {
     k = radius;
   }
   __host__ __device__ XYRect to_xyrect(Material *&mt) {
-    //
     float x0, x1, y0, y1, k;
     rect_val(x0, x1, y0, y1, k);
     XYRect xyr(x0, x1, y0, y1, k, mt);
     return xyr;
   }
   __host__ __device__ XZRect to_xzrect(Material *&mt) {
-    //
     float x0, x1, z0, z1, k;
     rect_val(x0, x1, z0, z1, k);
     XZRect xzr(x0, x1, z0, z1, k, mt);
     return xzr;
   }
   __host__ __device__ YZRect to_yzrect(Material *&mt) {
-    //
     float y0, y1, z0, z1, k;
     rect_val(y0, y1, z0, z1, k);
     YZRect yzr(y0, y1, z0, z1, k, mt);
     return yzr;
   }
-  __host__ __device__ Hittable *to_hittable(Texture *&tx,
-                                            Material *&mt) {
+  __host__ __device__ Hittable *to_hittable() {
+    MaterialParam mparam = to_material_param();
+    Material *mt = mparam.to_material();
+    return to_hittable(mt);
+  }
+  __host__ __device__ Hittable *to_hittable(Material *&mt) {
     Hittable *ht;
-    if (ttype == SOLID_COLOR) {
-      SolidColor s1 = to_solid();
-      tx = static_cast<Texture *>(&s1);
-    } else if (ttype == CHECKER) {
-      CheckerTexture c1 = to_checker();
-      tx = static_cast<Texture *>(&c1);
-    }
-    switch (mtype) {
-    case LAMBERTIAN: {
-      Lambertian lamb = to_lambert(tx);
-      mt = static_cast<Material *>(&lamb);
-      break;
-    }
-    case METAL: {
-      Metal met = to_metal(tx);
-      mt = static_cast<Material *>(&met);
-      break;
-    }
-    case DIELECTRIC: {
-      Dielectric diel = to_dielectric();
-      mt = static_cast<Material *>(&diel);
-      break;
-    }
-    case DIFFUSE_LIGHT: {
-      DiffuseLight dl = to_diffuse_light(tx);
-      mt = static_cast<Material *>(&dl);
-      break;
-    }
-    case ISOTROPIC: {
-      Isotropic isot = to_isotropic(tx);
-      mt = static_cast<Material *>(&isot);
-      break;
-    }
-    }
     switch (htype) {
     case TRIANGLE: {
       Triangle tri = to_triangle(mt);
@@ -230,31 +157,21 @@ struct ScenePrim {
     return ht;
   }
   __host__ __device__ Hittable *
-  to_hittable(unsigned char *&dt, Texture *&tx,
-              Material *&mt) {
-    if (ttype == IMAGE) {
-      ImageTexture img = to_image(dt);
-      tx = static_cast<Texture *>(&img);
-    }
-    return to_hittable(tx, mt);
+  to_hittable(unsigned char *&dt) {
+    MaterialParam mparam = to_material_param();
+    Material *mt = mparam.to_material(dt);
+    return to_hittable(mt);
   }
-  __device__ Hittable *to_hittable(Texture *&tx,
-                                   Material *&mt,
-                                   curandState *loc) {
-    if (ttype == NOISE) {
-      NoiseTexture nt = to_noise(loc);
-      tx = static_cast<Texture *>(&nt);
-    }
-    return to_hittable(tx, mt);
+  __device__ Hittable *to_hittable(curandState *loc) {
+    MaterialParam mparam = to_material_param();
+    Material *mt = mparam.to_material(loc);
+    return to_hittable(mt);
   }
   __device__ Hittable *to_hittable(unsigned char *&dt,
-                                   Texture *&tx,
-                                   Material *&mt,
                                    curandState *loc) {
-    if (ttype == NOISE) {
-      NoiseTexture nt = to_noise(loc);
-      tx = static_cast<Texture *>(&nt);
-    }
-    return to_hittable(dt, tx, mt);
+    MaterialParam mparam = to_material_param();
+    Material *mt = mparam.to_material(dt, loc);
+    return to_hittable(mt);
   }
 };
+#endif

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SCENEGROUP_CUH
+#define SCENEGROUP_CUH
 
 #include <mediumc.cuh>
 #include <ray.cuh>
@@ -16,6 +17,7 @@ struct SceneGroup {
   //
   float density;
   TextureParam tparam;
+
   __host__ __device__ SceneGroup() {}
   __host__ __device__ SceneGroup(ScenePrim *prm, int gsize,
                                  int gid, GroupType gtp,
@@ -30,24 +32,87 @@ struct SceneGroup {
     }
     return false;
   }
-  __host__ __device__ HittableGroup to_hittable() {
+  __host__ __device__ HittableGroup
+  to_h_group(Hittable **&hs, Texture *&t) {
+    //
+    HittableGroup hg;
+    switch (gtype) {
+    case SOLID: {
+      hg = HittableGroup(hs, group_size);
+      break;
+    }
+    case CONSTANT_MEDIUM: {
+      HittableGroup hgs(hs, group_size);
+      Hittable *h = static_cast<Hittable *>(&hgs);
+      ConstantMedium cm(h, density, t);
+      Hittable **hs = new Hittable *[1];
+      hs[0] = static_cast<Hittable *>(&cm);
+      hg = HittableGroup(hs, 1);
+      break;
+    }
+    }
+    return hg;
+  }
+  __host__ __device__ Hittable **to_hittable_list() {
     Hittable **hs = new Hittable *[group_size];
     for (int i = 0; i < group_size; i++) {
       ScenePrim pr;
       get(i, pr);
-      Texture *txt;
-      Material *mt;
-      hs[i] = pr.to_hittable(txt, mt);
+      hs[i] = pr.to_hittable();
     }
-    switch (gtype) {
-    case SOLID: {
-      HittableGroup hg(hs, group_size);
-      break;
+    return hs;
+  }
+  __host__ __device__ Hittable **
+  to_hittable_list(unsigned char *&td) {
+    Hittable **hs = new Hittable *[group_size];
+    for (int i = 0; i < group_size; i++) {
+      ScenePrim pr;
+      get(i, pr);
+      hs[i] = pr.to_hittable(td);
     }
-    case CONSTANT_MEDIUM: {
-      HittableGroup hg(hs, group_size);
-      break;
+    return hs;
+  }
+  __device__ Hittable **to_hittable_list(unsigned char *&td,
+                                         curandState *loc) {
+    Hittable **hs = new Hittable *[group_size];
+    for (int i = 0; i < group_size; i++) {
+      ScenePrim pr;
+      get(i, pr);
+      hs[i] = pr.to_hittable(td, loc);
     }
+    return hs;
+  }
+  __device__ Hittable **to_hittable_list(curandState *loc) {
+    Hittable **hs = new Hittable *[group_size];
+    for (int i = 0; i < group_size; i++) {
+      ScenePrim pr;
+      get(i, pr);
+      hs[i] = pr.to_hittable(loc);
     }
+    return hs;
+  }
+  __host__ __device__ HittableGroup to_hittable() {
+    Hittable **hs = to_hittable_list();
+    Texture *t = tparam.to_texture();
+    return to_h_group(hs, t);
+  }
+  __host__ __device__ HittableGroup
+  to_hittable(unsigned char *&td) {
+    Hittable **hs = to_hittable_list(td);
+    Texture *t = tparam.to_texture(td);
+    return to_h_group(hs, t);
+  }
+  __device__ HittableGroup to_hittable(unsigned char *&td,
+                                       curandState *loc) {
+    Hittable **hs = to_hittable_list(td, loc);
+    Texture *t = tparam.to_texture(td, loc);
+    return to_h_group(hs, t);
+  }
+  __device__ HittableGroup to_hittable(curandState *loc) {
+    Hittable **hs = to_hittable_list(loc);
+    Texture *t = tparam.to_texture(loc);
+    return to_h_group(hs, t);
   }
 };
+
+#endif

@@ -1,11 +1,12 @@
-#pragma once
+#ifndef HITTABLES_CUH
+#define HITTABLES_CUH
 #include <hittable.cuh>
 
 class HittableGroup : public Hittable {
 public:
   Hittable **list;
-  const int start_index;
-  const int end_index;
+  int start_index;
+  int end_index;
 
 public:
   __host__ __device__ HittableGroup()
@@ -94,3 +95,4 @@ public:
   __host__ __device__ Hittables(Hittable **hlist, int size)
       : SafeHittableGroup(hlist, size) {}
 };
+#endif

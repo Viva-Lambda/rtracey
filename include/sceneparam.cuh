@@ -18,6 +18,8 @@ struct TextureParam {
   Color cval;
   float scale;
   ImageParam imp;
+
+  __host__ __device__ TextureParam() {}
   __host__ __device__ TextureParam(TextureType t, Color c,
                                    float s, ImageParam i)
       : ttype(t), cval(c), scale(s), imp(i) {}
@@ -36,12 +38,54 @@ struct TextureParam {
   }
   __host__ __device__ ImageTexture
   to_image(unsigned char *&td) {
-    ImageTexture img(td, width, height,
-                     width * bytes_per_pixel,
-                     bytes_per_pixel, image_index);
+    ImageTexture img(td, imp.width, imp.height,
+                     imp.width * imp.bytes_per_pixel,
+                     imp.bytes_per_pixel, imp.index);
     return img;
   }
-  __host__ __device__ Texture *to_texture() {}
+  __host__ __device__ Texture *to_texture() {
+    Texture *txt;
+    if (ttype == SOLID_COLOR) {
+      SolidColor s1 = to_solid();
+      txt = static_cast<Texture *>(&s1);
+    } else if (ttype == CHECKER) {
+      CheckerTexture c1 = to_checker();
+      txt = static_cast<Texture *>(&c1);
+    }
+    return txt;
+  }
+  __host__ __device__ Texture *
+  to_texture(unsigned char *&dt) {
+    Texture *txt;
+    if (ttype == IMAGE) {
+      ImageTexture img = to_image(dt);
+      txt = static_cast<Texture *>(&img);
+      return txt;
+    } else {
+      return to_texture();
+    }
+  }
+  __device__ Texture *to_texture(curandState *loc) {
+    Texture *txt;
+    if (ttype == NOISE) {
+      NoiseTexture nt = to_noise(loc);
+      txt = static_cast<Texture *>(&nt);
+      return txt;
+    } else {
+      return to_texture();
+    }
+  }
+  __device__ Texture *to_texture(unsigned char *&dt,
+                                 curandState *loc) {
+    Texture *txt;
+    if (ttype == NOISE) {
+      NoiseTexture nt = to_noise(loc);
+      txt = static_cast<Texture *>(&nt);
+      return txt;
+    } else {
+      return to_texture(dt);
+    }
+  }
 };
 TextureParam mkSolidColorParam(Color c) {
   ImageParam img;
@@ -78,6 +122,76 @@ struct MaterialParam {
                                     MaterialType mt,
                                     float fri)
       : tparam(tp), mtype(mt), fuzz_ref_idx(fri) {}
+  __host__ __device__ Lambertian to_lambert(Texture *t) {
+    Lambertian lamb(t);
+    return lamb;
+  }
+  __host__ __device__ Metal to_metal(Texture *&t) {
+    Metal mm(t, fuzz_ref_idx);
+    return mm;
+  }
+  __host__ __device__ Dielectric to_dielectric() {
+    Dielectric dd(fuzz_ref_idx);
+    return dd;
+  }
+  __host__ __device__ DiffuseLight
+  to_diffuse_light(Texture *&t) {
+    DiffuseLight dl(t);
+    return dl;
+  }
+  __host__ __device__ Isotropic to_isotropic(Texture *&t) {
+    Isotropic iso(t);
+    return iso;
+  }
+  __host__ __device__ Material *to_material() {
+    Texture *t = tparam.to_texture();
+    return to_material(t);
+  }
+  __host__ __device__ Material *to_material(Texture *&txt) {
+    Material *mt;
+    switch (mtype) {
+    case LAMBERTIAN: {
+      Lambertian lamb = to_lambert(txt);
+      mt = static_cast<Material *>(&lamb);
+      break;
+    }
+    case METAL: {
+      Metal met = to_metal(txt);
+      mt = static_cast<Material *>(&met);
+      break;
+    }
+    case DIELECTRIC: {
+      Dielectric diel = to_dielectric();
+      mt = static_cast<Material *>(&diel);
+      break;
+    }
+    case DIFFUSE_LIGHT: {
+      DiffuseLight dl = to_diffuse_light(txt);
+      mt = static_cast<Material *>(&dl);
+      break;
+    }
+    case ISOTROPIC: {
+      Isotropic isot = to_isotropic(txt);
+      mt = static_cast<Material *>(&isot);
+      break;
+    }
+    }
+    return mt;
+  }
+  __host__ __device__ Material *
+  to_material(unsigned char *&td) {
+    Texture *t = tparam.to_texture(td);
+    return to_material(t);
+  }
+  __device__ Material *to_material(curandState *td) {
+    Texture *t = tparam.to_texture(td);
+    return to_material(t);
+  }
+  __device__ Material *to_material(unsigned char *&td,
+                                   curandState *loc) {
+    Texture *t = tparam.to_texture(td, loc);
+    return to_material(t);
+  }
 };
 MaterialParam mkLambertParam(TextureParam t) {
   float f = 0.0f;

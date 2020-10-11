@@ -297,7 +297,6 @@ struct SceneObjects {
     cudaFree(group_ids);
     cudaFree(gtypes);
   }
-
   __host__ __device__ ScenePrim
   get_primitive(int gstart, int group_id) {
     HittableParam ht(
