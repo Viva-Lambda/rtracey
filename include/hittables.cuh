@@ -18,7 +18,7 @@ public:
                                     int si, int ei)
       : list(hlist), start_index(si), end_index(ei) {}
 
-  __host__ __device__ ~HittableGroup() { delete[] list; }
+  // __host__ __device__ ~HittableGroup() { delete[] list; }
 
   /**
     @brief check if there is any object that is hit by

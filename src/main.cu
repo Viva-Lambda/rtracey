@@ -89,67 +89,18 @@ void make_image(thrust::device_ptr<unsigned char> &imdata,
   unsigned char *h_ptr = imdata_h.data();
 
   // --------------------- image ------------------------
-  upload_to_device(imdata, h_ptr, imdata_h.size());
+  upload_thrust<unsigned char>(imdata, h_ptr,
+                               (int)imdata_h.size());
 
   int *ws_ptr = ws.data();
 
-  upload_to_device(imwidths, ws_ptr, ws.size());
+  upload_thrust<int>(imwidths, ws_ptr, (int)ws.size());
 
   int *hs_ptr = hes.data();
-  upload_to_device(imhs, hs_ptr, hes.size());
+  upload_thrust<int>(imhs, hs_ptr, (int)hes.size());
 
   int *nb_ptr = nbChannels.data();
-  upload_to_device(imch, nb_ptr, nbChannels.size());
-}
-
-void make_final_world(
-    thrust::device_ptr<Hittable *> &hs,
-    thrust::device_ptr<Hittables *> &world) {
-  world = thrust::device_malloc<Hittables *>(1);
-  CUDA_CONTROL(cudaGetLastError());
-  // CUDA_CONTROL(upload(veri));
-  int box_size = 6;
-  int side_box_nb = 20;
-  int sphere_nb = 10;
-  int nb_hittable = side_box_nb;
-  nb_hittable *= side_box_nb;
-  nb_hittable *= box_size;
-  nb_hittable += sphere_nb;
-  // nb_hittable += 1;
-  hs = thrust::device_malloc<Hittable *>(nb_hittable);
-}
-
-void make_cornell(thrust::device_ptr<Hittable *> &hs,
-                  thrust::device_ptr<Hittables *> &world,
-                  thrust::device_ptr<FlipFace> &lshape) {
-  CUDA_CONTROL(cudaGetLastError());
-  // CUDA_CONTROL(upload(veri));
-  int box_nb = 5;
-  int box_size = 6;
-  int nb_hittable = box_nb * box_size + 5;
-  // nb_hittable += 1;
-  hs = thrust::device_malloc<Hittable *>(nb_hittable);
-  lshape = thrust::device_malloc<FlipFace>(1);
-  world = thrust::device_malloc<Hittables *>(1);
-}
-void make_cornell(std::vector<Hittable *> &hs) {
-  hs.clear();
-  Material *red = new Lambertian(Color(.65, .05, .05));
-  Material *blue = new Lambertian(Color(.05, .05, .65));
-  Material *white = new Lambertian(Color(.73, .73, .73));
-  Material *green = new Lambertian(Color(.12, .45, .15));
-  Material *light = new DiffuseLight(Color(15, 15, 15));
-
-  // ----------- Groups --------------------
-
-  // --------------- cornell box group ----------------
-
-  hs.push_back(new YZRect(0, 555, 0, 555, 555, green));
-  hs.push_back(new YZRect(0, 555, 0, 555, 0, red));
-  hs.push_back(new XZRect(213, 343, 227, 332, 554, light));
-  hs.push_back(new XZRect(0, 555, 0, 555, 0, white));
-  hs.push_back(new XZRect(0, 555, 0, 555, 555, white));
-  hs.push_back(new XYRect(0, 555, 0, 555, 555, blue));
+  upload_thrust<int>(imch, nb_ptr, (int)nbChannels.size());
 }
 
 int main() {
@@ -196,49 +147,18 @@ int main() {
   // declare world
   thrust::device_ptr<Hittables *> world;
   world = thrust::device_malloc<Hittables *>(1);
+  SceneObjects sobjs = make_cornell_box();
 
-  thrust::device_ptr<FlipFace> lshape;
-  lshape = thrust::device_malloc<FlipFace>(1);
   // make_final_world(hs, world);
   // make_cornell(hs, world, lshape);
-  std::vector<Hittable *> hs;
-  make_cornell(hs);
-  KernelArg<Hittable *> kargs;
-  CUDA_CONTROL(kargs.alloc_upload(hs));
-
-  CUDA_CONTROL(cudaGetLastError());
 
   // declara imdata
+  SceneObjects d_sobjs = sobjs.to_device();
 
   // --------------------- image ------------------------
-  // thrust::device_ptr<unsigned char> imdata;
-  // thrust::device_ptr<int> imwidths;
-  // thrust::device_ptr<int> imhs;
-  // thrust::device_ptr<int> imch; // nb channels
-  // make_image(imdata, imwidths, imhs, imch);
-
-  // open up pdf data
-  thrust::device_ptr<HittablePdf> hpdf =
-      thrust::device_malloc<HittablePdf>(1);
-  thrust::device_ptr<CosinePdf> cpdf =
-      thrust::device_malloc<CosinePdf>(1);
-  thrust::device_ptr<MixturePdf> mpdf =
-      thrust::device_malloc<MixturePdf>(1);
-
   CUDA_CONTROL(cudaGetLastError());
-  make_empty_cornell_box<<<1, 1>>>(
-      thrust::raw_pointer_cast(world), kargs,
-      thrust::raw_pointer_cast(lshape),
-      thrust::raw_pointer_cast(randState2));
+  make_empty_c_box<<<1, 1>>>(d_sobjs);
 
-  // make_world<<<1, 1>>>(thrust::raw_pointer_cast(world),
-  //                     thrust::raw_pointer_cast(hs),
-  //                     thrust::raw_pointer_cast(randState2),
-  //                     20,
-  //                     thrust::raw_pointer_cast(imdata),
-  //                     thrust::raw_pointer_cast(imwidths),
-  //                     thrust::raw_pointer_cast(imhs),
-  //                     thrust::raw_pointer_cast(imch));
   CUDA_CONTROL(cudaGetLastError());
   CUDA_CONTROL(cudaDeviceSynchronize());
 
@@ -258,12 +178,11 @@ int main() {
   Camera cam = makeCam(WIDTH, HEIGHT);
   //
 
-  render<<<blocks, threads>>>(
-      thrust::raw_pointer_cast(fb), WIDTH, HEIGHT,
-      SAMPLE_NB, BOUNCE_NB, cam,
-      thrust::raw_pointer_cast(world),
-      thrust::raw_pointer_cast(lshape),
-      thrust::raw_pointer_cast(randState1));
+  // render<<<blocks, threads>>>(
+  //    thrust::raw_pointer_cast(fb), WIDTH, HEIGHT,
+  //    SAMPLE_NB, BOUNCE_NB, cam,
+  //    thrust::raw_pointer_cast(world),
+  //    thrust::raw_pointer_cast(randState1));
   CUDA_CONTROL(cudaGetLastError());
   CUDA_CONTROL(cudaDeviceSynchronize());
   biter = clock();
@@ -291,19 +210,8 @@ int main() {
   }
   CUDA_CONTROL(cudaDeviceSynchronize());
   CUDA_CONTROL(cudaGetLastError());
-  // free_world(fb,                           //
-  //           world,                        //
-  //           hs,                           //
-  //           imdata, imch, imhs, imwidths, //
-  //           randState1,                   //
-  //           randState2);
-  // free_world(fb, world, hs, randState1, randState2);
-  free_empty_cornell(fb, world, lshape, randState1,
-                     randState2);
-  thrust::device_free(cpdf);
-  thrust::device_free(mpdf);
-  thrust::device_free(hpdf);
-  kargs.free();
+  free_empty_cornell(fb, world, randState1, randState2);
+  d_sobjs.d_free();
   CUDA_CONTROL(cudaGetLastError());
 
   cudaDeviceReset();

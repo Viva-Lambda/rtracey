@@ -1,4 +1,5 @@
-#pragma once
+#ifndef SCENEPARAM_CUH
+#define SCENEPARAM_CUH
 
 #include <scenetype.cuh>
 #include <texture.cuh>
@@ -12,7 +13,6 @@ struct ImageParam {
       : width(w), height(h), bytes_per_pixel(bpp),
         index(i) {}
 };
-
 struct TextureParam {
   TextureType ttype;
   Color cval;
@@ -113,11 +113,11 @@ TextureParam mkImageTextureParam(int w, int h, int bpp,
   TextureParam tp(IMAGE, c, s, img);
   return tp;
 }
-
 struct MaterialParam {
   TextureParam tparam;
   MaterialType mtype;
   float fuzz_ref_idx;
+  __host__ __device__ MaterialParam() {}
   __host__ __device__ MaterialParam(TextureParam tp,
                                     MaterialType mt,
                                     float fri)
@@ -216,7 +216,6 @@ MaterialParam mkIsotropicParam(TextureParam t) {
   MaterialParam mp(t, ISOTROPIC, f);
   return mp;
 }
-
 struct HittableParam {
   HittableType htype;
 
@@ -235,7 +234,6 @@ struct HittableParam {
         p2x(_p2x), p2y(_p2y), p2z(_p2z), n1x(_n1x),
         n1y(_n1y), n1z(_n1z), radius(r) {}
 };
-
 HittableParam mkRectHittable(float a0, float a1, float b0,
                              float b1, Vec3 anormal,
                              float k) {
@@ -266,7 +264,6 @@ HittableParam mkXYRectHittable(float a0, float a1, float b0,
                                float b1, float k) {
   return mkRectHittable(a0, a1, b0, b1, Vec3(0, 0, 1), k);
 }
-
 HittableParam mkSphereHittable(Point3 cent, float rad) {
   HittableParam param;
   param.htype = SPHERE;
@@ -293,3 +290,4 @@ HittableParam mkMovingSphereHittable(Point3 cent1,
   param.n1y = t1;
   return param;
 }
+#endif

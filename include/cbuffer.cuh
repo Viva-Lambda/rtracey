@@ -15,3 +15,11 @@ cudaError_t upload(T *&d_ptr, T *&h_ptr, int count) {
                     count * sizeof(T),
                     cudaMemcpyHostToDevice);
 }
+
+template <typename T>
+void upload_thrust(thrust::device_ptr<T> &d_ptr, T *&h_ptr,
+                   int count) {
+  d_ptr = thrust::device_malloc<T>(count);
+  for (int i = 0; i < count; i++)
+    d_ptr[i] = h_ptr[i];
+}
