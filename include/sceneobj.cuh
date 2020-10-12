@@ -3,6 +3,7 @@
 #include <debug.hpp>
 #include <ray.cuh>
 #include <scenegroup.cuh>
+#include <scenehit.cuh>
 #include <sceneparam.cuh>
 #include <sceneprim.cuh>
 #include <scenetype.cuh>
@@ -15,12 +16,9 @@ struct SceneObjects {
   float *scales;
 
   // image params
-  int *widths;
-  int *heights;
-  int *bytes_per_pixels;
-  int *image_indices;
-  // unsigned char *tdata;
-  // int tsize;
+  int *widths, *heights, *bytes_per_pixels, *image_indices;
+  unsigned char *tdata;
+  int tsize;
 
   // material params
   int *mtypes;
@@ -37,10 +35,7 @@ struct SceneObjects {
   int *prim_group_indices;
 
   //
-  int *group_starts;
-  int *group_sizes;
-  int *group_ids;
-  int *gtypes;
+  int *group_starts, *group_sizes, *group_ids, *gtypes;
   float *g_densities;
   // group texture params
   int *g_ttypes;
@@ -51,7 +46,7 @@ struct SceneObjects {
   int nb_groups;
   int nb_prims;
 
-  __host__ __device__ SceneObjects() {}
+  __host__ __device__ SceneObjects() : tdata(nullptr) {}
   __host__ __device__ SceneObjects(SceneGroup *gs, int nb_g)
       : nb_groups(nb_g) {
     alloc_group_params(nb_g);
@@ -178,6 +173,7 @@ struct SceneObjects {
       gstart += i;
       prims[i] = get_primitive(gstart, group.group_id);
     }
+    group.prims = prims;
   }
   __host__ SceneObjects to_device() {
     SceneObjects sobjs;
@@ -214,6 +210,10 @@ struct SceneObjects {
                        nb_prims);
     sobjs.image_indices =
         thrust::raw_pointer_cast(d_img_indices);
+
+    thrust::device_ptr<unsigned char> d_tdata;
+    upload_thrust<unsigned char>(d_tdata, tdata, tsize);
+    sobjs.tdata = thrust::raw_pointer_cast(d_tdata);
 
     thrust::device_ptr<int> d_mtypes;
     upload_thrust<int>(d_mtypes, mtypes, nb_prims);
@@ -340,7 +340,7 @@ struct SceneObjects {
     cudaFree(heights);
     cudaFree(bytes_per_pixels);
     cudaFree(image_indices);
-    // cudaFree(tdata);
+    cudaFree(tdata);
     cudaFree(mtypes);
     cudaFree(fuzz_ref_idxs);
     cudaFree(htypes);
@@ -396,72 +396,40 @@ struct SceneObjects {
                    group_id);
     return prim;
   }
-  __host__ __device__ void
-  mk_hittable_list(Hittable **&hs) {
+
+  __device__ bool hit(const Ray &r, float d_min,
+                      float d_max, HitRecord &rec) {
+    HitRecord temp;
+    bool hit_anything = false;
+    float closest_far = d_max;
     for (int i = 0; i < nb_groups; i++) {
-      SceneGroup group;
-      fill_group(group, i);
-      HittableGroup hg = group.to_hittable();
-      hs[i] = static_cast<Hittable *>(&hg);
+      SceneGroup g;
+      fill_group(g, i);
+      int gstart = group_starts[i];
+      bool is_hit = SceneHittable<SceneGroup>::hit(
+          g, r, d_min, d_max, temp);
+      if (isHit == true) {
+        hit_anything = isHit;
+        closest_far = temp.t;
+        rec = temp;
+        rec.primitive_index = gstart + rec.group_index;
+      }
+    }
+    return hit_anything;
+  }
+  __device__ Color emit(const HitRecord &rec) {
+    if (mtypes[rec.primitive_index] != DIFFUSE_LIGHT) {
+      // TODO
+      return Vec3(0.0f);
     }
   }
-  __host__ __device__ void
-  mk_hittable_list(Hittable **&hs, unsigned char *&td) {
-    for (int i = 0; i < nb_groups; i++) {
-      SceneGroup group;
-      fill_group(group, i);
-      HittableGroup hg = group.to_hittable(td);
-      hs[i] = static_cast<Hittable *>(&hg);
-    }
-  }
-  __device__ void mk_hittable_list(Hittable **&hs,
-                                   unsigned char *&td,
-                                   curandState *loc) {
-    for (int i = 0; i < nb_groups; i++) {
-      SceneGroup group;
-      fill_group(group, i);
-      HittableGroup hg = group.to_hittable(td, loc);
-      hs[i] = static_cast<Hittable *>(&hg);
-    }
-  }
-  __device__ void mk_hittable_list(Hittable **&hs,
-                                   curandState *loc) {
-    for (int i = 0; i < nb_groups; i++) {
-      SceneGroup group;
-      fill_group(group, i);
-      HittableGroup hg = group.to_hittable(loc);
-      hs[i] = static_cast<Hittable *>(&hg);
-    }
-  }
-  __host__ __device__ Hittables to_hittables() {
-    Hittable **hs = new Hittable *[nb_groups];
-    mk_hittable_list(hs);
-    order_scene(hs, nb_groups);
-    Hittables hits(hs, nb_groups);
-    return hits;
-  }
-  __host__ __device__ Hittables
-  to_hittables(unsigned char *&td) {
-    Hittable **hs = new Hittable *[nb_groups];
-    mk_hittable_list(hs, td);
-    order_scene(hs, nb_groups);
-    Hittables hits(hs, nb_groups);
-    return hits;
-  }
-  __device__ Hittables to_hittables(unsigned char *&td,
-                                    curandState *loc) {
-    Hittable **hs = new Hittable *[nb_groups];
-    mk_hittable_list(hs, td, loc);
-    order_scene(hs, nb_groups);
-    Hittables hits(hs, nb_groups);
-    return hits;
-  }
-  __device__ Hittables to_hittables(curandState *loc) {
-    Hittable **hs = new Hittable *[nb_groups];
-    mk_hittable_list(hs, loc);
-    order_scene(hs, nb_groups);
-    Hittables hits(hs, nb_groups);
-    return hits;
+  __device__ bool scatter(const Ray &r,
+                          const HitRecord &rec,
+                          Ray &scatter, float &pdf_val,
+                          curandState *loc) {
+    // TODO
+    return false;
   }
 };
+
 #endif

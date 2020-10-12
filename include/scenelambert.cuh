@@ -10,8 +10,7 @@ template <> struct SceneMaterial<Lambertian> {
   __device__ static bool
   scatter(Lambertian lamb, const Ray &r_in,
           const HitRecord &rec, Color &attenuation,
-          Ray &scattered, float &pdf,
-          curandState *loc) const override {
+          Ray &scattered, float &pdf, curandState *loc) {
     Onb uvw;
     uvw.build_from_w(rec.normal);
     auto direction =

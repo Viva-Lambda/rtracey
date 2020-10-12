@@ -29,18 +29,20 @@ struct Hittable {
 template <class HiT> struct SceneHittable {
 
   template <typename T>
-  __device__ static bool hit(HiT h, const Ray &r,
+  __device__ static bool hit(const HiT &h, const Ray &r,
                              float d_min, float d_max,
                              HitRecord &rec);
   template <typename T>
   __host__ __device__ static bool
-  bounding_box(HiT h, float t0, float t1, Aabb &output_box);
+  bounding_box(const HiT &h, float t0, float t1,
+               Aabb &output_box);
 
   template <typename T>
-  __device__ static float pdf_value(HiT h, const Point3 &o,
+  __device__ static float pdf_value(const HiT &&h,
+                                    const Point3 &o,
                                     const Point3 &v);
   template <typename T>
-  __device__ static Vec3 random(HiT h, const Vec3 &v,
+  __device__ static Vec3 random(const HiT &h, const Vec3 &v,
                                 curandState *loc) {
     return Vec3(1.0f, 0.0f, 0.0f);
   }

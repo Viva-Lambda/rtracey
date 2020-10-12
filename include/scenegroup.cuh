@@ -3,6 +3,7 @@
 
 #include <mediumc.cuh>
 #include <ray.cuh>
+#include <scenehit.cuh>
 #include <sceneparam.cuh>
 #include <sceneprim.cuh>
 #include <scenetype.cuh>
@@ -32,87 +33,74 @@ struct SceneGroup {
     }
     return false;
   }
-  __host__ __device__ HittableGroup
-  to_h_group(Hittable **&hs, Texture *&t) {
+};
+
+template <> struct SceneHittable<SceneGroup> {
+  __device__ static bool hit(const SceneGroup &g,
+                             const Ray &r, float d_min,
+                             float d_max, HitRecord &rec) {
+    HitRecord temp;
+    bool hit_anything = false;
+    float closest_far = d_max;
+    for (int i = 0; i < g.group_size; i++) {
+      ScenePrim p;
+      g.get(i, p);
+      bool isHit = SceneHittable<ScenePrim>::hit(
+          p, r, d_min, closest_far, temp);
+      if (isHit == true) {
+        hit_anything = isHit;
+        closest_far = temp.t;
+        rec = temp;
+        rec.group_id = g.group_id;
+        rec.group_index = p.group_index;
+      }
+    }
+    return hit_anything;
+  }
+  __host__ __device__ static bool
+  bounding_box(SceneGroup g, float t0, float t1,
+               Aabb &output_box) {
+    Aabb temp;
+    bool first_box = true;
+    for (int i = 0; i < g.group_size; i++) {
+      ScenePrim p;
+      g.get(i, p);
+
+      bool isBounding =
+          SceneHittable<ScenePrim>::bounding_box(p, t0, t1,
+                                                 temp);
+      if (isBounding == false) {
+        return false;
+      }
+      output_box = first_box
+                       ? temp
+                       : surrounding_box(output_box, temp);
+      first_box = false;
+      // center = output_box.center;
+    }
+    return true;
+  }
+  __device__ static float pdf_value(SceneGroup g,
+                                    const Point3 &o,
+                                    const Point3 &v) {
     //
-    HittableGroup hg;
-    switch (gtype) {
-    case SOLID: {
-      hg = HittableGroup(hs, group_size);
-      break;
+    float weight = 1.0f / g.group_size;
+    float sum = 0.0f;
+    for (int i = 0; i < g.group_size; i++) {
+      ScenePrim p;
+      g.get(i, p);
+      sum += weight *
+             SceneHittable<ScenePrim>::pdf_value(p, o, v);
     }
-    case CONSTANT_MEDIUM: {
-      HittableGroup hgs(hs, group_size);
-      Hittable *h = static_cast<Hittable *>(&hgs);
-      ConstantMedium cm(h, density, t);
-      Hittable **hss = new Hittable *[1];
-      hss[0] = static_cast<Hittable *>(&cm);
-      hg = HittableGroup(hss, 1);
-      break;
-    }
-    }
-    return hg;
+    return sum;
   }
-  __host__ __device__ Hittable **
-  to_hittable_list(Hittable **&hs) {
-    for (int i = 0; i < group_size; i++) {
-      ScenePrim pr;
-      get(i, pr);
-      hs[i] = pr.to_hittable();
-    }
-    return hs;
-  }
-  __host__ __device__ Hittable **
-  to_hittable_list(unsigned char *&td) {
-    Hittable **hs = new Hittable *[group_size];
-    for (int i = 0; i < group_size; i++) {
-      ScenePrim pr;
-      get(i, pr);
-      hs[i] = pr.to_hittable(td);
-    }
-    return hs;
-  }
-  __device__ Hittable **to_hittable_list(unsigned char *&td,
-                                         curandState *loc) {
-    Hittable **hs = new Hittable *[group_size];
-    for (int i = 0; i < group_size; i++) {
-      ScenePrim pr;
-      get(i, pr);
-      hs[i] = pr.to_hittable(td, loc);
-    }
-    return hs;
-  }
-  __device__ Hittable **to_hittable_list(curandState *loc) {
-    Hittable **hs = new Hittable *[group_size];
-    for (int i = 0; i < group_size; i++) {
-      ScenePrim pr;
-      get(i, pr);
-      hs[i] = pr.to_hittable(loc);
-    }
-    return hs;
-  }
-  __host__ __device__ HittableGroup to_hittable() {
-    Hittable **hs;
-    hs = to_hittable_list(hs);
-    Texture *t = tparam.to_texture();
-    return to_h_group(hs, t);
-  }
-  __host__ __device__ HittableGroup
-  to_hittable(unsigned char *&td) {
-    Hittable **hs = to_hittable_list(td);
-    Texture *t = tparam.to_texture(td);
-    return to_h_group(hs, t);
-  }
-  __device__ HittableGroup to_hittable(unsigned char *&td,
-                                       curandState *loc) {
-    Hittable **hs = to_hittable_list(td, loc);
-    Texture *t = tparam.to_texture(td, loc);
-    return to_h_group(hs, t);
-  }
-  __device__ HittableGroup to_hittable(curandState *loc) {
-    Hittable **hs = to_hittable_list(loc);
-    Texture *t = tparam.to_texture(loc);
-    return to_h_group(hs, t);
+
+  __device__ static Vec3 random(SceneGroup g, const Vec3 &v,
+                                curandState *loc) {
+    int obj_index = random_int(loc, 0, g.group_size - 1);
+    ScenePrim p;
+    g.get(obj_index, p);
+    return SceneHittable<ScenePrim>::random(p, v, loc);
   }
 };
 

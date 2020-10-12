@@ -4,14 +4,20 @@
 #include <color.hpp>
 #include <debug.hpp>
 #include <external.hpp>
-#include <hittables.cuh>
 #include <makeworld.cuh>
-#include <material.cuh>
 #include <ray.cuh>
-#include <sphere.cuh>
-#include <texture.cuh>
 #include <trace.cuh>
 #include <vec3.cuh>
+// scene objects
+#include <sceneaarect.cuh>
+#include <scenegroup.cuh>
+#include <scenehit.cuh>
+#include <sceneobj.cuh>
+#include <sceneparam.cuh>
+#include <sceneprim.cuh>
+#include <scenesphere.cuh>
+#include <scenetriangle.cuh>
+#include <scenetype.cuh>
 
 __global__ void rand_init(curandState *randState,
                           int seed) {
@@ -145,8 +151,6 @@ int main() {
   CUDA_CONTROL(cudaDeviceSynchronize());
 
   // declare world
-  thrust::device_ptr<Hittables *> world;
-  world = thrust::device_malloc<Hittables *>(1);
   SceneObjects sobjs = make_cornell_box();
 
   // make_final_world(hs, world);

@@ -3,18 +3,20 @@
 
 #include <camera.cuh>
 #include <external.hpp>
-#include <hittable.cuh>
-#include <hittables.cuh>
 #include <material.cuh>
 #include <pdf.cuh>
 #include <ray.cuh>
+#include <scenegroup.cuh>
+#include <scenehit.cuh>
+#include <sceneobj.cuh>
 #include <vec3.cuh>
 
 /**
   @param Ray r is the incoming ray.
   @param Hittables** world pointer to list of hittables
  */
-__device__ Color ray_color(const Ray &r, Hittables **world,
+__device__ Color ray_color(const Ray &r,
+                           SceneObjects &world,
                            curandState *loc, int bounceNb) {
   Ray current_ray = r;
   Vec3 current_attenuation = Vec3(1.0f);
@@ -23,10 +25,10 @@ __device__ Color ray_color(const Ray &r, Hittables **world,
   while (bounceNb > 0) {
     HitRecord rec;
     bool anyHit =
-        world[0]->hit(current_ray, 0.001f, FLT_MAX, rec);
+        world.hit(world, current_ray, 0.001f, FLT_MAX, rec);
     if (anyHit) {
       Color emittedColor =
-          rec.mat_ptr->emitted(rec.u, rec.v, rec.p);
+          rec.mat_ptr.emitted(rec.u, rec.v, rec.p);
       Ray scattered;
       Vec3 attenuation;
       float pdf_val;
@@ -56,7 +58,7 @@ __device__ Color ray_color(const Ray &r, Hittables **world,
 __global__ void render(Vec3 *fb, int maximum_x,
                        int maximum_y, int sample_nb,
                        int bounceNb, Camera dcam,
-                       Hittables **world,
+                       SceneObjects &world,
                        curandState *randState) {
   int i = threadIdx.x + blockIdx.x * blockDim.x;
   int j = threadIdx.y + blockIdx.y * blockDim.y;

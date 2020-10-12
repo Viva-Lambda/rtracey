@@ -1,16 +1,21 @@
-#pragma once
+#ifndef RECORD_CUH
+#define RECORD_CUH
 #include <ray.cuh>
-#include <sceneparam.cuh>
-#include <scenetype.cuh>
+#include <scenematparam.cuh>
 #include <vec3.cuh>
 
 struct HitRecord {
   float t;
   Point3 p;
   Vec3 normal;
-  MaterialParam mat_ptr;
   float u, v;
   bool front_face;
+  MaterialParam mat_ptr;
+
+  // scene related params
+  int group_id;
+  int group_index;
+  int primitive_index;
 
   /**
     @brief check if ray hits the front side of the object
@@ -51,3 +56,4 @@ struct AxisInfo {
     }
   }
 };
+#endif

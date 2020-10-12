@@ -6,8 +6,8 @@
 #include <utils.cuh>
 #include <vec3.cuh>
 
-#include <hittable.cuh>
 #include <material.cuh>
+#include <scenehit.cuh>
 #include <texture.cuh>
 
 class ConstantMedium : public Hittable {

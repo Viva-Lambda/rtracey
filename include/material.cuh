@@ -1,8 +1,8 @@
 #pragma once
 
-#include <hittable.cuh>
 #include <onb.cuh>
 #include <ray.cuh>
+#include <scenehit.cuh>
 #include <texture.cuh>
 #include <vec3.cuh>
 

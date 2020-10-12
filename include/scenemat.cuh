@@ -2,8 +2,10 @@
 // scene material
 #include <onb.cuh>
 #include <ray.cuh>
-#include <sceneparam.cuh>
-#include <texture.cuh>
+#include <scenematparam.cuh>
+#include <scenetexparam.cuh>
+//
+#include <record.cuh>
 #include <vec3.cuh>
 __host__ __device__ float fresnelCT(float costheta,
                                     float ridx) {
@@ -42,7 +44,8 @@ __host__ __device__ Vec3 reflect(const Vec3 &v,
                                  const Vec3 &n) {
   return v - 2.0f * dot(v, n) * n;
 }
-template <MaT> struct SceneMaterial {
+
+template <class MaT> struct SceneMaterial {
   __device__ static bool
   scatter(MaT m, const Ray &r_in, const HitRecord &rec,
           Vec3 &attenuation, Ray &scattered, float &pdf,
@@ -57,9 +60,35 @@ template <MaT> struct SceneMaterial {
     return 0.0f;
   }
   __host__ __device__ static Color
-  emitted(MaT m, float u, float v, const Point3 &p) const {
+  emitted(MaT m, float u, float v, const Point3 &p) {
     //
     return Color(0.0f);
   }
 };
 
+struct Lambertian {
+  TextureParam albedo;
+  __host__ __device__ Lambertian(const MaterialParam &mp)
+      : albedo(mp.tparam) {}
+};
+struct Metal {
+  TextureParam albedo;
+  float fuzz;
+  __host__ __device__ Metal(const MaterialParam &mp)
+      : albedo(mp.tparam), fuzz(mp.fuzz_ref_idx) {}
+};
+struct Dielectric {
+  float ref_idx;
+  __host__ __device__ Dielectric(const MaterialParam &mp)
+      : ref_idx(mp.fuzz_ref_idx) {}
+};
+struct DiffuseLight {
+  TextureParam albedo;
+  __host__ __device__ DiffuseLight(const MaterialParam &mp)
+      : albedo(mp.tparam) {}
+};
+struct Isotropic {
+  TextureParam albedo;
+  __host__ __device__ DiffuseLight(const MaterialParam &mp)
+      : albedo(mp.tparam) {}
+};

@@ -16,12 +16,14 @@ enum MaterialType : int {
 };
 
 enum HittableType : int {
-  TRIANGLE = 1,
-  SPHERE = 2,
-  MOVING_SPHERE = 3,
-  XY_RECT = 4,
-  XZ_RECT = 5,
-  YZ_RECT = 6
+  SPHERE = 1,
+  MOVING_SPHERE = 2,
+  XY_RECT = 3,
+  XZ_RECT = 4,
+  YZ_RECT = 5,
+  XY_TRIANGLE = 6,
+  XZ_TRIANGLE = 7,
+  YZ_TRIANGLE = 8
 };
 
 enum GroupType : int { SOLID = 1, CONSTANT_MEDIUM = 2 };
