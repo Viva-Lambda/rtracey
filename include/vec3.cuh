@@ -290,6 +290,22 @@ __device__ Vec3 random_cosine_direction(curandState *lo) {
 
   return Vec3(x, y, z);
 }
+__device__ inline Vec3
+random_to_sphere(float radius, float distance_squared,
+                 curandState *loc) {
+  auto r1 = curand_uniform(loc);
+  auto r2 = curand_uniform(loc);
+  auto z =
+      1 +
+      r2 * (sqrt(1 - radius * radius / distance_squared) -
+            1);
+
+  auto phi = 2 * M_PI * r1;
+  auto x = cos(phi) * sqrt(1 - z * z);
+  auto y = sin(phi) * sqrt(1 - z * z);
+
+  return Vec3(x, y, z);
+}
 
 using Point3 = Vec3;
 using Color = Vec3;
