@@ -218,6 +218,28 @@ __host__ __device__ Vec3 max_vec(const Vec3 v1,
   return Vec3(xmax, ymax, zmax);
 }
 
+__host__ __device__ bool refract(const Vec3 &v,
+                                 const Vec3 &n,
+                                 float ni_over_nt,
+                                 Vec3 &refracted) {
+  Vec3 uv = to_unit(v);
+  float dt = dot(uv, n);
+  float discriminant =
+      1.0f - ni_over_nt * ni_over_nt * (1 - dt * dt);
+  if (discriminant > 0) {
+    refracted =
+        ni_over_nt * (uv - n * dt) - n * sqrt(discriminant);
+    return true;
+  } else {
+    return false;
+  }
+}
+
+__host__ __device__ Vec3 reflect(const Vec3 &v,
+                                 const Vec3 &n) {
+  return v - 2.0f * dot(v, n) * n;
+}
+
 #define RND (curand_uniform(&local_rand_state))
 
 __device__ float random_float(curandState *loc, float min,

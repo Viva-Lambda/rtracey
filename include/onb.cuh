@@ -1,5 +1,4 @@
-#ifndef ONB_CUH
-#define ONB_CUH
+#pragma once
 
 #include <external.hpp>
 #include <ray.cuh>
@@ -31,7 +30,6 @@ public:
 public:
   Vec3 axis[3];
 };
-
 __host__ __device__ void Onb::build_from_w(const Vec3 &n) {
   axis[2] = to_unit(n);
   Vec3 a =
@@ -39,5 +37,3 @@ __host__ __device__ void Onb::build_from_w(const Vec3 &n) {
   axis[1] = to_unit(cross(w(), a));
   axis[0] = cross(w(), v());
 }
-
-#endif

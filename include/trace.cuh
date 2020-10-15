@@ -1,13 +1,10 @@
-// trace kernel
 #pragma once
 
 #include <camera.cuh>
 #include <external.hpp>
-#include <material.cuh>
 #include <pdf.cuh>
 #include <ray.cuh>
 #include <scenegroup.cuh>
-#include <scenehit.cuh>
 #include <sceneobj.cuh>
 #include <vec3.cuh>
 
@@ -25,22 +22,24 @@ __device__ Color ray_color(const Ray &r,
   while (bounceNb > 0) {
     HitRecord rec;
     bool anyHit =
-        world.hit(world, current_ray, 0.001f, FLT_MAX, rec);
+        world.hit(current_ray, 0.001f, FLT_MAX, rec);
     if (anyHit) {
+      // rec.mat_ptr.tparam.tdata = world.tdata;
       Color emittedColor =
-          rec.mat_ptr.emitted(rec.u, rec.v, rec.p);
+          SceneMaterial<MaterialParam>::emitted(
+              rec.mat_ptr, rec.u, rec.v, rec.p);
       Ray scattered;
       Vec3 attenuation;
-      float pdf_val;
-      bool isScattered = rec.mat_ptr->scatter(
-          current_ray, rec, attenuation, scattered, pdf_val,
-          loc);
+      float pdf_val = 1.0f;
+      bool isScattered =
+          SceneMaterial<MaterialParam>::scatter(
+              rec.mat_ptr, current_ray, rec, attenuation,
+              scattered, pdf_val, loc);
       if (isScattered) {
-
         bounceNb--;
-        float s_pdf = rec.mat_ptr->scattering_pdf(
-            current_ray, rec, scattered);
-
+        float s_pdf =
+            SceneMaterial<MaterialParam>::scattering_pdf(
+                rec.mat_ptr, current_ray, rec, scattered);
         result += (current_attenuation * emittedColor);
         current_attenuation *=
             attenuation * s_pdf / pdf_val;
@@ -53,12 +52,13 @@ __device__ Color ray_color(const Ray &r,
       return Color(0.0);
     }
   }
-  return Vec3(0.0f); // background color
+  // return Vec3(1.0f); // background color
+  return result;
 }
 __global__ void render(Vec3 *fb, int maximum_x,
                        int maximum_y, int sample_nb,
                        int bounceNb, Camera dcam,
-                       SceneObjects &world,
+                       SceneObjects world,
                        curandState *randState) {
   int i = threadIdx.x + blockIdx.x * blockDim.x;
   int j = threadIdx.y + blockIdx.y * blockDim.y;
@@ -70,6 +70,7 @@ __global__ void render(Vec3 *fb, int maximum_x,
   curandState localS = randState[pixel_index];
   Vec3 rcolor(0.0f);
   Camera cam = dcam;
+  // world.set_curand(&localS);
   for (int s = 0; s < sample_nb; s++) {
     float u = float(i + curand_uniform(&localS)) /
               float(maximum_x);
@@ -77,7 +78,9 @@ __global__ void render(Vec3 *fb, int maximum_x,
               float(maximum_y);
     Ray r = cam.get_ray(u, v, &localS);
     //
-    rcolor += ray_color(r, world, &localS, bounceNb);
+    // rcolor += ray_color(r, world, &localS, bounceNb);
+    rcolor += Color(world.tp1xs[1], world.tp1ys[1],
+                    world.tp1zs[1]);
   }
   // fix the bounce depth
   randState[pixel_index] = localS;

@@ -5,7 +5,6 @@
 #include <scenegroup.cuh>
 #include <scenematparam.cuh>
 #include <sceneobj.cuh>
-#include <sceneparam.cuh>
 #include <sceneprim.cuh>
 #include <scenetexparam.cuh>
 #include <vec3.cuh>
@@ -40,23 +39,25 @@ SceneObjects make_cornell_box() {
   auto blue_wall = mkXYRectHittable(0, 555, 0, 555, 555);
   //
   int prim_count = 6;
-  ScenePrim *prms = new ScenePrim[prim_count];
+  Primitive *prms = new Primitive[prim_count];
   //
   int pcount = 0;
-  prms[pcount] = ScenePrim(green_param, green_wall, 0, 0);
+//prms[pcount] = Primitive(green_param, green_wall, 0, 0);
+//pcount++;
+  prms[pcount] = Primitive(red_param, red_wall, 1, 0);
   pcount++;
-  prms[pcount] = ScenePrim(red_param, red_wall, 1, 0);
+  prms[pcount] = Primitive(light_param, light_wall, 2, 0);
   pcount++;
-  prms[pcount] = ScenePrim(light_param, light_wall, 2, 0);
-  pcount++;
-  prms[pcount] = ScenePrim(white_param, white_wall, 3, 0);
-  pcount++;
-  prms[pcount] = ScenePrim(white_param, white_wall2, 4, 0);
-  pcount++;
-  prms[pcount] = ScenePrim(blue_param, blue_wall, 5, 0);
+  // prms[pcount] = Primitive(white_param, white_wall, 3,
+  // 0);
+  // pcount++;
+  // prms[pcount] = Primitive(white_param, white_wall2, 4,
+  // 0);
+  // pcount++;
+  // prms[pcount] = Primitive(blue_param, blue_wall, 5, 0);
   TextureParam tp;
-  SceneGroup sg(prms, prim_count, 0, SOLID, 0.0f, tp);
-  SceneGroup sgs[] = {sg};
+  GroupParam sg(prms, prim_count, 0, BOX, 0.0f, tp);
+  GroupParam sgs[] = {sg};
   SceneObjects sobjs(sgs, 1);
   // Hittables hs = sobjs.to_hittables();
   return sobjs;

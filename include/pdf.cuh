@@ -1,5 +1,4 @@
-#ifndef PDF_CUH
-#define PDF_CUH
+#pragma once
 
 #include <onb.cuh>
 #include <ray.cuh>
@@ -16,7 +15,6 @@ public:
   __device__ virtual Vec3
   generate(curandState *&loc) const = 0;
 };
-
 class CosinePdf : public Pdf {
 public:
   __host__ __device__ CosinePdf() {}
@@ -38,29 +36,26 @@ public:
 public:
   Onb uvw;
 };
-
-class HittablePdf : public Pdf {
+template <class HiT> class HittablePdf : public Pdf {
 public:
   __host__ __device__ HittablePdf() : ptr(nullptr) {}
-  __host__ __device__ HittablePdf(Hittable *&p,
+  __host__ __device__ HittablePdf(const HiT &p,
                                   const Point3 &origin)
       : ptr(p), o(origin) {}
 
-  __device__ float
-  value(const Vec3 &direction) const override {
-    return ptr->pdf_value(o, direction);
+  __device__ float value(const Vec3 &direction) const {
+    return ptr.pdf_value(o, direction);
   }
 
   __device__ Vec3
   generate(curandState *&loc) const override {
-    return ptr->random(o, loc);
+    return ptr.random(o, loc);
   }
 
 public:
   Point3 o;
-  Hittable *ptr;
+  HiT ptr;
 };
-
 class MixturePdf : public Pdf {
 public:
   __host__ __device__ MixturePdf() {}
@@ -85,5 +80,3 @@ public:
   Pdf *p1;
   Pdf *p2;
 };
-
-#endif

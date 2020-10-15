@@ -1,7 +1,7 @@
-#ifndef RECORD_CUH
-#define RECORD_CUH
+#pragma once
+
 #include <ray.cuh>
-#include <scenematparam.cuh>
+#include <scenematpar.cuh>
 #include <vec3.cuh>
 
 struct HitRecord {
@@ -56,4 +56,3 @@ struct AxisInfo {
     }
   }
 };
-#endif

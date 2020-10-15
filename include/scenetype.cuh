@@ -1,6 +1,7 @@
 #pragma once
 
 enum TextureType : int {
+  NONE_TEXTURE = 0,
   SOLID_COLOR = 1,
   CHECKER = 2,
   NOISE = 3,
@@ -8,6 +9,7 @@ enum TextureType : int {
 };
 
 enum MaterialType : int {
+  NONE_MATERIAL = 0,
   LAMBERTIAN = 1,
   METAL = 2,
   DIELECTRIC = 3,
@@ -16,6 +18,7 @@ enum MaterialType : int {
 };
 
 enum HittableType : int {
+  NONE_HITTABLE = 0,
   SPHERE = 1,
   MOVING_SPHERE = 2,
   XY_RECT = 3,
@@ -26,4 +29,8 @@ enum HittableType : int {
   YZ_TRIANGLE = 8
 };
 
-enum GroupType : int { SOLID = 1, CONSTANT_MEDIUM = 2 };
+enum GroupType : int {
+  BOX = 1,
+  CONSTANT_MEDIUM = 2,
+  SIMPLE_MESH = 3
+};

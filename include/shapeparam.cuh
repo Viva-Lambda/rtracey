@@ -3,13 +3,16 @@
 #include <vec3.cuh>
 
 struct HittableParam {
-  HittableType htype;
+  HittableType htype; //
 
   float p1x, p1y, p1z;
   float p2x, p2y, p2z;
   float radius;
   float n1x, n1y, n1z;
-  __host__ __device__ HittableParam() {}
+  __host__ __device__ HittableParam()
+      : p1x(0), p1y(0), p1z(0), p2x(0), p2y(0), p2z(0),
+        n1x(0), n1y(0), n1z(0), radius(0),
+        htype(NONE_HITTABLE) {}
   __host__ __device__ HittableParam(HittableType ht,
                                     float _p1x, float _p1y,
                                     float _p1z, float _p2x,
@@ -20,9 +23,9 @@ struct HittableParam {
         p2x(_p2x), p2y(_p2y), p2z(_p2z), n1x(_n1x),
         n1y(_n1y), n1z(_n1z), radius(r) {}
 };
-HittableParam mkRectHittable(float a0, float a1, float b0,
-                             float b1, Vec3 anormal,
-                             float k) {
+__host__ __device__ HittableParam
+mkRectHittable(float a0, float a1, float b0, float b1,
+               Vec3 anormal, float k) {
   HittableParam param;
   param.p1x = a0;
   param.p1y = a1;
@@ -38,16 +41,16 @@ HittableParam mkRectHittable(float a0, float a1, float b0,
   }
   return param;
 }
-HittableParam mkYZRectHittable(float a0, float a1, float b0,
-                               float b1, float k) {
+__host__ __device__ HittableParam mkYZRectHittable(
+    float a0, float a1, float b0, float b1, float k) {
   return mkRectHittable(a0, a1, b0, b1, Vec3(1, 0, 0), k);
 }
-HittableParam mkXZRectHittable(float a0, float a1, float b0,
-                               float b1, float k) {
+__host__ __device__ HittableParam mkXZRectHittable(
+    float a0, float a1, float b0, float b1, float k) {
   return mkRectHittable(a0, a1, b0, b1, Vec3(0, 1, 0), k);
 }
-HittableParam mkXYRectHittable(float a0, float a1, float b0,
-                               float b1, float k) {
+__host__ __device__ HittableParam mkXYRectHittable(
+    float a0, float a1, float b0, float b1, float k) {
   return mkRectHittable(a0, a1, b0, b1, Vec3(0, 0, 1), k);
 }
 HittableParam mkSphereHittable(Point3 cent, float rad) {
@@ -59,10 +62,9 @@ HittableParam mkSphereHittable(Point3 cent, float rad) {
   param.radius = rad;
   return param;
 }
-HittableParam mkMovingSphereHittable(Point3 cent1,
-                                     Point3 cent2,
-                                     float rad, float t0,
-                                     float t1) {
+__host__ __device__ HittableParam
+mkMovingSphereHittable(Point3 cent1, Point3 cent2,
+                       float rad, float t0, float t1) {
   HittableParam param;
   param.htype = MOVING_SPHERE;
   param.p1x = cent1.x();

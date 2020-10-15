@@ -1,19 +1,24 @@
 #pragma once
+#include "debug.hpp"
 #include <external.hpp>
 #include <ray.cuh>
 #include <vec3.cuh>
 
 template <typename T>
-cudaError_t alloc(T *&d_ptr, std::size_t size) {
+T *alloc(T *&d_ptr, std::size_t size, cudaError_t &err) {
   d_ptr = nullptr;
-  return cudaMalloc((void **)&d_ptr, size);
+  err = cudaMalloc((void **)&(d_ptr), size);
+  return d_ptr;
 }
 template <typename T>
-cudaError_t upload(T *&d_ptr, T *&h_ptr, int count) {
-  alloc(d_ptr, count * sizeof(T));
-  return cudaMemcpy((void *)d_ptr, (void *)h_ptr,
-                    count * sizeof(T),
-                    cudaMemcpyHostToDevice);
+T *upload(T *&d_ptr, T *&h_ptr, int count,
+          cudaError_t &err) {
+  d_ptr = alloc(d_ptr, count * sizeof(T), err);
+  CUDA_CONTROL(err);
+  err =
+      cudaMemcpy((void *)d_ptr, (void *)h_ptr,
+                 count * sizeof(T), cudaMemcpyHostToDevice);
+  return d_ptr;
 }
 
 template <typename T>

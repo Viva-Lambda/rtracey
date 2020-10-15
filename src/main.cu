@@ -9,14 +9,10 @@
 #include <trace.cuh>
 #include <vec3.cuh>
 // scene objects
-#include <sceneaarect.cuh>
+#include <record.cuh>
 #include <scenegroup.cuh>
-#include <scenehit.cuh>
 #include <sceneobj.cuh>
-#include <sceneparam.cuh>
 #include <sceneprim.cuh>
-#include <scenesphere.cuh>
-#include <scenetriangle.cuh>
 #include <scenetype.cuh>
 
 __global__ void rand_init(curandState *randState,
@@ -113,8 +109,8 @@ int main() {
   float aspect_ratio = 16.0f / 9.0f;
   int WIDTH = 320;
   int HEIGHT = static_cast<int>(WIDTH / aspect_ratio);
-  int BLOCK_WIDTH = 32;
-  int BLOCK_HEIGHT = 18;
+  int BLOCK_WIDTH = 16;
+  int BLOCK_HEIGHT = 8;
   int SAMPLE_NB = 10;
   int BOUNCE_NB = 10;
 
@@ -157,11 +153,11 @@ int main() {
   // make_cornell(hs, world, lshape);
 
   // declara imdata
-  SceneObjects d_sobjs = sobjs.to_device();
+  SceneObjects world = sobjs.to_device();
 
   // --------------------- image ------------------------
   CUDA_CONTROL(cudaGetLastError());
-  make_empty_c_box<<<1, 1>>>(d_sobjs);
+  // make_empty_c_box<<<1, 1>>>(d_sobjs);
 
   CUDA_CONTROL(cudaGetLastError());
   CUDA_CONTROL(cudaDeviceSynchronize());
@@ -180,13 +176,11 @@ int main() {
 
   // declare camera
   Camera cam = makeCam(WIDTH, HEIGHT);
-  //
 
-  // render<<<blocks, threads>>>(
-  //    thrust::raw_pointer_cast(fb), WIDTH, HEIGHT,
-  //    SAMPLE_NB, BOUNCE_NB, cam,
-  //    thrust::raw_pointer_cast(world),
-  //    thrust::raw_pointer_cast(randState1));
+  render<<<blocks, threads>>>(
+      thrust::raw_pointer_cast(fb), WIDTH, HEIGHT,
+      SAMPLE_NB, BOUNCE_NB, cam, world,
+      thrust::raw_pointer_cast(randState1));
   CUDA_CONTROL(cudaGetLastError());
   CUDA_CONTROL(cudaDeviceSynchronize());
   biter = clock();
@@ -214,8 +208,8 @@ int main() {
   }
   CUDA_CONTROL(cudaDeviceSynchronize());
   CUDA_CONTROL(cudaGetLastError());
-  free_empty_cornell(fb, world, randState1, randState2);
-  d_sobjs.d_free();
+  free_empty_cornell(fb, randState1, randState2);
+  world.d_free();
   CUDA_CONTROL(cudaGetLastError());
 
   cudaDeviceReset();

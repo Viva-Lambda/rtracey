@@ -1,10 +1,9 @@
-#ifndef SCENEOBJ_CUH
-#define SCENEOBJ_CUH
+#pragma once
 #include <debug.hpp>
+#include <group.cuh>
+#include <groupparam.cuh>
 #include <ray.cuh>
-#include <scenegroup.cuh>
-#include <scenehit.cuh>
-#include <sceneparam.cuh>
+#include <scenegroupparam.cuh>
 #include <sceneprim.cuh>
 #include <scenetype.cuh>
 #include <vec3.cuh>
@@ -12,7 +11,7 @@
 struct SceneObjects {
   // texture params
   int *ttypes;
-  Color *cvals;
+  float *tp1xs, *tp1ys, *tp1zs;
   float *scales;
 
   // image params
@@ -46,30 +45,33 @@ struct SceneObjects {
   int nb_groups;
   int nb_prims;
 
-  __host__ __device__ SceneObjects() : tdata(nullptr) {}
-  __host__ __device__ SceneObjects(SceneGroup *gs, int nb_g)
-      : nb_groups(nb_g) {
+  __host__ __device__ SceneObjects()
+      : tdata(nullptr), tsize(0) {}
+  __host__ __device__ SceneObjects(GroupParam *gs, int nb_g)
+      : nb_groups(nb_g), tdata(nullptr), tsize(0) {
     alloc_group_params(nb_g);
     //
     int nb_prim = 0;
     for (int i = 0; i < nb_groups; i++) {
-      SceneGroup g = gs[i];
+      GroupParam g = gs[i];
       nb_prim += g.group_size;
     }
     nb_prims = nb_prim;
     alloc_prim_params(nb_prim);
 
     for (int i = 0; i < nb_groups; i++) {
-      SceneGroup g = gs[i];
+      GroupParam g = gs[i];
       group_sizes[i] = g.group_size;
       group_ids[i] = g.group_id;
       gtypes[i] = g.gtype;
       int gstart = i * g.group_size;
-      group_starts[i] = gstart == 0 ? g.group_size : gstart;
+      // group_starts[i] = gstart == 0 ? g.group_size :
+      // gstart;
+      group_starts[i] = gstart;
 
       for (int j = 0; j < g.group_size; j++) {
         int gindex = gstart + j;
-        ScenePrim prim;
+        Primitive prim;
         bool is_valid_index = g.get(j, prim);
         if (is_valid_index) {
           set_primitive(prim, gindex);
@@ -77,10 +79,26 @@ struct SceneObjects {
       }
     }
   }
-  __host__ __device__ void set_primitive(ScenePrim &p,
+  __host__ __device__ void
+  set_group_texture(const GroupParam &g, int i) {
+    g_densities[i] = g.density;
+    g_ttypes[i] = g.tparam.ttype;
+    g_tp1xs[i] = g.tparam.cval.x();
+    g_tp1ys[i] = g.tparam.cval.y();
+    g_tp1zs[i] = g.tparam.cval.z();
+    g_scales[i] = g.tparam.scale;
+    g_widths[i] = g.tparam.imp.width;
+    g_heights[i] = g.tparam.imp.height;
+    g_bpps[i] = g.tparam.imp.bytes_per_pixel;
+    g_indices[i] = g.tparam.imp.index;
+  }
+  __host__ __device__ void set_primitive(Primitive &p,
                                          int gindex) {
     ttypes[gindex] = p.mparam.tparam.ttype;
-    cvals[gindex] = p.mparam.tparam.cval;
+
+    tp1xs[gindex] = p.mparam.tparam.cval.x();
+    tp1ys[gindex] = p.mparam.tparam.cval.y();
+    tp1zs[gindex] = p.mparam.tparam.cval.z();
     scales[gindex] = p.mparam.tparam.scale;
     widths[gindex] = p.mparam.tparam.imp.width;
     heights[gindex] = p.mparam.tparam.imp.height;
@@ -123,7 +141,9 @@ struct SceneObjects {
   }
   __host__ __device__ void alloc_prim_params(int nb_ps) {
     ttypes = new int[nb_ps];
-    cvals = new Color[nb_ps];
+    tp1xs = new float[nb_ps];
+    tp1ys = new float[nb_ps];
+    tp1zs = new float[nb_ps];
     scales = new float[nb_ps];
     widths = new int[nb_ps];
     heights = new int[nb_ps];
@@ -150,7 +170,7 @@ struct SceneObjects {
     prim_group_indices = new int[nb_ps];
   }
   __host__ __device__ TextureParam
-  get_group_texture_param(int gindex) const {
+  get_group_texture_param(int gindex) {
     Color cv(g_tp1xs[gindex], g_tp1ys[gindex],
              g_tp1zs[gindex]);
     ImageParam img_p(g_widths[gindex], g_heights[gindex],
@@ -160,14 +180,33 @@ struct SceneObjects {
         g_scales[gindex], img_p);
     return tpr;
   }
-  __host__ __device__ void fill_group(SceneGroup &group,
-                                      int gindex) const {
+  __device__ TextureParam
+  get_group_texture_param(int gindex, curandState *loc) {
+    Color cv(g_tp1xs[gindex], g_tp1ys[gindex],
+             g_tp1zs[gindex]);
+    ImageParam img_p(g_widths[gindex], g_heights[gindex],
+                     g_bpps[gindex], g_indices[gindex]);
+    TextureParam tpr(
+        loc, static_cast<TextureType>(g_ttypes[gindex]), cv,
+        g_scales[gindex], img_p);
+    return tpr;
+  }
+
+  // __device__ void set_curand(curandState *lc) { loc = lc;
+  // }
+
+  __host__ __device__ void
+  fill_group_params(GroupParam &group, int gindex) {
     group.gtype = static_cast<GroupType>(gtypes[gindex]);
     group.group_size = group_sizes[gindex];
     group.group_id = group_ids[gindex];
     group.density = g_densities[gindex];
+  }
+  __host__ __device__ void fill_group(GroupParam &group,
+                                      int gindex) {
+    fill_group_params(group, gindex);
     group.tparam = get_group_texture_param(gindex);
-    ScenePrim *prims = new ScenePrim[group.group_size];
+    Primitive *prims = new Primitive[group.group_size];
     int gstart = group_starts[gindex];
     for (int i = 0; i < group.group_size; i++) {
       gstart += i;
@@ -175,7 +214,20 @@ struct SceneObjects {
     }
     group.prims = prims;
   }
-  __host__ SceneObjects to_device() {
+  __device__ void fill_group(GroupParam &group, int gindex,
+                             curandState *loc) {
+    fill_group_params(group, gindex);
+    group.tparam = get_group_texture_param(gindex, loc);
+    Primitive *prims = new Primitive[group.group_size];
+    int gstart = group_starts[gindex];
+    for (int i = 0; i < group.group_size; i++) {
+      int g_start = gstart + i;
+      prims[i] =
+          get_primitive(g_start, group.group_id, loc);
+    }
+    group.prims = prims;
+  }
+  __host__ SceneObjects to_device_thrust() {
     SceneObjects sobjs;
     sobjs.nb_prims = nb_prims;
     sobjs.nb_groups = nb_groups;
@@ -184,9 +236,17 @@ struct SceneObjects {
     upload_thrust<int>(d_ttypes, ttypes, nb_prims);
     sobjs.ttypes = thrust::raw_pointer_cast(d_ttypes);
 
-    thrust::device_ptr<Color> d_cvals;
-    upload_thrust<Color>(d_cvals, cvals, nb_prims);
-    sobjs.cvals = thrust::raw_pointer_cast(d_cvals);
+    thrust::device_ptr<float> d_tp1xs;
+    upload_thrust<float>(d_tp1xs, tp1xs, nb_prims);
+    sobjs.tp1xs = thrust::raw_pointer_cast(d_tp1xs);
+
+    thrust::device_ptr<float> d_tp1ys;
+    upload_thrust<float>(d_tp1ys, tp1ys, nb_prims);
+    sobjs.tp1ys = thrust::raw_pointer_cast(d_tp1ys);
+
+    thrust::device_ptr<float> d_tp1zs;
+    upload_thrust<float>(d_tp1zs, tp1zs, nb_prims);
+    sobjs.tp1zs = thrust::raw_pointer_cast(d_tp1zs);
 
     thrust::device_ptr<float> d_scales;
     upload_thrust<float>(d_scales, scales, nb_prims);
@@ -332,9 +392,204 @@ struct SceneObjects {
 
     return sobjs;
   }
+  __host__ SceneObjects to_device() {
+    SceneObjects sobjs;
+    sobjs.nb_prims = nb_prims;
+    sobjs.nb_groups = nb_groups;
+
+    cudaError_t err;
+    int *d_ttypes;
+    sobjs.ttypes =
+        upload<int>(d_ttypes, ttypes, nb_prims, err);
+    CUDA_CONTROL(err);
+
+    float *d_tp1xs;
+    sobjs.tp1xs =
+        upload<float>(d_tp1xs, tp1xs, nb_prims, err);
+    CUDA_CONTROL(err);
+
+    float *d_tp1ys;
+    sobjs.tp1ys =
+        upload<float>(d_tp1ys, tp1ys, nb_prims, err);
+    CUDA_CONTROL(err);
+
+    float *d_tp1zs;
+    sobjs.tp1zs =
+        upload<float>(d_tp1zs, tp1zs, nb_prims, err);
+    CUDA_CONTROL(err);
+
+    float *d_scales;
+    sobjs.scales =
+        upload<float>(d_scales, scales, nb_prims, err);
+    CUDA_CONTROL(err);
+
+    int *d_widths;
+    sobjs.widths =
+        upload<int>(d_widths, widths, nb_prims, err);
+    CUDA_CONTROL(err);
+
+    int *d_heights;
+    sobjs.heights =
+        upload<int>(d_heights, heights, nb_prims, err);
+    CUDA_CONTROL(err);
+
+    int *d_bpps;
+    sobjs.bytes_per_pixels = upload<int>(
+        d_bpps, bytes_per_pixels, nb_prims, err);
+    CUDA_CONTROL(err);
+
+    int *d_img_indices;
+    sobjs.image_indices = upload<int>(
+        d_img_indices, image_indices, nb_prims, err);
+    CUDA_CONTROL(err);
+
+    unsigned char *d_tdata;
+    sobjs.tdata =
+        upload<unsigned char>(d_tdata, tdata, tsize, err);
+    CUDA_CONTROL(err);
+
+    int *d_mtypes;
+    sobjs.mtypes =
+        upload<int>(d_mtypes, mtypes, nb_prims, err);
+    CUDA_CONTROL(err);
+
+    float *d_fuzzs;
+    sobjs.fuzz_ref_idxs = upload<float>(
+        d_fuzzs, fuzz_ref_idxs, nb_prims, err);
+    CUDA_CONTROL(err);
+
+    int *d_htypes;
+    sobjs.htypes =
+        upload<int>(d_htypes, htypes, nb_prims, err);
+    CUDA_CONTROL(err);
+
+    float *d_p1xs;
+    sobjs.p1xs = upload<float>(d_p1xs, p1xs, nb_prims, err);
+    CUDA_CONTROL(err);
+
+    float *d_p1ys;
+    sobjs.p1ys = upload<float>(d_p1ys, p1ys, nb_prims, err);
+    CUDA_CONTROL(err);
+
+    float *d_p1zs;
+    sobjs.p1zs = upload<float>(d_p1zs, p1zs, nb_prims, err);
+    CUDA_CONTROL(err);
+
+    float *d_p2xs;
+    sobjs.p2xs = upload<float>(d_p2xs, p2xs, nb_prims, err);
+    CUDA_CONTROL(err);
+
+    float *d_p2ys;
+    sobjs.p2ys = upload<float>(d_p2ys, p2ys, nb_prims, err);
+    CUDA_CONTROL(err);
+
+    float *d_p2zs;
+    sobjs.p2zs = upload<float>(d_p2zs, p2zs, nb_prims, err);
+    CUDA_CONTROL(err);
+
+    float *d_n1xs;
+    sobjs.n1xs = upload<float>(d_n1xs, n1xs, nb_prims, err);
+    CUDA_CONTROL(err);
+
+    float *d_n1ys;
+    sobjs.n1ys = upload<float>(d_n1ys, n1ys, nb_prims, err);
+    CUDA_CONTROL(err);
+
+    float *d_n1zs;
+    sobjs.n1zs = upload<float>(d_n1zs, n1zs, nb_prims, err);
+    CUDA_CONTROL(err);
+
+    float *d_rads;
+    sobjs.rads = upload<float>(d_rads, rads, nb_prims, err);
+    CUDA_CONTROL(err);
+
+    int *d_prim_g_indices;
+    sobjs.prim_group_indices =
+        upload<int>(d_prim_g_indices, prim_group_indices,
+                    nb_prims, err);
+    CUDA_CONTROL(err);
+
+    int *d_gstarts;
+    sobjs.group_starts = upload<int>(
+        d_gstarts, group_starts, nb_groups, err);
+    CUDA_CONTROL(err);
+
+    int *d_gsizes;
+
+    sobjs.group_sizes =
+        upload<int>(d_gsizes, group_sizes, nb_groups, err);
+    CUDA_CONTROL(err);
+
+    int *d_gids;
+    sobjs.group_ids =
+        upload<int>(d_gids, group_ids, nb_groups, err);
+    CUDA_CONTROL(err);
+
+    int *d_gts;
+    sobjs.gtypes =
+        upload<int>(d_gts, gtypes, nb_groups, err);
+    CUDA_CONTROL(err);
+
+    float *d_g_dens;
+
+    sobjs.g_densities = upload<float>(d_g_dens, g_densities,
+                                      nb_groups, err);
+    CUDA_CONTROL(err);
+
+    int *d_g_ttypes;
+    sobjs.g_ttypes =
+        upload<int>(d_g_ttypes, g_ttypes, nb_groups, err);
+    CUDA_CONTROL(err);
+
+    float *d_g_tp1xs;
+    sobjs.g_tp1xs =
+        upload<float>(d_g_tp1xs, g_tp1xs, nb_groups, err);
+
+    CUDA_CONTROL(err);
+
+    float *d_g_tp1ys;
+    sobjs.g_tp1ys =
+        upload<float>(d_g_tp1ys, g_tp1ys, nb_groups, err);
+    CUDA_CONTROL(err);
+
+    float *d_g_tp1zs;
+    sobjs.g_tp1zs =
+        upload<float>(d_g_tp1zs, g_tp1zs, nb_groups, err);
+    CUDA_CONTROL(err);
+
+    float *d_g_scales;
+    sobjs.g_scales =
+        upload<float>(d_g_scales, g_scales, nb_groups, err);
+    CUDA_CONTROL(err);
+
+    int *d_g_widths;
+    sobjs.g_widths =
+        upload<int>(d_g_widths, g_widths, nb_groups, err);
+    CUDA_CONTROL(err);
+
+    int *d_g_heights;
+    sobjs.g_heights =
+        upload<int>(d_g_heights, g_heights, nb_groups, err);
+    CUDA_CONTROL(err);
+
+    int *d_g_bpps;
+    sobjs.g_bpps =
+        upload<int>(d_g_bpps, g_bpps, nb_groups, err);
+    CUDA_CONTROL(err);
+
+    int *d_g_indices;
+
+    sobjs.g_indices =
+        upload<int>(d_g_indices, g_indices, nb_groups, err);
+    CUDA_CONTROL(err);
+
+    return sobjs;
+  }
   __host__ void d_free() {
     cudaFree(ttypes);
-    cudaFree(cvals);
+    cudaFree(tp1xs);
+    cudaFree(tp1ys);
+    cudaFree(tp1zs);
     cudaFree(scales);
     cudaFree(widths);
     cudaFree(heights);
@@ -375,41 +630,85 @@ struct SceneObjects {
     cudaFree(g_bpps);
     cudaFree(g_indices);
   }
-  __host__ __device__ ScenePrim
-  get_primitive(int gstart, int group_id) const {
+  __host__ __device__ HittableParam
+  get_hparam(int gstart, int group_id) {
     HittableParam ht(
         static_cast<HittableType>(htypes[gstart]),
         p1xs[gstart], p1ys[gstart], p1zs[gstart],
         p2xs[gstart], p2ys[gstart], p2zs[gstart],
         n1xs[gstart], n1ys[gstart], n1zs[gstart],
         rads[gstart]);
+    return ht;
+  }
+  __host__ __device__ ImageParam
+  get_image_param(int gstart, int group_id) {
     ImageParam imp(widths[gstart], heights[gstart],
                    bytes_per_pixels[gstart],
                    image_indices[gstart]);
+    return imp;
+  }
+  __host__ __device__ TextureParam get_texture_param(
+      int gstart, int group_id, const ImageParam &imp) {
+    Color cv(tp1xs[gstart], tp1ys[gstart], tp1zs[gstart]);
     TextureParam tp(
-        static_cast<TextureType>(ttypes[gstart]),
-        cvals[gstart], scales[gstart], imp);
+        static_cast<TextureType>(ttypes[gstart]), cv,
+        scales[gstart], imp);
+    return tp;
+  }
+  __device__ TextureParam get_texture_param(
+      int gstart, int group_id, const ImageParam &imp,
+      curandState *loc) {
+    Color cv(tp1xs[gstart], tp1ys[gstart], tp1zs[gstart]);
+    TextureParam tp(
+        loc, static_cast<TextureType>(ttypes[gstart]), cv,
+        scales[gstart], imp);
+    return tp;
+  }
+  __host__ __device__ MaterialParam get_material_param(
+      int gstart, int group_id, const TextureParam &tp) {
     MaterialParam mp(
         tp, static_cast<MaterialType>(mtypes[gstart]),
         fuzz_ref_idxs[gstart]);
-    ScenePrim prim(mp, ht, prim_group_indices[gstart],
+    return mp;
+  }
+  __host__ __device__ Primitive
+  get_primitive(int gstart, int group_id) {
+    HittableParam ht = get_hparam(gstart, group_id);
+    ImageParam imp = get_image_param(gstart, group_id);
+    TextureParam tp =
+        get_texture_param(gstart, group_id, imp);
+    MaterialParam mp =
+        get_material_param(gstart, group_id, tp);
+    Primitive prim(mp, ht, prim_group_indices[gstart],
                    group_id);
     return prim;
   }
-
+  __device__ Primitive get_primitive(int gstart,
+                                     int group_id,
+                                     curandState *loc) {
+    HittableParam ht = get_hparam(gstart, group_id);
+    ImageParam imp = get_image_param(gstart, group_id);
+    TextureParam tp =
+        get_texture_param(gstart, group_id, imp, loc);
+    MaterialParam mp =
+        get_material_param(gstart, group_id, tp);
+    Primitive prim(mp, ht, prim_group_indices[gstart],
+                   group_id);
+    return prim;
+  }
   __device__ bool hit(const Ray &r, float d_min,
                       float d_max, HitRecord &rec) {
     HitRecord temp;
     bool hit_anything = false;
     float closest_far = d_max;
     for (int i = 0; i < nb_groups; i++) {
-      SceneGroup g;
+      GroupParam g;
       fill_group(g, i);
       int gstart = group_starts[i];
-      bool is_hit = SceneHittable<SceneGroup>::hit(
-          g, r, d_min, d_max, temp);
-      if (isHit == true) {
-        hit_anything = isHit;
+      bool is_hit = SceneHittable<GroupParam>::hit(
+          g, r, d_min, closest_far, temp);
+      if (is_hit == true) {
+        hit_anything = is_hit;
         closest_far = temp.t;
         rec = temp;
         rec.primitive_index = gstart + rec.group_index;
@@ -417,19 +716,4 @@ struct SceneObjects {
     }
     return hit_anything;
   }
-  __device__ Color emit(const HitRecord &rec) {
-    if (mtypes[rec.primitive_index] != DIFFUSE_LIGHT) {
-      // TODO
-      return Vec3(0.0f);
-    }
-  }
-  __device__ bool scatter(const Ray &r,
-                          const HitRecord &rec,
-                          Ray &scatter, float &pdf_val,
-                          curandState *loc) {
-    // TODO
-    return false;
-  }
 };
-
-#endif

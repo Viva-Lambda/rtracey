@@ -1,88 +1,21 @@
-#ifndef SCENEPRIM_CUH
-#define SCENEPRIM_CUH
-
-#include <material.cuh>
+#pragma once
+#include <aabb.cuh>
+#include <primitive.cuh>
 #include <ray.cuh>
-#include <sceneaarect.cuh>
-#include <scenehit.cuh>
-#include <sceneparam.cuh>
-#include <scenesphere.cuh>
-#include <scenetriangle.cuh>
+#include <sceneshape.cuh>
 #include <scenetype.cuh>
-#include <texture.cuh>
+#include <shape.cuh>
 #include <vec3.cuh>
 
-struct ScenePrim {
-  // material params
-  MaterialParam mparam;
-
-  // hittable params
-  HittableParam hparam;
-
-  // group params
-  int group_id;
-  int group_index;
-
-  __host__ __device__ ScenePrim() {}
-  __host__ __device__ ScenePrim(MaterialParam mt,
-                                HittableParam ht,
-                                int gindex, int gid)
-      : mparam(mt), hparam(ht), group_index(gindex),
-        group_id(gid) {}
-  __host__ __device__ Sphere to_sphere() {
-    Point3 cent(hparam.p1x, hparam.p1y, hparam.p1z);
-    Sphere sp(cent, hparam.radius, mparam);
-    return sp;
-  }
-  __host__ __device__ MovingSphere to_moving_sphere() {
-    Point3 cent1(hparam.p1x, hparam.p1y, hparam.p1z);
-    Point3 cent2(hparam.p2x, hparam.p2y, hparam.p2z);
-    MovingSphere sp(cent1, cent2, hparam.n1x, hparam.n1y,
-                    hparam.radius, mparam);
-    return sp;
-  }
-  __host__ __device__ Triangle to_triangle() {
-    Point3 p1(hparam.p1x, hparam.p1y, hparam.p1z);
-    Point3 p2(hparam.p2x, hparam.p2y, hparam.p2z);
-    Point3 p3(hparam.n1x, hparam.n1y, hparam.n1z);
-    Triangle tri(p1, p2, p3, mparam);
-    return tri;
-  }
-  __host__ __device__ void rect_val(float &a0, float &a1,
-                                    float &b0, float &b1,
-                                    float &k) {
-    a0 = hparam.p1x;
-    a1 = hparam.p1y;
-    b0 = hparam.p2x;
-    b1 = hparam.p2y;
-    k = hparam.radius;
-  }
-  __host__ __device__ XYRect to_xyrect() {
-    float x0, x1, y0, y1, k;
-    rect_val(x0, x1, y0, y1, k);
-    XYRect xyr(x0, x1, y0, y1, k, mparam);
-    return xyr;
-  }
-  __host__ __device__ XZRect to_xzrect() {
-    float x0, x1, z0, z1, k;
-    rect_val(x0, x1, z0, z1, k);
-    XZRect xzr(x0, x1, z0, z1, k, mparam);
-    return xzr;
-  }
-  __host__ __device__ YZRect to_yzrect() {
-    float y0, y1, z0, z1, k;
-    rect_val(y0, y1, z0, z1, k);
-    YZRect yzr(y0, y1, z0, z1, k, mparam);
-    return yzr;
-  }
-};
-
-template <> struct SceneHittable<ScenePrim> {
-  __device__ static bool hit(ScenePrim sprim, const Ray &r,
-                             float d_min, float d_max,
-                             HitRecord &rec) {
+template <> struct SceneHittable<Primitive> {
+  __device__ static bool hit(const Primitive &sprim,
+                             const Ray &r, float d_min,
+                             float d_max, HitRecord &rec) {
     bool res = false;
     switch (sprim.hparam.htype) {
+    case NONE_HITTABLE:
+      res = false;
+      break;
     case XY_RECT: {
       XYRect xyr = sprim.to_xyrect();
       res = SceneHittable<XYRect>::hit(xyr, r, d_min, d_max,
@@ -137,10 +70,13 @@ template <> struct SceneHittable<ScenePrim> {
   }
 
   __host__ __device__ static bool
-  bounding_box(ScenePrim sprim, float t0, float t1,
+  bounding_box(const Primitive &sprim, float t0, float t1,
                Aabb &output_box) {
     bool res = false;
     switch (sprim.hparam.htype) {
+    case NONE_HITTABLE:
+      res = false;
+      break;
     case XY_RECT: {
       XYRect xyr = sprim.to_xyrect();
       res = SceneHittable<XYRect>::bounding_box(xyr, t0, t1,
@@ -194,12 +130,15 @@ template <> struct SceneHittable<ScenePrim> {
     return res;
   }
 
-  __device__ static float pdf_value(ScenePrim sprim,
+  __device__ static float pdf_value(const Primitive &sprim,
                                     const Point3 &o,
                                     const Point3 &v) {
     float pdf = 1.0f;
 
     switch (sprim.hparam.htype) {
+    case NONE_HITTABLE:
+      pdf = 1.0f;
+      break;
     case XY_RECT: {
       XYRect xyr = sprim.to_xyrect();
       pdf = SceneHittable<XYRect>::pdf_value(xyr, o, v);
@@ -245,10 +184,13 @@ template <> struct SceneHittable<ScenePrim> {
     }
     return pdf;
   }
-  __device__ static Vec3
-  random(ScenePrim sprim, const Vec3 &v, curandState *loc) {
+  __device__ static Vec3 random(const Primitive &sprim,
+                                const Vec3 &v,
+                                curandState *loc) {
     Vec3 vp(0.0f);
     switch (sprim.hparam.htype) {
+    case NONE_HITTABLE:
+      vp = Vec3(0.0f);
     case XY_RECT: {
       XYRect xyr = sprim.to_xyrect();
       vp = SceneHittable<XYRect>::random(xyr, v, loc);
@@ -293,4 +235,3 @@ template <> struct SceneHittable<ScenePrim> {
     return vp;
   }
 };
-#endif
