@@ -20,6 +20,16 @@ T *upload(T *&d_ptr, T *&h_ptr, int count,
                  count * sizeof(T), cudaMemcpyHostToDevice);
   return d_ptr;
 }
+template <typename T>
+T *download(T *&d_ptr, T *&h_ptr, int count,
+            cudaError_t &err) {
+  d_ptr = alloc(d_ptr, count * sizeof(T), err);
+  CUDA_CONTROL(err);
+  err =
+      cudaMemcpy((void *)d_ptr, (void *)h_ptr,
+                 count * sizeof(T), cudaMemcpyDeviceToHost);
+  return d_ptr;
+}
 
 template <typename T>
 void upload_thrust(thrust::device_ptr<T> &d_ptr, T *&h_ptr,

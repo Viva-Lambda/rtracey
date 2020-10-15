@@ -157,7 +157,8 @@ int main() {
 
   // --------------------- image ------------------------
   CUDA_CONTROL(cudaGetLastError());
-  // make_empty_c_box<<<1, 1>>>(d_sobjs);
+  make_cornell_box_k<<<1, 1>>>(
+      world, thrust::raw_pointer_cast(randState2));
 
   CUDA_CONTROL(cudaGetLastError());
   CUDA_CONTROL(cudaDeviceSynchronize());

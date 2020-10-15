@@ -13,7 +13,7 @@
   @param Hittables** world pointer to list of hittables
  */
 __device__ Color ray_color(const Ray &r,
-                           SceneObjects &world,
+                           const SceneObjects world,
                            curandState *loc, int bounceNb) {
   Ray current_ray = r;
   Vec3 current_attenuation = Vec3(1.0f);
@@ -21,13 +21,13 @@ __device__ Color ray_color(const Ray &r,
 
   while (bounceNb > 0) {
     HitRecord rec;
-    bool anyHit =
-        world.hit(current_ray, 0.001f, FLT_MAX, rec);
+    bool anyHit = true;
+    // world.hit(current_ray, 0.001f, FLT_MAX, rec);
     if (anyHit) {
       // rec.mat_ptr.tparam.tdata = world.tdata;
-      Color emittedColor =
-          SceneMaterial<MaterialParam>::emitted(
-              rec.mat_ptr, rec.u, rec.v, rec.p);
+      Color emittedColor = Color(1.0f, 0.0f, 0.0f);
+      // SceneMaterial<MaterialParam>::emitted(
+      //    rec.mat_ptr, rec.u, rec.v, rec.p);
       Ray scattered;
       Vec3 attenuation;
       float pdf_val = 1.0f;
@@ -58,7 +58,7 @@ __device__ Color ray_color(const Ray &r,
 __global__ void render(Vec3 *fb, int maximum_x,
                        int maximum_y, int sample_nb,
                        int bounceNb, Camera dcam,
-                       SceneObjects world,
+                       const SceneObjects world,
                        curandState *randState) {
   int i = threadIdx.x + blockIdx.x * blockDim.x;
   int j = threadIdx.y + blockIdx.y * blockDim.y;
@@ -70,7 +70,7 @@ __global__ void render(Vec3 *fb, int maximum_x,
   curandState localS = randState[pixel_index];
   Vec3 rcolor(0.0f);
   Camera cam = dcam;
-  // world.set_curand(&localS);
+  // world.set_rand(&localS);
   for (int s = 0; s < sample_nb; s++) {
     float u = float(i + curand_uniform(&localS)) /
               float(maximum_x);
@@ -78,9 +78,9 @@ __global__ void render(Vec3 *fb, int maximum_x,
               float(maximum_y);
     Ray r = cam.get_ray(u, v, &localS);
     //
-    // rcolor += ray_color(r, world, &localS, bounceNb);
-    rcolor += Color(world.tp1xs[1], world.tp1ys[1],
-                    world.tp1zs[1]);
+    rcolor += ray_color(r, world, &localS, bounceNb);
+    // rcolor += Color(world.tp1xs[0], world.tp1ys[0],
+    //                world.tp1zs[0]);
   }
   // fix the bounce depth
   randState[pixel_index] = localS;

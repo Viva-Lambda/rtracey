@@ -65,26 +65,28 @@ struct TextureParam {
     return img;
   }
 };
-TextureParam mkSolidColorParam(Color c) {
+__host__ __device__ TextureParam
+mkSolidColorParam(Color c) {
   ImageParam img;
   float s = 0.0f;
   TextureParam tp(SOLID_COLOR, c, s, img);
   return tp;
 }
-TextureParam mkCheckerTextureParam(Color c) {
+__host__ __device__ TextureParam
+mkCheckerTextureParam(Color c) {
   ImageParam img;
   float s = 0.0f;
   TextureParam tp(CHECKER, c, s, img);
   return tp;
 }
-TextureParam mkNoiseParam(float s) {
+__host__ __device__ TextureParam mkNoiseParam(float s) {
   ImageParam img;
   Color c;
   TextureParam tp(NOISE, c, s, img);
   return tp;
 }
-TextureParam mkImageTextureParam(int w, int h, int bpp,
-                                 int idx) {
+__host__ __device__ TextureParam
+mkImageTextureParam(int w, int h, int bpp, int idx) {
   ImageParam img(w, h, bpp, idx);
   Color c;
   float s = 0.0f;
