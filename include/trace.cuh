@@ -25,16 +25,13 @@ __device__ Color ray_color(const Ray &r,
         world.hit(current_ray, 0.001f, FLT_MAX, rec);
     if (anyHit) {
       // rec.mat_ptr.tparam.tdata = world.tdata;
-      Color emittedColor =
-          SceneMaterial<MaterialParam>::emitted(
-              rec.mat_ptr, rec.u, rec.v, rec.p);
+      Color emittedColor = world.emitted(rec);
       Ray scattered;
       Vec3 attenuation;
       float pdf_val = 1.0f;
       bool isScattered =
-          SceneMaterial<MaterialParam>::scatter(
-              rec.mat_ptr, current_ray, rec, attenuation,
-              scattered, pdf_val, loc);
+          world.scatter(current_ray, rec, attenuation,
+                        scattered, pdf_val);
       if (isScattered) {
         bounceNb--;
         float s_pdf =

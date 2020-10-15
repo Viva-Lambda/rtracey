@@ -951,8 +951,9 @@ struct SceneObjects {
         scales[gstart], imp);
     return tp;
   }
-  __host__ __device__ MaterialParam get_material_param(
-      int gstart, int group_id, const TextureParam &tp) const {
+  __host__ __device__ MaterialParam
+  get_material_param(int gstart, int group_id,
+                     const TextureParam &tp) const {
     MaterialParam mp(
         tp, static_cast<MaterialType>(mtypes[gstart]),
         fuzz_ref_idxs[gstart]);
@@ -998,6 +999,7 @@ struct SceneObjects {
         closest_far = temp.t;
         rec = temp;
         rec.primitive_index = gstart + temp.group_index;
+        rec.group_id = group_ids[i];
       }
     }
     return hit_anything;
@@ -1018,6 +1020,7 @@ struct SceneObjects {
         closest_far = temp.t;
         rec = temp;
         rec.primitive_index = gstart + rec.group_index;
+        rec.group_id = group_ids[i];
       }
     }
     return hit_anything;
@@ -1029,5 +1032,35 @@ struct SceneObjects {
     } else {
       return h_hit(r, d_min, d_max, rec);
     }
+  }
+  __device__ bool scatter(const Ray &r,
+                          const HitRecord &rec,
+                          Color &attenuation, Ray &r_out,
+                          float &pdf_v) {
+    int prim_index = rec.primitive_index;
+    int group_id = rec.group_id;
+    Primitive prim =
+        get_primitive(prim_index, group_id, rand);
+    return SceneMaterial<Primitive>::scatter(
+        prim.mparam, r, rec, attenuation, r_out, pdf_v);
+  }
+  __device__ Color emitted(const HitRecord &rec) {
+    int prim_index = rec.primitive_index;
+    int group_id = rec.group_id;
+    Primitive prim =
+        get_primitive(prim_index, group_id, rand);
+    return SceneMaterial<Primitive>::emitted(
+        prim.mparam, r, rec, attenuation, r_out, pdf_v);
+  }
+  __device__ float scattering_pdf(const HitRecord &rec,
+                                  const Ray &r,
+                                  Ray &r_out) {
+    //
+    int prim_index = rec.primitive_index;
+    int group_id = rec.group_id;
+    Primitive prim =
+        get_primitive(prim_index, group_id, rand);
+    return SceneMaterial<Primitive>::scattering_pdf(
+        prim.mparam, r, rec, r_out);
   }
 };
