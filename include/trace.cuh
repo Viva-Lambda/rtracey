@@ -25,9 +25,9 @@ __device__ Color ray_color(const Ray &r,
     // world.hit(current_ray, 0.001f, FLT_MAX, rec);
     if (anyHit) {
       // rec.mat_ptr.tparam.tdata = world.tdata;
-      Color emittedColor = Color(1.0f, 0.0f, 0.0f);
-      // SceneMaterial<MaterialParam>::emitted(
-      //    rec.mat_ptr, rec.u, rec.v, rec.p);
+      Color emittedColor =
+          SceneMaterial<MaterialParam>::emitted(
+              rec.mat_ptr, rec.u, rec.v, rec.p);
       Ray scattered;
       Vec3 attenuation;
       float pdf_val = 1.0f;
