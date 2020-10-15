@@ -10,7 +10,6 @@ struct HitRecord {
   Vec3 normal;
   float u, v;
   bool front_face;
-  MaterialParam mat_ptr;
 
   // scene related params
   int group_id;

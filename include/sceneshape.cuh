@@ -48,7 +48,6 @@ template <> struct SceneHittable<Sphere> {
         Vec3 normal = (rec.p - sp.center) / sp.radius;
         rec.set_front_face(r, normal);
         get_sphere_uv(normal, rec.u, rec.v);
-        rec.mat_ptr = sp.mat_ptr;
         return true;
       }
       temp = (-b + sqrt(discriminant)) / a;
@@ -58,7 +57,6 @@ template <> struct SceneHittable<Sphere> {
         Vec3 normal = (rec.p - sp.center) / sp.radius;
         rec.set_front_face(r, normal);
         get_sphere_uv(normal, rec.u, rec.v);
-        rec.mat_ptr = sp.mat_ptr;
         return true;
       }
     }
@@ -115,7 +113,6 @@ template <> struct SceneHittable<MovingSphere> {
         rec.t = temp;
         rec.p = r.at(rec.t);
         rec.normal = (rec.p - scenter) / sp.radius;
-        rec.mat_ptr = sp.mat_ptr;
         return true;
       }
       temp = (-b + sqrt(discriminant)) / a;
@@ -123,7 +120,6 @@ template <> struct SceneHittable<MovingSphere> {
         rec.t = temp;
         rec.p = r.at(rec.t);
         rec.normal = (rec.p - scenter) / sp.radius;
-        rec.mat_ptr = sp.mat_ptr;
         return true;
       }
     }
@@ -200,7 +196,6 @@ template <> struct SceneHittable<Triangle> {
     rec.p = r.at(rec.t);
     Vec3 outnormal = cross(edge1, edge2);
     rec.set_front_face(r, outnormal);
-    rec.mat_ptr = tri.mat_ptr;
     return true;
   }
   __host__ __device__ static bool
@@ -351,7 +346,6 @@ template <> struct SceneHittable<AaRect> {
     rec.t = t;
     Vec3 outward_normal = rect.axis_normal;
     rec.set_front_face(r, outward_normal);
-    rec.mat_ptr = rect.mat_ptr;
     rec.p = r.at(t);
     return true;
   }

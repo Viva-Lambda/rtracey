@@ -2,6 +2,7 @@
 #include <aabb.cuh>
 #include <primitive.cuh>
 #include <ray.cuh>
+#include <scenematparam.cuh>
 #include <sceneshape.cuh>
 #include <scenetype.cuh>
 #include <shape.cuh>
@@ -233,5 +234,30 @@ template <> struct SceneHittable<Primitive> {
     }
     }
     return vp;
+  }
+};
+
+template <> struct SceneMaterial<Primitive> {
+  __device__ static bool
+  scatter(const Primitive &m, const Ray &r_in,
+          const HitRecord &rec, Vec3 &attenuation,
+          Ray &scattered, float &pdf, curandState *loc) {
+    return SceneMaterial<MaterialParam>::scatter(
+        m.mparam, r_in, rec, attenuation, scattered, pdf,
+        loc);
+  }
+  __device__ static float
+  scattering_pdf(const Primitive &m, const Ray &r_in,
+                 const HitRecord &rec,
+                 const Ray &scattered) {
+    //
+    return SceneMaterial<MaterialParam>::scattering_pdf(
+        m.mparam, r_in, rec, scattered);
+  }
+  __device__ static Color emitted(const Primitive &m,
+                                  float u, float v,
+                                  const Point3 &p) {
+    return SceneMaterial<MaterialParam>::emitted(m.mparam,
+                                                 u, v, p);
   }
 };

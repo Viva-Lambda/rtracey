@@ -75,7 +75,6 @@ template <> struct SceneHittable<ConstantMedium> {
 
     rec.normal = Vec3(1, 0, 0); // arbitrary
     rec.front_face = true;      // also arbitrary
-    rec.mat_ptr = g.phase_function;
 
     return true;
   }
