@@ -997,7 +997,7 @@ struct SceneObjects {
         hit_anything = is_hit;
         closest_far = temp.t;
         rec = temp;
-        rec.primitive_index = gstart + rec.group_index;
+        rec.primitive_index = gstart + temp.group_index;
       }
     }
     return hit_anything;
