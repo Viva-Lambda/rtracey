@@ -38,7 +38,7 @@ template <> struct SceneHittable<Sphere> {
     Vec3 oc = r.origin() - sp.center;
     float a = dot(r.direction(), r.direction());
     float b = dot(oc, r.direction());
-    float c = dot(oc, oc) - sp.radius * sp.radius;
+    float c = dot(oc, oc) - (*sp.radius) * (*sp.radius);
     float discriminant = b * b - a * c;
     if (discriminant > 0) {
       float temp = (-b - sqrt(discriminant)) / a;
@@ -77,7 +77,7 @@ template <> struct SceneHittable<Sphere> {
                                     FLT_MAX, rec))
       return 0.0f;
 
-    float rad2 = sp.radius * sp.radius;
+    float rad2 = (*sp.radius) * (*sp.radius);
     Vec3 cent_diff = sp.center - orig;
     auto cos_theta_max =
         sqrt(1 - rad2 / cent_diff.squared_length());
@@ -92,8 +92,8 @@ template <> struct SceneHittable<Sphere> {
     auto distance_squared = direction.squared_length();
     Onb uvw;
     uvw.build_from_w(direction);
-    return uvw.local(
-        random_to_sphere(sp.radius, distance_squared, loc));
+    return uvw.local(random_to_sphere(
+        *sp.radius, distance_squared, loc));
   }
 };
 
@@ -101,25 +101,26 @@ template <> struct SceneHittable<MovingSphere> {
   __device__ static bool hit(const MovingSphere &sp,
                              const Ray &r, float d_min,
                              float d_max, HitRecord &rec) {
-    Point3 scenter = sp.center(r.time());
+    float rt = r.time();
+    Point3 scenter = sp.center(&rt);
     Vec3 oc = r.origin() - scenter;
     float a = dot(r.direction(), r.direction());
     float b = dot(oc, r.direction());
-    float c = dot(oc, oc) - sp.radius * sp.radius;
+    float c = dot(oc, oc) - (*sp.radius) * (*sp.radius);
     float discriminant = b * b - a * c;
     if (discriminant > 0) {
       float temp = (-b - sqrt(discriminant)) / a;
       if (temp < d_max && temp > d_min) {
         rec.t = temp;
         rec.p = r.at(rec.t);
-        rec.normal = (rec.p - scenter) / sp.radius;
+        rec.normal = (rec.p - scenter) / (*sp.radius);
         return true;
       }
       temp = (-b + sqrt(discriminant)) / a;
       if (temp < d_max && temp > d_min) {
         rec.t = temp;
         rec.p = r.at(rec.t);
-        rec.normal = (rec.p - scenter) / sp.radius;
+        rec.normal = (rec.p - scenter) / (*sp.radius);
         return true;
       }
     }
@@ -140,9 +141,9 @@ template <> struct SceneHittable<MovingSphere> {
     if (!SceneHittable<MovingSphere>::hit(
             sp, Ray(orig, v), 0.001, FLT_MAX, rec))
       return 0.0f;
-    float rad2 = sp.radius * sp.radius;
-    Vec3 cent_diff =
-        (sp.center(sp.time1 - sp.time0) - orig);
+    float rad2 = (*sp.radius) * (*sp.radius);
+    float tdiff = (*sp.time1) - (*sp.time0);
+    Vec3 cent_diff = sp.center(&tdiff) - orig;
 
     auto cos_theta_max =
         sqrt(1 - rad2 / cent_diff.squared_length());
@@ -154,12 +155,14 @@ template <> struct SceneHittable<MovingSphere> {
   __device__ static Vec3 random(const MovingSphere &sp,
                                 const Point3 &orig,
                                 curandState *loc) {
-    Vec3 direction = sp.center(sp.time1 - sp.time0) - orig;
+
+    float tdiff = (*sp.time1) - (*sp.time0);
+    Vec3 direction = sp.center(&tdiff) - orig;
     auto distance_squared = direction.squared_length();
     Onb uvw;
     uvw.build_from_w(direction);
-    return uvw.local(
-        random_to_sphere(sp.radius, distance_squared, loc));
+    return uvw.local(random_to_sphere(
+        *sp.radius, distance_squared, loc));
   }
 };
 template <> struct SceneHittable<Triangle> {
@@ -328,7 +331,7 @@ template <> struct SceneHittable<AaRect> {
        limits of
        rectangle
      */
-    float t = (rect.k - r.origin()[rect.ax.notAligned]) /
+    float t = (*rect.k - r.origin()[rect.ax.notAligned]) /
               r.direction()[rect.ax.notAligned];
     if (t < t0 || t > t1)
       return false;
@@ -336,13 +339,13 @@ template <> struct SceneHittable<AaRect> {
               t * r.direction()[rect.ax.aligned1];
     float b = r.origin()[rect.ax.aligned2] +
               t * r.direction()[rect.ax.aligned2];
-    bool c1 = rect.a0 < a and a < rect.a1;
-    bool c2 = rect.b0 < b and b < rect.b1;
+    bool c1 = *rect.a0 < a and a < *rect.a1;
+    bool c2 = *rect.b0 < b and b < *rect.b1;
     if ((c1 and c2) == false) {
       return false;
     }
-    rec.u = (a - rect.a0) / (rect.a1 - rect.a0);
-    rec.v = (b - rect.b0) / (rect.b1 - rect.b0);
+    rec.u = (a - (*rect.a0)) / (*rect.a1 - (*rect.a0));
+    rec.v = (b - (*rect.b0)) / (*rect.b1 - (*rect.b0));
     rec.t = t;
     Vec3 outward_normal = rect.axis_normal;
     rec.set_front_face(r, outward_normal);
@@ -360,18 +363,18 @@ template <> struct SceneHittable<AaRect> {
     // choose points with axis
     switch (rect.ax.notAligned) {
     case 2: {
-      p1 = Point3(rect.a0, rect.b0, rect.k - 0.0001);
-      p2 = Point3(rect.a1, rect.b1, rect.k + 0.0001);
+      p1 = Point3(*rect.a0, *rect.b0, *rect.k - 0.0001);
+      p2 = Point3(*rect.a1, *rect.b1, *rect.k + 0.0001);
       break;
     }
     case 1: {
-      p1 = Point3(rect.a0, rect.k - 0.0001, rect.b0);
-      p2 = Point3(rect.a1, rect.k + 0.0001, rect.b1);
+      p1 = Point3(*rect.a0, *rect.k - 0.0001, *rect.b0);
+      p2 = Point3(*rect.a1, *rect.k + 0.0001, *rect.b1);
       break;
     }
     case 0: {
-      p1 = Point3(rect.k - 0.0001, rect.a0, rect.b0);
-      p2 = Point3(rect.k + 0.0001, rect.a1, rect.b1);
+      p1 = Point3(*rect.k - 0.0001, *rect.a0, *rect.b0);
+      p2 = Point3(*rect.k + 0.0001, *rect.a1, *rect.b1);
       break;
     }
     }
@@ -387,16 +390,17 @@ template <> struct SceneHittable<AaRect> {
                                     0.001, FLT_MAX, rec))
       return 0;
 
-    float area = (rect.a1 - rect.a0) * (rect.b1 - rect.b0);
+    float area =
+        (*rect.a1 - (*rect.a0)) * (*rect.b1 - (*rect.b0));
     return get_pdf_surface(v, rec.normal, rec.t, area);
   }
 
   __device__ static Vec3 random(const AaRect &rect,
                                 const Point3 &orig,
                                 curandState *loc) {
-    Point3 random_point =
-        Point3(random_float(loc, rect.a0, rect.a1), rect.k,
-               random_float(loc, rect.b0, rect.b1));
+    Point3 random_point = Point3(
+        random_float(loc, *rect.a0, *rect.a1), *rect.k,
+        random_float(loc, *rect.b0, *rect.b1));
     return random_point - orig;
   }
 };

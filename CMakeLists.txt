@@ -22,7 +22,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS "-lstdc++ -ldl -ggdb -Wall -Wextra -pedantic -Wextra-tokens")
 
 
-set(CMAKE_CUDA_FLAGS "-ccbin clang++ -g -gencode arch=compute_50,code=sm_50")
+set(CMAKE_CUDA_FLAGS "-ccbin clang++ -G -g -gencode arch=compute_50,code=sm_50")
 
 #target_compile_features(main PUBLIC cxx_std_11)
 

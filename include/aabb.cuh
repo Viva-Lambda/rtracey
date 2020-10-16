@@ -1,6 +1,4 @@
-#ifndef AABB_CUH
-#define AABB_CUH
-
+#pragma once
 #include <external.hpp>
 #include <ray.cuh>
 #include <utils.cuh>
@@ -91,5 +89,3 @@ __host__ __device__ Aabb surrounding_box(Aabb b1, Aabb b2) {
 
   return Aabb(small, big);
 }
-
-#endif

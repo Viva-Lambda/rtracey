@@ -3,42 +3,46 @@
 #include <vec3.cuh>
 
 struct HittableParam {
-  HittableType htype; //
+  const int *htype; //
 
-  float p1x, p1y, p1z;
-  float p2x, p2y, p2z;
-  float radius;
-  float n1x, n1y, n1z;
+  const float *p1x, *p1y, *p1z;
+  const float *p2x, *p2y, *p2z;
+  const float *radius;
+  const float *n1x, *n1y, *n1z;
   __host__ __device__ HittableParam()
-      : p1x(0), p1y(0), p1z(0), p2x(0), p2y(0), p2z(0),
-        n1x(0), n1y(0), n1z(0), radius(0),
-        htype(NONE_HITTABLE) {}
-  __host__ __device__ HittableParam(HittableType ht,
-                                    float _p1x, float _p1y,
-                                    float _p1z, float _p2x,
-                                    float _p2y, float _p2z,
-                                    float _n1x, float _n1y,
-                                    float _n1z, float r)
+      : p1x(nullptr), p1y(nullptr), p1z(nullptr),
+        p2x(nullptr), p2y(nullptr), p2z(nullptr),
+        n1x(nullptr), n1y(nullptr), n1z(nullptr),
+        radius(nullptr), htype(nullptr) {}
+  __host__ __device__ HittableParam(
+      const int *ht, const float *_p1x, const float *_p1y,
+      const float *_p1z, const float *_p2x,
+      const float *_p2y, const float *_p2z,
+      const float *_n1x, const float *_n1y,
+      const float *_n1z, const float *r)
       : htype(ht), p1x(_p1x), p1y(_p1y), p1z(_p1z),
         p2x(_p2x), p2y(_p2y), p2z(_p2z), n1x(_n1x),
         n1y(_n1y), n1z(_n1z), radius(r) {}
 };
-__host__ __device__ HittableParam
-mkRectHittable(float a0, float a1, float b0, float b1,
-               Vec3 anormal, float k) {
-  HittableParam param;
-  param.p1x = a0;
-  param.p1y = a1;
-  param.p2x = b0;
-  param.p2y = b1;
-  param.radius = k;
+
+__host__ __device__ HittableParam mkRectHittable(
+    const float a0, const float a1, const float b0,
+    const float b1, Vec3 anormal, const float k) {
+
+  const int *htype;
   if (anormal.z() == 1) {
-    param.htype = XY_RECT;
+    htype = &XY_RECT;
   } else if (anormal.y() == 1) {
-    param.htype = XZ_RECT;
+    htype = &XZ_RECT;
   } else if (anormal.x() == 1) {
-    param.htype = YZ_RECT;
+    htype = &YZ_RECT;
+  } else {
+    htype = &NONE_HITTABLE;
   }
+  HittableParam param(
+      htype, &a0, &a1, (const float *)nullptr, &b0, &b1,
+      (const float *)nullptr, (const float *)nullptr,
+      (const float *)nullptr, (const float *)nullptr, &k);
   return param;
 }
 __host__ __device__ HittableParam mkYZRectHittable(
@@ -54,27 +58,16 @@ __host__ __device__ HittableParam mkXYRectHittable(
   return mkRectHittable(a0, a1, b0, b1, Vec3(0, 0, 1), k);
 }
 HittableParam mkSphereHittable(Point3 cent, float rad) {
-  HittableParam param;
-  param.htype = SPHERE;
-  param.p1x = cent.x();
-  param.p1y = cent.y();
-  param.p1z = cent.z();
-  param.radius = rad;
+  HittableParam param(&SPHERE, cent.e1, cent.e2, cent.e3,
+                      nullptr, nullptr, nullptr, nullptr,
+                      nullptr, nullptr, &rad);
   return param;
 }
 __host__ __device__ HittableParam
 mkMovingSphereHittable(Point3 cent1, Point3 cent2,
                        float rad, float t0, float t1) {
-  HittableParam param;
-  param.htype = MOVING_SPHERE;
-  param.p1x = cent1.x();
-  param.p1y = cent1.y();
-  param.p1z = cent1.z();
-  param.p2x = cent2.x();
-  param.p2y = cent2.y();
-  param.p2z = cent2.z();
-  param.radius = rad;
-  param.n1x = t0;
-  param.n1y = t1;
+  HittableParam param(&MOVING_SPHERE, cent1.e1, cent1.e2,
+                      cent1.e3, cent2.e1, cent2.e2,
+                      cent2.e3, &t0, &t1, nullptr, &rad);
   return param;
 }

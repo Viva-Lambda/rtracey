@@ -21,7 +21,7 @@ template <> struct SceneHittable<ConstantMedium> {
     HitRecord rec1, rec2;
 
     bool any_hit = false;
-    for (int i = 0; i < g.nb_prims; i++) {
+    for (int i = 0; i < (*g.nb_prims); i++) {
       Primitive p = g.boundary[i];
       any_hit = SceneHittable<Primitive>::hit(
           p, r, -FLT_MAX, FLT_MAX, rec1);
@@ -29,7 +29,7 @@ template <> struct SceneHittable<ConstantMedium> {
     if (!any_hit)
       return any_hit;
 
-    for (int i = 0; i < g.nb_prims; i++) {
+    for (int i = 0; i < (*g.nb_prims); i++) {
       Primitive p = g.boundary[i];
       any_hit = SceneHittable<Primitive>::hit(
           p, r, rec1.t + 0.0001, FLT_MAX, rec2);
@@ -75,6 +75,7 @@ template <> struct SceneHittable<ConstantMedium> {
 
     rec.normal = Vec3(1, 0, 0); // arbitrary
     rec.front_face = true;      // also arbitrary
+    rec.is_group_scattering = true;
 
     return true;
   }
@@ -83,7 +84,7 @@ template <> struct SceneHittable<ConstantMedium> {
                Aabb &output_box) {
     Aabb temp;
     bool first_box = true;
-    for (int i = 0; i < g.nb_prims; i++) {
+    for (int i = 0; i < (*g.nb_prims); i++) {
       Primitive p = g.boundary[i];
       bool isBounding =
           SceneHittable<Primitive>::bounding_box(p, t0, t1,
@@ -102,9 +103,9 @@ template <> struct SceneHittable<ConstantMedium> {
   __device__ static float pdf_value(const ConstantMedium &g,
                                     const Point3 &o,
                                     const Point3 &v) {
-    float weight = 1.0f / g.nb_prims;
+    float weight = 1.0f / (*g.nb_prims);
     float sum = 0.0f;
-    for (int i = 0; i < g.nb_prims; i++) {
+    for (int i = 0; i < (*g.nb_prims); i++) {
       Primitive p = g.boundary[i];
       sum += weight *
              SceneHittable<Primitive>::pdf_value(p, o, v);
@@ -114,7 +115,7 @@ template <> struct SceneHittable<ConstantMedium> {
   __device__ static Vec3 random(const ConstantMedium &g,
                                 const Vec3 &v,
                                 curandState *loc) {
-    int obj_index = random_int(loc, 0, g.nb_prims - 1);
+    int obj_index = random_int(loc, 0, (*g.nb_prims) - 1);
     Primitive p = g.boundary[obj_index];
     return SceneHittable<Primitive>::random(p, v, loc);
   }
@@ -126,7 +127,7 @@ template <> struct SceneHittable<Box> {
     HitRecord temp;
     bool hit_anything = false;
     float closest_far = d_max;
-    for (int i = 0; i < g.group_size; i++) {
+    for (int i = 0; i < (*g.group_size); i++) {
       Primitive p = g.prims[i];
       bool isHit = SceneHittable<Primitive>::hit(
           p, r, d_min, closest_far, temp);
@@ -134,6 +135,7 @@ template <> struct SceneHittable<Box> {
         hit_anything = isHit;
         closest_far = temp.t;
         rec = temp;
+        rec.is_group_scattering = true;
       }
     }
     return hit_anything;
@@ -152,9 +154,9 @@ template <> struct SceneHittable<Box> {
   __device__ static float pdf_value(const Box &g,
                                     const Point3 &o,
                                     const Point3 &v) {
-    float weight = 1.0f / g.group_size;
+    float weight = 1.0f / (*g.group_size);
     float sum = 0.0f;
-    for (int i = 0; i < g.group_size; i++) {
+    for (int i = 0; i < (*g.group_size); i++) {
       Primitive p = g.prims[i];
       sum += weight *
              SceneHittable<Primitive>::pdf_value(p, o, v);
@@ -164,7 +166,7 @@ template <> struct SceneHittable<Box> {
 
   __device__ static Vec3 random(const Box &g, const Vec3 &v,
                                 curandState *loc) {
-    int obj_index = random_int(loc, 0, g.group_size - 1);
+    int obj_index = random_int(loc, 0, (*g.group_size) - 1);
     Primitive p = g.prims[obj_index];
     return SceneHittable<Primitive>::random(p, v, loc);
   }
@@ -176,7 +178,7 @@ template <> struct SceneHittable<SimpleMesh> {
     HitRecord temp;
     bool hit_anything = false;
     float closest_far = d_max;
-    for (int i = 0; i < g.group_size; i++) {
+    for (int i = 0; i < (*g.group_size); i++) {
       Primitive p = g.prims[i];
       bool isHit = SceneHittable<Primitive>::hit(
           p, r, d_min, closest_far, temp);
@@ -184,7 +186,8 @@ template <> struct SceneHittable<SimpleMesh> {
         hit_anything = isHit;
         closest_far = temp.t;
         rec = temp;
-        rec.group_index = p.group_index;
+        rec.group_index = (*p.group_index);
+        rec.is_group_scattering = true;
       }
     }
     return hit_anything;
@@ -194,7 +197,7 @@ template <> struct SceneHittable<SimpleMesh> {
                Aabb &output_box) {
     Aabb temp;
     bool first_box = true;
-    for (int i = 0; i < g.group_size; i++) {
+    for (int i = 0; i < (*g.group_size); i++) {
       Primitive p = g.prims[i];
       bool isBounding =
           SceneHittable<Primitive>::bounding_box(p, t0, t1,
@@ -213,9 +216,9 @@ template <> struct SceneHittable<SimpleMesh> {
   __device__ static float pdf_value(const SimpleMesh &g,
                                     const Point3 &o,
                                     const Point3 &v) {
-    float weight = 1.0f / g.group_size;
+    float weight = 1.0f / (*g.group_size);
     float sum = 0.0f;
-    for (int i = 0; i < g.group_size; i++) {
+    for (int i = 0; i < (*g.group_size); i++) {
       Primitive p = g.prims[i];
       sum += weight *
              SceneHittable<Primitive>::pdf_value(p, o, v);
@@ -226,7 +229,7 @@ template <> struct SceneHittable<SimpleMesh> {
   __device__ static Vec3 random(const SimpleMesh &g,
                                 const Vec3 &v,
                                 curandState *loc) {
-    int obj_index = random_int(loc, 0, g.group_size - 1);
+    int obj_index = random_int(loc, 0, (*g.group_size) - 1);
     Primitive p = g.prims[obj_index];
     return SceneHittable<Primitive>::random(p, v, loc);
   }

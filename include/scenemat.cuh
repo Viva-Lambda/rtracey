@@ -23,7 +23,7 @@ template <class MaT> struct SceneMaterial {
   }
   __device__ static Color
   emitted(const MaT &m, float u, float v, const Point3 &p) {
-    return Color(0.0f);
+    return Color(0.0f, 0.0f, 0.0f);
   }
 };
 template <> struct SceneMaterial<Lambertian> {
@@ -52,7 +52,7 @@ template <> struct SceneMaterial<Lambertian> {
   __device__ static Color emitted(const Lambertian &m,
                                   float u, float v,
                                   const Point3 &p) {
-    return Color(0.0f);
+    return Color(0.0f, 0.0f, 0.0f);
   }
 };
 template <> struct SceneMaterial<Metal> {
@@ -62,10 +62,10 @@ template <> struct SceneMaterial<Metal> {
           Ray &scattered, float &pdf, curandState *loc) {
     Vec3 reflected =
         reflect(to_unit(r_in.direction()), rec.normal);
-    scattered =
-        Ray(rec.p,
-            reflected + m.fuzz * random_in_unit_sphere(loc),
-            r_in.time());
+    scattered = Ray(
+        rec.p,
+        reflected + (*m.fuzz) * random_in_unit_sphere(loc),
+        r_in.time());
     attenuation = SceneTexture<TextureParam>::value(
         m.albedo, rec.u, rec.v, rec.p);
     pdf = 1.0f;
@@ -80,7 +80,7 @@ template <> struct SceneMaterial<Metal> {
   __device__ static Color emitted(const Metal &m, float u,
                                   float v,
                                   const Point3 &p) {
-    return Color(0.0f);
+    return Color(0.0f, 0.0f, 0.0f);
   }
 };
 __host__ __device__ float fresnelCT(float costheta,
@@ -107,27 +107,27 @@ template <> struct SceneMaterial<Dielectric> {
     Vec3 outward_normal;
     Vec3 reflected = reflect(r_in.direction(), rec.normal);
     float ni_over_nt;
-    attenuation = Vec3(1.0);
+    attenuation = Vec3(1.0f, 1.0f, 1.0f);
     Vec3 refracted;
     float reflect_prob;
     float cosine;
     if (dot(r_in.direction(), rec.normal) > 0.0f) {
       outward_normal = -rec.normal;
-      ni_over_nt = m.ref_idx;
+      ni_over_nt = *m.ref_idx;
       cosine = dot(r_in.direction(), rec.normal) /
                r_in.direction().length();
       cosine = sqrt(1.0f -
-                    m.ref_idx * m.ref_idx *
+                    ni_over_nt * ni_over_nt *
                         (1 - cosine * cosine));
     } else {
       outward_normal = rec.normal;
-      ni_over_nt = 1.0f / m.ref_idx;
+      ni_over_nt = 1.0f / (*m.ref_idx);
       cosine = -dot(r_in.direction(), rec.normal) /
                r_in.direction().length();
     }
     if (refract(r_in.direction(), outward_normal,
                 ni_over_nt, refracted))
-      reflect_prob = fresnelCT(cosine, m.ref_idx);
+      reflect_prob = fresnelCT(cosine, *m.ref_idx);
     else
       reflect_prob = 1.0f;
     if (curand_uniform(loc) < reflect_prob)
@@ -145,7 +145,7 @@ template <> struct SceneMaterial<Dielectric> {
   __device__ static Color emitted(const Dielectric &m,
                                   float u, float v,
                                   const Point3 &p) {
-    return Color(0.0f);
+    return Color(0.0f, 0.0f, 0.0f);
   }
 };
 template <> struct SceneMaterial<DiffuseLight> {
@@ -190,6 +190,6 @@ template <> struct SceneMaterial<Isotropic> {
   __device__ static Color emitted(const Isotropic &m,
                                   float u, float v,
                                   const Point3 &p) {
-    return Color(0.0f);
+    return Color(0.0f, 0.0f, 0.0f);
   }
 };

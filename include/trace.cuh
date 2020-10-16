@@ -13,11 +13,11 @@
   @param Hittables** world pointer to list of hittables
  */
 __device__ Color ray_color(const Ray &r,
-                           const SceneObjects world,
+                           const SceneObjects &world,
                            curandState *loc, int bounceNb) {
   Ray current_ray = r;
-  Vec3 current_attenuation = Vec3(1.0f);
-  Vec3 result = Vec3(0.0f);
+  Vec3 current_attenuation = Vec3(1.0f, 1.0f, 1.0f);
+  Vec3 result = Vec3(0.0f, 0.0f, 0.0f);
 
   while (bounceNb > 0) {
     HitRecord rec;
@@ -34,9 +34,8 @@ __device__ Color ray_color(const Ray &r,
                         scattered, pdf_val);
       if (isScattered) {
         bounceNb--;
-        float s_pdf =
-            SceneMaterial<MaterialParam>::scattering_pdf(
-                rec.mat_ptr, current_ray, rec, scattered);
+        float s_pdf = world.scattering_pdf(rec, current_ray,
+                                           scattered);
         result += (current_attenuation * emittedColor);
         current_attenuation *=
             attenuation * s_pdf / pdf_val;
@@ -46,7 +45,7 @@ __device__ Color ray_color(const Ray &r,
         return result;
       }
     } else {
-      return Color(0.0);
+      return Color(0.0f, 0.0f, 0.0f);
     }
   }
   // return Vec3(1.0f); // background color
@@ -65,7 +64,7 @@ __global__ void render(Vec3 *fb, int maximum_x,
   }
   int pixel_index = j * maximum_x + i;
   curandState localS = randState[pixel_index];
-  Vec3 rcolor(0.0f);
+  Vec3 rcolor(0.0f, 0.0f, 0.0f);
   Camera cam = dcam;
   // world.set_rand(&localS);
   for (int s = 0; s < sample_nb; s++) {
@@ -82,8 +81,8 @@ __global__ void render(Vec3 *fb, int maximum_x,
   // fix the bounce depth
   randState[pixel_index] = localS;
   rcolor /= float(sample_nb);
-  rcolor.e[0] = sqrt(rcolor.x());
-  rcolor.e[1] = sqrt(rcolor.y());
-  rcolor.e[2] = sqrt(rcolor.z());
+  *rcolor.e1 = sqrt(rcolor.x());
+  *rcolor.e2 = sqrt(rcolor.y());
+  *rcolor.e3 = sqrt(rcolor.z());
   fb[pixel_index] = rcolor;
 }

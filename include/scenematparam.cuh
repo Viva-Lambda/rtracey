@@ -14,37 +14,27 @@ template <> struct SceneMaterial<MaterialParam> {
           const HitRecord &rec, Vec3 &attenuation,
           Ray &scattered, float &pdf, curandState *loc) {
     bool res;
-    switch (m.mtype) {
-    case LAMBERTIAN: {
+    const int mtype = *m.mtype;
+    if (mtype == LAMBERTIAN) {
       Lambertian mat = m.to_lambert();
       res = SceneMaterial<Lambertian>::scatter(
           mat, r_in, rec, attenuation, scattered, pdf, loc);
-      break;
-    }
-    case METAL: {
+    } else if (mtype == METAL) {
       Metal mat = m.to_metal();
       res = SceneMaterial<Metal>::scatter(
           mat, r_in, rec, attenuation, scattered, pdf, loc);
-      break;
-    }
-    case DIELECTRIC: {
+    } else if (mtype == DIELECTRIC) {
       Dielectric mat = m.to_dielectric();
       res = SceneMaterial<Dielectric>::scatter(
           mat, r_in, rec, attenuation, scattered, pdf, loc);
-      break;
-    }
-    case DIFFUSE_LIGHT: {
+    } else if (mtype == DIFFUSE_LIGHT) {
       DiffuseLight mat = m.to_diffuse_light();
       res = SceneMaterial<DiffuseLight>::scatter(
           mat, r_in, rec, attenuation, scattered, pdf, loc);
-      break;
-    }
-    case ISOTROPIC: {
+    } else if (mtype == ISOTROPIC) {
       Isotropic mat = m.to_isotropic();
       res = SceneMaterial<Isotropic>::scatter(
           mat, r_in, rec, attenuation, scattered, pdf, loc);
-      break;
-    }
     }
     return res;
   }
@@ -53,74 +43,55 @@ template <> struct SceneMaterial<MaterialParam> {
                  const HitRecord &rec,
                  const Ray &scattered) {
     float res = 0.0f;
-    switch (m.mtype) {
-    case LAMBERTIAN: {
+    const int mtype = *m.mtype;
+    if (mtype == LAMBERTIAN) {
       Lambertian mat = m.to_lambert();
       res = SceneMaterial<Lambertian>::scattering_pdf(
           mat, r_in, rec, scattered);
-      break;
-    }
-    case METAL: {
+    } else if (mtype == METAL) {
+
       Metal mat = m.to_metal();
       res = SceneMaterial<Metal>::scattering_pdf(
           mat, r_in, rec, scattered);
-      break;
-    }
-    case DIELECTRIC: {
+    } else if (mtype == DIELECTRIC) {
       Dielectric mat = m.to_dielectric();
       res = SceneMaterial<Dielectric>::scattering_pdf(
           mat, r_in, rec, scattered);
-      break;
-    }
-    case DIFFUSE_LIGHT: {
+    } else if (mtype == DIFFUSE_LIGHT) {
       DiffuseLight mat = m.to_diffuse_light();
       res = SceneMaterial<DiffuseLight>::scattering_pdf(
           mat, r_in, rec, scattered);
-      break;
-    }
-    case ISOTROPIC: {
+    } else if (mtype == ISOTROPIC) {
       Isotropic mat = m.to_isotropic();
       res = SceneMaterial<Isotropic>::scattering_pdf(
           mat, r_in, rec, scattered);
-      break;
-    }
     }
     return res;
   }
   __device__ static Color emitted(const MaterialParam &m,
                                   float u, float v,
                                   const Point3 &p) {
-    Color res(0.0f);
-    switch (m.mtype) {
-    case LAMBERTIAN: {
+    Color res(0.0f, 0.0f, 0.0f);
+    const int mtype = *m.mtype;
+    if (mtype == LAMBERTIAN) {
       Lambertian mat = m.to_lambert();
       res =
           SceneMaterial<Lambertian>::emitted(mat, u, v, p);
-      break;
-    }
-    case METAL: {
+    } else if (mtype == METAL) {
       Metal mat = m.to_metal();
       res = SceneMaterial<Metal>::emitted(mat, u, v, p);
-      break;
-    }
-    case DIELECTRIC: {
+    } else if (mtype == DIELECTRIC) {
       Dielectric mat = m.to_dielectric();
       res =
           SceneMaterial<Dielectric>::emitted(mat, u, v, p);
-      break;
-    }
-    case DIFFUSE_LIGHT: {
+    } else if (mtype == DIFFUSE_LIGHT) {
       DiffuseLight mat = m.to_diffuse_light();
       res = SceneMaterial<DiffuseLight>::emitted(mat, u, v,
                                                  p);
-      break;
-    }
-    case ISOTROPIC: {
+    } else if (mtype == ISOTROPIC) {
       Isotropic mat = m.to_isotropic();
 
       res = SceneMaterial<Isotropic>::emitted(mat, u, v, p);
-      break;
-    }
     }
     return res;
   }

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <ray.cuh>
-#include <scenematpar.cuh>
 #include <vec3.cuh>
 
 struct HitRecord {
@@ -15,6 +14,7 @@ struct HitRecord {
   int group_id;
   int group_index;
   int primitive_index;
+  bool is_group_scattering = false;
 
   /**
     @brief check if ray hits the front side of the object
