@@ -115,7 +115,7 @@ scatter(const SceneObjects &s, const Ray &r,
   return false;
 }
 template <>
-__host__ __device__ bool
+__device__ bool
 scatter<LAMBERTIAN_MAT>(const SceneObjects &s, const Ray &r,
                         const HitRecord &rec,
                         Color &attenuation, Ray &r_out,
@@ -129,7 +129,7 @@ scatter<LAMBERTIAN_MAT>(const SceneObjects &s, const Ray &r,
   return true;
 }
 template <>
-__host__ __device__ bool
+__device__ bool
 scatter<METAL_MAT>(const SceneObjects &s, const Ray &r,
                    const HitRecord &rec, Color &attenuation,
                    Ray &r_out, float &pdf,
@@ -146,7 +146,7 @@ scatter<METAL_MAT>(const SceneObjects &s, const Ray &r,
   return (dot(r_out.direction(), rec.normal) > 0.0f);
 }
 template <>
-__host__ __device__ bool
+__device__ bool
 scatter<DIELECTRIC_MAT>(const SceneObjects &s, const Ray &r,
                         const HitRecord &rec,
                         Color &attenuation, Ray &r_out,
@@ -187,7 +187,7 @@ scatter<DIELECTRIC_MAT>(const SceneObjects &s, const Ray &r,
   return true;
 }
 template <>
-__host__ __device__ bool scatter<DIFFUSE_LIGHT_MAT>(
+__device__ bool scatter<DIFFUSE_LIGHT_MAT>(
     const SceneObjects &s, const Ray &r,
     const HitRecord &rec, Color &attenuation, Ray &r_out,
     float &pdf, curandState *loc) {
@@ -195,7 +195,7 @@ __host__ __device__ bool scatter<DIFFUSE_LIGHT_MAT>(
   return false;
 }
 template <>
-__host__ __device__ bool
+__device__ bool
 scatter<ISOTROPIC_MAT>(const SceneObjects &s, const Ray &r,
                        const HitRecord &rec,
                        Color &attenuation, Ray &r_out,
@@ -206,7 +206,7 @@ scatter<ISOTROPIC_MAT>(const SceneObjects &s, const Ray &r,
   return true;
 }
 template <>
-__host__ __device__ bool
+__device__ bool
 scatter<MATERIAL>(const SceneObjects &s, const Ray &r,
                   const HitRecord &rec, Color &attenuation,
                   Ray &r_out, float &pdf,
@@ -235,26 +235,26 @@ scatter<MATERIAL>(const SceneObjects &s, const Ray &r,
 }
 
 template <MaterialType m>
-__host__ __device__ Color emitted(const SceneObjects &s,
-                                  const HitRecord &rec) {
+__device__ Color emitted(const SceneObjects &s,
+                         const HitRecord &rec) {
   return Color(0.0f);
 }
 
 template <>
-__host__ __device__ Color emitted<DIFFUSE_LIGHT_MAT>(
+__device__ Color emitted<DIFFUSE_LIGHT_MAT>(
     const SceneObjects &s, const HitRecord &rec) {
   return color_value<TEXTURE>(s, rec);
 }
 
 template <MaterialType m>
-__host__ __device__ float
+__device__ float
 scattering_pdf(const SceneObjects &s, const Ray &r_in,
                const HitRecord &rec, const Ray &r_out) {
   return 0.0f;
 }
 
 template <>
-__host__ __device__ float scattering_pdf<LAMBERTIAN_MAT>(
+__device__ float scattering_pdf<LAMBERTIAN_MAT>(
     const SceneObjects &s, const Ray &r_in,
     const HitRecord &rec, const Ray &r_out) {
   auto cosine = dot(rec.normal, to_unit(r_out.direction()));

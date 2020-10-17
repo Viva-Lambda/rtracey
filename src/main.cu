@@ -10,9 +10,7 @@
 #include <vec3.cuh>
 // scene objects
 #include <record.cuh>
-#include <scenegroup.cuh>
 #include <sceneobj.cuh>
-#include <sceneprim.cuh>
 #include <scenetype.cuh>
 
 __global__ void rand_init(curandState *randState,

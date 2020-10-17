@@ -2,11 +2,13 @@
 
 #include <camera.cuh>
 #include <external.hpp>
+#include <hit.cuh>
 #include <pdf.cuh>
+#include <prandom.cuh>
 #include <ray.cuh>
-#include <scenegroup.cuh>
 #include <sceneobj.cuh>
 #include <shade.cuh>
+#include <spdf.cuh>
 #include <vec3.cuh>
 
 /**

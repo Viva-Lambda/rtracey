@@ -5,7 +5,6 @@
 #include <ray.cuh>
 #include <record.cuh>
 #include <sceneobj.cuh>
-#include <sceneshape.cuh>
 #include <scenetype.cuh>
 #include <vec3.cuh>
 __host__ __device__ float get_pdf_surface(Vec3 dir,
@@ -59,6 +58,7 @@ __host__ __device__ float pdf_value<MOVING_SPHERE_HIT>(
   float radius = s.rads[prim_idx];
   float time0 = s.n1xs[prim_idx];
   float time1 = s.n1ys[prim_idx];
+  float rt = time1 - time0;
   Point3 center = MovingSphere::mcenter(center1, center2,
                                         time0, time1, rt);
 
@@ -100,7 +100,7 @@ pdf_value<RECT_HIT>(const SceneObjects &s, const Point3 &o,
 
   HitRecord rec;
   rec.primitive_index = prim_idx;
-  if (!hit<RECT_HIT>(rect, Ray(o, v), 0.001, FLT_MAX, rec))
+  if (!hit<RECT_HIT>(s, Ray(o, v), 0.001, FLT_MAX, rec))
     return 0;
 
   float area = (a1 - a0) * (b1 - b0);
@@ -137,7 +137,7 @@ pdf_value<HITTABLE>(const SceneObjects &s, const Point3 &o,
                     const Point3 &v, int prim_idx) {
   //
   int htype_ = s.htypes[prim_idx];
-  HittableType htype = static_cast<HittableType>(htype);
+  HittableType htype = static_cast<HittableType>(htype_);
   float pdf = 0.0f;
   if (htype == SPHERE_HIT) {
     pdf = pdf_value<SPHERE_HIT>(s, o, v, prim_idx);
@@ -179,7 +179,7 @@ pdf_value<NONE_GRP>(const SceneObjects &s, const Point3 &o,
   float sum = 0.0f;
   for (int i = group_start; i < group_size; i++) {
     int prim_idx = i;
-    sum += weight * pdf_value<HITTABLE>(p, o, v);
+    sum += weight * pdf_value<HITTABLE>(s, o, v);
   }
   return sum;
 }

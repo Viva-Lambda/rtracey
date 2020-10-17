@@ -4,7 +4,6 @@
 #include <ray.cuh>
 #include <record.cuh>
 #include <sceneobj.cuh>
-#include <sceneshape.cuh>
 #include <scenetype.cuh>
 #include <vec3.cuh>
 __host__ __device__ void get_sphere_uv(const Vec3 &p,
@@ -180,7 +179,7 @@ hit<RECT_HIT>(const SceneObjects &s, const Ray &r,
 
   float t = (k - r.origin()[ax.notAligned]) /
             r.direction()[ax.notAligned];
-  if (t < t0 || t > t1)
+  if (t < d_min || t > d_max)
     return false;
   float a = r.origin()[ax.aligned1] +
             t * r.direction()[ax.aligned1];
@@ -224,7 +223,7 @@ hit<HITTABLE>(const SceneObjects &s, const Ray &r,
               float d_min, float d_max, HitRecord &rec) {
   int prim_idx = rec.primitive_index;
   int htype_ = s.htypes[prim_idx];
-  HittableType htype = static_cast<HittableType>(htype);
+  HittableType htype = static_cast<HittableType>(htype_);
   bool res = false;
   if (htype == SPHERE_HIT) {
     res = hit<SPHERE_HIT>(s, r, d_min, d_max, rec);
@@ -369,6 +368,4 @@ hit<SCENE_GRP>(const SceneObjects &s, const Ray &r,
     }
   }
   return res;
-}
-return res;
 }

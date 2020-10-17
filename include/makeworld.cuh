@@ -1,12 +1,12 @@
 // make world kernel
 #pragma once
 
+#include <groupparam.cuh>
+#include <matparam.cuh>
+#include <primitive.cuh>
 #include <ray.cuh>
-#include <scenegroup.cuh>
-#include <scenematparam.cuh>
 #include <sceneobj.cuh>
-#include <sceneprim.cuh>
-#include <scenetexparam.cuh>
+#include <texparam.cuh>
 #include <vec3.cuh>
 
 SceneObjects make_cornell_box() {
