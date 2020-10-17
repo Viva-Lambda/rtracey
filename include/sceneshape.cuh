@@ -7,6 +7,7 @@
 #include <shape.cuh>
 #include <utils.cuh>
 #include <vec3.cuh>
+#include <scenetype.cuh>
 __host__ __device__ void get_sphere_uv(const Vec3 &p,
                                        float &u, float &v) {
   auto phi = atan2(p.z(), p.x());
@@ -311,7 +312,6 @@ __host__ __device__ float get_pdf_surface(Vec3 dir,
                                           Vec3 normal,
                                           float dist,
                                           float area) {
-  //
   float dist_squared = dist * dist / dir.squared_length();
   float cosine = fabs(dot(dir, normal) / dir.length());
   return dist_squared / (cosine * area);

@@ -1,5 +1,6 @@
 #pragma once
 // shade utils
+#include <aabb.cuh>
 #include <ray.cuh>
 #include <record.cuh>
 #include <sceneobj.cuh>
@@ -217,6 +218,34 @@ hit<YZ_RECT_HIT>(const SceneObjects &s, const Ray &r,
   return hit<RECT_HIT>(s, r, d_min, d_max, rec);
 }
 
+template <>
+__host__ __device__ bool
+hit<HITTABLE>(const SceneObjects &s, const Ray &r,
+              float d_min, float d_max, HitRecord &rec) {
+  int prim_idx = rec.primitive_index;
+  int htype_ = s.htypes[prim_idx];
+  HittableType htype = static_cast<HittableType>(htype);
+  bool res = false;
+  if (htype == SPHERE_HIT) {
+    res = hit<SPHERE_HIT>(s, r, d_min, d_max, rec);
+  } else if (htype == MOVING_SPHERE_HIT) {
+    res = hit<MOVING_SPHERE_HIT>(s, r, d_min, d_max, rec);
+  } else if (htype == XY_RECT_HIT) {
+    res = hit<XY_RECT_HIT>(s, r, d_min, d_max, rec);
+  } else if (htype == XZ_RECT_HIT) {
+    res = hit<XZ_RECT_HIT>(s, r, d_min, d_max, rec);
+  } else if (htype == YZ_RECT_HIT) {
+    res = hit<YZ_RECT_HIT>(s, r, d_min, d_max, rec);
+  } else if (htype == YZ_TRIANGLE_HIT) {
+    res = hit<YZ_TRIANGLE_HIT>(s, r, d_min, d_max, rec);
+  } else if (htype == XZ_TRIANGLE_HIT) {
+    res = hit<XZ_TRIANGLE_HIT>(s, r, d_min, d_max, rec);
+  } else if (htype == XY_TRIANGLE_HIT) {
+    res = hit<XY_TRIANGLE_HIT>(s, r, d_min, d_max, rec);
+  }
+  return res;
+}
+
 template <GroupType g>
 __host__ __device__ bool hit(const SceneObjects &s,
                              const Ray &r, float d_min,
@@ -233,45 +262,7 @@ hit<NONE_GRP>(const SceneObjects &s, const Ray &r,
   bool res = false;
   for (int i = group_start; i < group_size; i++) {
     rec.primitive_index = i;
-    int htype_ = s.htypes[prim_idx];
-    HittableType htype = static_cast<HittableType>(htype);
-    switch (htype) {
-    case NONE_HIT: {
-      break;
-    }
-    case SPHERE_HIT: {
-      res = hit<SPHERE_HIT>(s, r, d_min, d_max, rec);
-      break;
-    }
-    case MOVING_SPHERE_HIT: {
-      res = hit<MOVING_SPHERE_HIT>(s, r, d_min, d_max, rec);
-      break;
-    }
-    case XY_RECT_HIT: {
-      res = hit<XY_RECT_HIT>(s, r, d_min, d_max, rec);
-      break;
-    }
-    case XZ_RECT_HIT: {
-      res = hit<XZ_RECT_HIT>(s, r, d_min, d_max, rec);
-      break;
-    }
-    case YZ_RECT_HIT: {
-      res = hit<YZ_RECT_HIT>(s, r, d_min, d_max, rec);
-      break;
-    }
-    case YZ_TRIANGLE_HIT: {
-      res = hit<YZ_TRIANGLE_HIT>(s, r, d_min, d_max, rec);
-      break;
-    }
-    case XZ_TRIANGLE_HIT: {
-      res = hit<XZ_TRIANGLE_HIT>(s, r, d_min, d_max, rec);
-      break;
-    }
-    case XY_TRIANGLE_HIT: {
-      res = hit<XY_TRIANGLE_HIT>(s, r, d_min, d_max, rec);
-      break;
-    }
-    }
+    res = hit<HITTABLE>(s, r, d_min, d_max, rec);
   }
   return res;
 }
@@ -366,26 +357,18 @@ hit<SCENE_GRP>(const SceneObjects &s, const Ray &r,
     rec.group_index = i;
     int gtype_ = s.g_ttypes[rec.group_index];
     GroupType gtype = static_cast<GroupType>(gtype_);
-    switch (gtype) {
-    case NONE_GRP: {
+    if (gtype == NONE_GRP) {
       res = hit<NONE_GRP>(s, r, d_min, d_max, rec);
-      break;
-    }
-    case BOX_GRP: {
+    } else if (gtype == BOX_GRP) {
       res = hit<BOX_GRP>(s, r, d_min, d_max, rec);
-      break;
-    }
-    case CONSTANT_MEDIUM_GRP: {
+    } else if (gtype == CONSTANT_MEDIUM_GRP) {
       res =
           hit<CONSTANT_MEDIUM_GRP>(s, r, d_min, d_max, rec);
-      break;
-    }
-    case SIMPLE_MESH_GRP: {
+    } else if (gtype == SIMPLE_MESH_GRP) {
       res = hit<SIMPLE_MESH_GRP>(s, r, d_min, d_max, rec);
-      break;
     }
-    }
-    return res;
   }
   return res;
+}
+return res;
 }

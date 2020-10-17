@@ -56,7 +56,8 @@ enum HittableType : int {
   TRIANGLE_HIT = 7,
   XY_TRIANGLE_HIT = 8,
   XZ_TRIANGLE_HIT = 9,
-  YZ_TRIANGLE_HIT = 10
+  YZ_TRIANGLE_HIT = 10,
+  HITTABLE = 11
 };
 enum GroupType : int {
   NONE_GRP = 0,
