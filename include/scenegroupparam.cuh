@@ -10,7 +10,7 @@ template <> struct SceneHittable<GroupParam> {
                              const Ray &r, float d_min,
                              float d_max, HitRecord &rec) {
     bool res = false;
-    const int gtype = *g.gtype;
+    const int gtype = g.gtype;
     if (gtype == BOX) {
       Box bg = g.to_box();
       res =
@@ -30,7 +30,7 @@ template <> struct SceneHittable<GroupParam> {
   bounding_box(const GroupParam &g, float t0, float t1,
                Aabb &output_box) {
     bool res = false;
-    const int gtype = *g.gtype;
+    const int gtype = g.gtype;
     if (gtype == BOX) {
       Box bg = g.to_box();
       res = SceneHittable<Box>::bounding_box(bg, t0, t1,
@@ -51,7 +51,7 @@ template <> struct SceneHittable<GroupParam> {
                                     const Point3 &o,
                                     const Point3 &v) {
     float res = 0.0f;
-    const int gtype = *g.gtype;
+    const int gtype = g.gtype;
     if (gtype == BOX) {
       Box bg = g.to_box();
       res = SceneHittable<Box>::pdf_value(bg, o, v);
@@ -69,7 +69,7 @@ template <> struct SceneHittable<GroupParam> {
                                 const Vec3 &v,
                                 curandState *loc) {
     Vec3 res(0.0f, 0.0f, 0.0f);
-    const int gtype = *g.gtype;
+    const int gtype = g.gtype;
     if (gtype == BOX) {
       Box bg = g.to_box();
       res = SceneHittable<Box>::random(bg, v, loc);

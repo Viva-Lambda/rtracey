@@ -14,11 +14,6 @@ struct SolidColor : Texture {
   __host__ __device__ SolidColor(float red, float green,
                                  float blue)
       : color_value(red, green, blue) {}
-  __host__ __device__ SolidColor(const float *red,
-                                 const float *green,
-                                 const float *blue)
-      : color_value((float *)red, (float *)green,
-                    (float *)blue) {}
 };
 template <class TeX = Texture> struct CheckerTexture {
   TeX odd;
@@ -41,32 +36,30 @@ template <> struct CheckerTexture<SolidColor> {
       : odd(c1), even(SolidColor(1.0f - c1.color_value)) {}
 };
 struct NoiseTexture : Texture {
-  const float *scale;
+  const float scale;
   Perlin noise;
 
-  __host__ __device__ NoiseTexture() {}
-  __device__ NoiseTexture(const float *s, curandState *loc)
+  __host__ __device__ NoiseTexture() : scale(0.0f) {}
+  __device__ NoiseTexture(const float s, curandState *loc)
       : scale(s), noise(Perlin(loc)) {}
 };
 struct ImageTexture : Texture {
   unsigned char *data;
-  const int *width, *height;
-  const int *bytes_per_pixel;
-  const int *index;
+  const int width, height;
+  const int bytes_per_pixel;
+  const int index;
   __host__ __device__ ImageTexture()
-      : data(nullptr), width(nullptr), height(nullptr),
-        bytes_per_pixel(nullptr), index(nullptr) {}
-  __host__ __device__ ImageTexture(const int *w,
-                                   const int *h,
-                                   const int *bpp,
-                                   const int *idx,
+      : data(nullptr), width(0), height(0),
+        bytes_per_pixel(0), index(0) {}
+  __host__ __device__ ImageTexture(const int w, const int h,
+                                   const int bpp,
+                                   const int idx,
                                    unsigned char *td)
       : width(w), height(h), bytes_per_pixel(bpp),
         index(idx), data(td) {}
-  __host__ __device__ ImageTexture(const int *w,
-                                   const int *h,
-                                   const int *bpp,
-                                   const int *idx)
+  __host__ __device__ ImageTexture(const int w, const int h,
+                                   const int bpp,
+                                   const int idx)
       : width(w), height(h), bytes_per_pixel(bpp),
         index(idx), data(nullptr) {}
   __host__ __device__ void set_data(unsigned char *td) {

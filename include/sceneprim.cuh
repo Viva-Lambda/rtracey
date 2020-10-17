@@ -13,7 +13,7 @@ template <> struct SceneHittable<Primitive> {
                              const Ray &r, float d_min,
                              float d_max, HitRecord &rec) {
     bool res = false;
-    const int htype = *sprim.hparam.htype;
+    const int htype = sprim.hparam.htype;
     if (htype == NONE_HITTABLE) {
       res = false;
     } else if (htype == XY_RECT) {
@@ -56,7 +56,7 @@ template <> struct SceneHittable<Primitive> {
   bounding_box(const Primitive &sprim, float t0, float t1,
                Aabb &output_box) {
     bool res = false;
-    const int htype = *sprim.hparam.htype;
+    const int htype = sprim.hparam.htype;
     if (htype == NONE_HITTABLE) {
       res = false;
     } else if (htype == XY_RECT) {
@@ -101,7 +101,7 @@ template <> struct SceneHittable<Primitive> {
                                     const Point3 &v) {
     float pdf = 1.0f;
 
-    const int htype = *sprim.hparam.htype;
+    const int htype = sprim.hparam.htype;
     if (htype == NONE_HITTABLE) {
       pdf = 1.0f;
     } else if (htype == XY_RECT) {
@@ -137,7 +137,7 @@ template <> struct SceneHittable<Primitive> {
                                 const Vec3 &v,
                                 curandState *loc) {
     Vec3 vp(0.0f, 0.0f, 0.0f);
-    const int htype = *sprim.hparam.htype;
+    const int htype = sprim.hparam.htype;
     if (htype == NONE_HITTABLE) {
       vp = Vec3(0.0f, 0.0f, 0.0f);
     } else if (htype == XY_RECT) {

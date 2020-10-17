@@ -14,7 +14,7 @@ template <> struct SceneMaterial<MaterialParam> {
           const HitRecord &rec, Vec3 &attenuation,
           Ray &scattered, float &pdf, curandState *loc) {
     bool res;
-    const int mtype = *m.mtype;
+    const int mtype = m.mtype;
     if (mtype == LAMBERTIAN) {
       Lambertian mat = m.to_lambert();
       res = SceneMaterial<Lambertian>::scatter(
@@ -43,7 +43,7 @@ template <> struct SceneMaterial<MaterialParam> {
                  const HitRecord &rec,
                  const Ray &scattered) {
     float res = 0.0f;
-    const int mtype = *m.mtype;
+    const int mtype = m.mtype;
     if (mtype == LAMBERTIAN) {
       Lambertian mat = m.to_lambert();
       res = SceneMaterial<Lambertian>::scattering_pdf(
@@ -72,7 +72,7 @@ template <> struct SceneMaterial<MaterialParam> {
                                   float u, float v,
                                   const Point3 &p) {
     Color res(0.0f, 0.0f, 0.0f);
-    const int mtype = *m.mtype;
+    const int mtype = m.mtype;
     if (mtype == LAMBERTIAN) {
       Lambertian mat = m.to_lambert();
       res =

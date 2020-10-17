@@ -6,6 +6,7 @@
 #include <ray.cuh>
 #include <scenegroup.cuh>
 #include <sceneobj.cuh>
+#include <shade.cuh>
 #include <vec3.cuh>
 
 /**
@@ -31,7 +32,7 @@ __device__ Color ray_color(const Ray &r,
       float pdf_val = 1.0f;
       bool isScattered =
           world.scatter(current_ray, rec, attenuation,
-                        scattered, pdf_val);
+                        scattered, pdf_val, loc);
       if (isScattered) {
         bounceNb--;
         float s_pdf = world.scattering_pdf(rec, current_ray,
@@ -81,8 +82,5 @@ __global__ void render(Vec3 *fb, int maximum_x,
   // fix the bounce depth
   randState[pixel_index] = localS;
   rcolor /= float(sample_nb);
-  *rcolor.e1 = sqrt(rcolor.x());
-  *rcolor.e2 = sqrt(rcolor.y());
-  *rcolor.e3 = sqrt(rcolor.z());
-  fb[pixel_index] = rcolor;
+  fb[pixel_index] = sqrt(rcolor);
 }

@@ -6,6 +6,7 @@
 #include <scenegroupparam.cuh>
 #include <sceneprim.cuh>
 #include <scenetype.cuh>
+#include <utils.cuh>
 #include <vec3.cuh>
 
 struct SceneObjects {
@@ -88,15 +89,15 @@ struct SceneObjects {
   __host__ __device__ void set_groups(GroupParam *gs) {
     for (int i = 0; i < nb_groups; i++) {
       GroupParam g = gs[i];
-      group_sizes[i] = (*g.group_size);
-      group_ids[i] = (*g.group_id);
-      gtypes[i] = *g.gtype;
+      group_sizes[i] = g.group_size;
+      group_ids[i] = (g.group_id);
+      gtypes[i] = g.gtype;
       int gstart = i * group_sizes[i];
       // group_starts[i] = gstart == 0 ? g.group_size :
       // gstart;
       group_starts[i] = gstart;
 
-      for (int j = 0; j < (*g.group_size); j++) {
+      for (int j = 0; j < g.group_size; j++) {
         int gindex = gstart + j;
         Primitive prim = g.get(j);
         set_primitive(prim, gindex);
@@ -108,54 +109,54 @@ struct SceneObjects {
     int nb_prim = 0;
     for (int i = 0; i < nb_groups; i++) {
       GroupParam g = gs[i];
-      nb_prim += (*g.group_size);
+      nb_prim += g.group_size;
     }
     return nb_prim;
   }
   __device__ void set_rand(curandState *loc) { rand = loc; }
   __host__ __device__ void
   set_group_texture(const GroupParam &g, int i) {
-    g_densities[i] = *g.density;
-    g_ttypes[i] = *g.tparam.ttype;
-    g_tp1xs[i] = *g.tparam.tp1x;
-    g_tp1ys[i] = *g.tparam.tp1y;
-    g_tp1zs[i] = *g.tparam.tp1z;
-    g_scales[i] = *g.tparam.scale;
-    g_widths[i] = *g.tparam.width;
-    g_heights[i] = *g.tparam.height;
-    g_bpps[i] = *g.tparam.bytes_per_pixel;
-    g_indices[i] = *g.tparam.index;
+    g_densities[i] = g.density;
+    g_ttypes[i] = g.tparam.ttype;
+    g_tp1xs[i] = g.tparam.tp1x;
+    g_tp1ys[i] = g.tparam.tp1y;
+    g_tp1zs[i] = g.tparam.tp1z;
+    g_scales[i] = g.tparam.scale;
+    g_widths[i] = g.tparam.width;
+    g_heights[i] = g.tparam.height;
+    g_bpps[i] = g.tparam.bytes_per_pixel;
+    g_indices[i] = g.tparam.index;
   }
-  __host__ __device__ void set_primitive(Primitive &p,
+  __host__ __device__ void set_primitive(const Primitive &p,
                                          int gindex) {
-    ttypes[gindex] = *p.mparam.tparam.ttype;
+    ttypes[gindex] = p.mparam.tparam.ttype;
 
-    tp1xs[gindex] = *p.mparam.tparam.tp1x;
-    tp1ys[gindex] = *p.mparam.tparam.tp1y;
-    tp1zs[gindex] = *p.mparam.tparam.tp1z;
-    scales[gindex] = *p.mparam.tparam.scale;
-    widths[gindex] = *p.mparam.tparam.width;
-    heights[gindex] = *p.mparam.tparam.height;
+    tp1xs[gindex] = p.mparam.tparam.tp1x;
+    tp1ys[gindex] = p.mparam.tparam.tp1y;
+    tp1zs[gindex] = p.mparam.tparam.tp1z;
+    scales[gindex] = p.mparam.tparam.scale;
+    widths[gindex] = p.mparam.tparam.width;
+    heights[gindex] = p.mparam.tparam.height;
     bytes_per_pixels[gindex] =
-        *p.mparam.tparam.bytes_per_pixel;
-    image_indices[gindex] = *p.mparam.tparam.index;
-    mtypes[gindex] = *p.mparam.mtype;
-    fuzz_ref_idxs[gindex] = *p.mparam.fuzz_ref_idx;
-    htypes[gindex] = *p.hparam.htype;
+        p.mparam.tparam.bytes_per_pixel;
+    image_indices[gindex] = p.mparam.tparam.index;
+    mtypes[gindex] = p.mparam.mtype;
+    fuzz_ref_idxs[gindex] = p.mparam.fuzz_ref_idx;
+    htypes[gindex] = p.hparam.htype;
 
-    p1xs[gindex] = *p.hparam.p1x;
-    p1ys[gindex] = *p.hparam.p1y;
-    p1zs[gindex] = *p.hparam.p1z;
+    p1xs[gindex] = p.hparam.p1x;
+    p1ys[gindex] = p.hparam.p1y;
+    p1zs[gindex] = p.hparam.p1z;
 
-    p2xs[gindex] = *p.hparam.p2x;
-    p2ys[gindex] = *p.hparam.p2y;
-    p2zs[gindex] = *p.hparam.p2z;
+    p2xs[gindex] = p.hparam.p2x;
+    p2ys[gindex] = p.hparam.p2y;
+    p2zs[gindex] = p.hparam.p2z;
 
-    n1xs[gindex] = *p.hparam.n1x;
-    n1ys[gindex] = *p.hparam.n1y;
-    n1zs[gindex] = *p.hparam.n1z;
-    rads[gindex] = *p.hparam.radius;
-    prim_group_indices[gindex] = *p.group_index;
+    n1xs[gindex] = p.hparam.n1x;
+    n1ys[gindex] = p.hparam.n1y;
+    n1zs[gindex] = p.hparam.n1z;
+    rads[gindex] = p.hparam.radius;
+    prim_group_indices[gindex] = p.group_index;
   }
   __host__ __device__ void alloc_group_params(int nb_g) {
     group_starts = new int[nb_g];
@@ -205,43 +206,41 @@ struct SceneObjects {
   }
   __host__ __device__ TextureParam
   get_group_texture_param(int gindex) const {
-    const float *gtp1x = (const float *)&g_tp1xs[gindex];
-    const float *gtp1y = (const float *)&g_tp1ys[gindex];
-    const float *gtp1z = (const float *)&g_tp1zs[gindex];
-    const int *gwidth = (const int *)&g_widths[gindex];
-    const int *gh = (const int *)&g_heights[gindex];
-    const int *gbpp = (const int *)&g_bpps[gindex];
-    const int *g_ind = (const int *)&g_indices[gindex];
+    const float gtp1x = g_tp1xs[gindex];
+    const float gtp1y = g_tp1ys[gindex];
+    const float gtp1z = g_tp1zs[gindex];
+    const int gwidth = g_widths[gindex];
+    const int gh = g_heights[gindex];
+    const int gbpp = g_bpps[gindex];
+    const int g_ind = g_indices[gindex];
     const ImageParam img_p =
         ImageParam(gwidth, gh, gbpp, g_ind);
-    const int *gttype = (const int *)&g_ttypes[gindex];
-    const float *gscl = (const float *)&g_scales[gindex];
+    const int gttype = g_ttypes[gindex];
+    const float gscl = g_scales[gindex];
     TextureParam tpr(gttype, gtp1x, gtp1y, gtp1z, gscl,
                      img_p);
     return tpr;
   }
   __device__ TextureParam get_group_texture_param(
       int gindex, curandState *loc) const {
-    const float *gtp1x = (const float *)&g_tp1xs[gindex];
-    const float *gtp1y = (const float *)&g_tp1ys[gindex];
-    const float *gtp1z = (const float *)&g_tp1zs[gindex];
+    const float gtp1x = g_tp1xs[gindex];
+    const float gtp1y = g_tp1ys[gindex];
+    const float gtp1z = g_tp1zs[gindex];
 
-    const int *gwidth = &g_widths[gindex];
-    const int *gh = &g_heights[gindex];
-    const int *gbpp = &g_bpps[gindex];
-    const int *g_ind = &g_indices[gindex];
+    const int gwidth = g_widths[gindex];
+    const int gh = g_heights[gindex];
+    const int gbpp = g_bpps[gindex];
+    const int g_ind = g_indices[gindex];
     const ImageParam img_p =
         ImageParam(gwidth, gh, gbpp, g_ind);
-    const int *gttype = &g_ttypes[gindex];
-    const float *gscl = &g_scales[gindex];
+    const int gttype = g_ttypes[gindex];
+    const float gscl = g_scales[gindex];
 
     TextureParam tpr(loc, gttype, gtp1x, gtp1y, gtp1z, gscl,
                      img_p);
     return tpr;
   }
 
-  // __device__ void set_curand(curandState *lc) { loc = lc;
-  // }
   __host__ SceneObjects to_device_thrust() {
     SceneObjects sobjs;
     sobjs.nb_prims = nb_prims;
@@ -894,116 +893,101 @@ struct SceneObjects {
     delete[] g_indices;
   }
   __host__ __device__ HittableParam
-  get_hparam(int gstart, int group_id) const {
-    const int *htype = (const int *)&htypes[gstart];
-    const float *p1x = (const float *)&p1xs[gstart];
-    const float *p1y = (const float *)&p1ys[gstart];
-    const float *p1z = (const float *)&p1zs[gstart];
-    const float *p2x = (const float *)&p2xs[gstart];
-    const float *p2y = (const float *)&p2ys[gstart];
-    const float *p2z = (const float *)&p2zs[gstart];
-    const float *n1x = (const float *)&n1xs[gstart];
-    const float *n1y = (const float *)&n1ys[gstart];
-    const float *n1z = (const float *)&n1zs[gstart];
-    const float *radius = (const float *)&rads[gstart];
+  get_hparam(int gstart) const {
+    const int htype = htypes[gstart];
+    const float p1x = p1xs[gstart];
+    const float p1y = p1ys[gstart];
+    const float p1z = p1zs[gstart];
+    const float p2x = p2xs[gstart];
+    const float p2y = p2ys[gstart];
+    const float p2z = p2zs[gstart];
+    const float n1x = n1xs[gstart];
+    const float n1y = n1ys[gstart];
+    const float n1z = n1zs[gstart];
+    const float radius = rads[gstart];
 
     HittableParam ht(htype, p1x, p1y, p1z, p2x, p2y, p2z,
                      n1x, n1y, n1z, radius);
     return ht;
   }
   __host__ __device__ ImageParam
-  get_image_param(int gstart, int group_id) const {
-    const int *w = (const int *)&widths[gstart];
-    const int *h = (const int *)&heights[gstart];
-    const int *bpp = (const int *)&bytes_per_pixels[gstart];
-    const int *idx = (const int *)&image_indices[gstart];
+  get_image_param(int gstart) const {
+    const int w = widths[gstart];
+    const int h = heights[gstart];
+    const int bpp = bytes_per_pixels[gstart];
+    const int idx = image_indices[gstart];
     ImageParam imp(w, h, bpp, idx);
     return imp;
   }
-  __host__ __device__ TextureParam
-  get_texture_param(int gstart, int group_id,
-                    const ImageParam &imp) const {
-    const float *tp1x = (const float *)&tp1xs[gstart];
-    const float *tp1y = (const float *)&tp1ys[gstart];
-    const float *tp1z = (const float *)&tp1zs[gstart];
-    const int *ttype = (const int *)&ttypes[gstart];
-    const float *sc = (const float *)&scales[gstart];
+  __host__ __device__ TextureParam get_texture_param(
+      int gstart, const ImageParam &imp) const {
+    const float tp1x = tp1xs[gstart];
+    const float tp1y = tp1ys[gstart];
+    const float tp1z = tp1zs[gstart];
+    const int ttype = ttypes[gstart];
+    const float sc = scales[gstart];
     TextureParam tp(ttype, tp1x, tp1y, tp1z, sc, imp);
     return tp;
   }
-  __device__ TextureParam get_texture_param(
-      int gstart, int group_id, const ImageParam &imp,
-      curandState *loc) const {
-    const float *tp1x = (const float *)&tp1xs[gstart];
-    const float *tp1y = (const float *)&tp1ys[gstart];
-    const float *tp1z = (const float *)&tp1zs[gstart];
-    const int *ttype = (const int *)&ttypes[gstart];
-    const float *sc = (const float *)&scales[gstart];
+  __device__ TextureParam
+  get_texture_param(int gstart, const ImageParam &imp,
+                    curandState *loc) const {
+    const float tp1x = tp1xs[gstart];
+    const float tp1y = tp1ys[gstart];
+    const float tp1z = tp1zs[gstart];
+    const int ttype = ttypes[gstart];
+    const float sc = scales[gstart];
     TextureParam tp(loc, ttype, tp1x, tp1y, tp1z, sc, imp);
     return tp;
   }
-  __host__ __device__ MaterialParam
-  get_material_param(int gstart, int group_id,
-                     const TextureParam &tp) const {
-    const int *mt = (const int *)&mtypes[gstart];
-    const float *fzz =
-        (const float *)&fuzz_ref_idxs[gstart];
+  __host__ __device__ MaterialParam get_material_param(
+      int gstart, const TextureParam &tp) const {
+    const int mt = mtypes[gstart];
+    const float fzz = fuzz_ref_idxs[gstart];
     MaterialParam mp(tp, mt, fzz);
     return mp;
   }
   __host__ __device__ MaterialParam
-  get_material_param(int gstart, int group_id) const {
-    const ImageParam imp =
-        get_image_param(gstart, group_id);
-    const TextureParam tp =
-        get_texture_param(gstart, group_id, imp);
-    const int *mt = (const int *)&mtypes[gstart];
-    const float *fzz =
-        (const float *)&fuzz_ref_idxs[gstart];
+  get_material_param(int gstart) const {
+    const ImageParam imp = get_image_param(gstart);
+    const TextureParam tp = get_texture_param(gstart, imp);
+    const int mt = mtypes[gstart];
+    const float fzz = fuzz_ref_idxs[gstart];
 
     MaterialParam mp(tp, mt, fzz);
     return mp;
   }
-  __device__ MaterialParam get_material_param(
-      int gstart, int group_id, curandState *loc) const {
-    const ImageParam imp =
-        get_image_param(gstart, group_id);
+  __device__ MaterialParam
+  get_material_param(int gstart, curandState *loc) const {
+    const ImageParam imp = get_image_param(gstart);
     const TextureParam tp =
-        get_texture_param(gstart, group_id, imp, loc);
-    const int *mt = (const int *)&mtypes[gstart];
-    const float *fzz =
-        (const float *)&fuzz_ref_idxs[gstart];
+        get_texture_param(gstart, imp, loc);
+    const int mt = mtypes[gstart];
+    const float fzz = fuzz_ref_idxs[gstart];
 
     MaterialParam mp(tp, mt, fzz);
     return mp;
   }
   __host__ __device__ Primitive
   get_primitive(int gstart, int group_id) const {
-    const HittableParam ht = get_hparam(gstart, group_id);
-    const ImageParam imp =
-        get_image_param(gstart, group_id);
-    const TextureParam tp =
-        get_texture_param(gstart, group_id, imp);
-    const MaterialParam mp =
-        get_material_param(gstart, group_id, tp);
-    const int *gindex =
-        (const int *)&prim_group_indices[gstart];
-    const int *gid = (const int *)&group_id;
+    const HittableParam ht = get_hparam(gstart);
+    const ImageParam imp = get_image_param(gstart);
+    const TextureParam tp = get_texture_param(gstart, imp);
+    const MaterialParam mp = get_material_param(gstart, tp);
+    const int gindex = prim_group_indices[gstart];
+    const int gid = group_id;
     Primitive prim = Primitive(mp, ht, gindex, gid);
     return prim;
   }
   __device__ Primitive get_primitive(
       int gstart, int group_id, curandState *loc) const {
-    const HittableParam ht = get_hparam(gstart, group_id);
-    const ImageParam imp =
-        get_image_param(gstart, group_id);
+    const HittableParam ht = get_hparam(gstart);
+    const ImageParam imp = get_image_param(gstart);
     const TextureParam tp =
-        get_texture_param(gstart, group_id, imp, loc);
-    const MaterialParam mp =
-        get_material_param(gstart, group_id, tp);
-    const int *gindex =
-        (const int *)&prim_group_indices[gstart];
-    const int *gid = (const int *)&group_id;
+        get_texture_param(gstart, imp, loc);
+    const MaterialParam mp = get_material_param(gstart, tp);
+    const int gindex = prim_group_indices[gstart];
+    const int gid = group_id;
 
     Primitive prim = Primitive(mp, ht, gindex, gid);
     return prim;
@@ -1011,29 +995,25 @@ struct SceneObjects {
   __device__ bool group_hit(int gindex, const Ray &r,
                             float d_min, float d_max,
                             HitRecord &rec) const {
-    const int *ggtype = (const int *)&gtypes[gindex];
-    const int *gsize = (const int *)&group_sizes[gindex];
-    const int *g_id = (const int *)&group_ids[gindex];
-    const float *g_dens =
-        (const float *)&g_densities[gindex];
+    const int ggtype = gtypes[gindex];
+    const int gsize = group_sizes[gindex];
+    const int g_id = group_ids[gindex];
+    const float g_dens = g_densities[gindex];
     const TextureParam tparam =
-        get_group_texture_param(gindex, loc);
+        get_group_texture_param(gindex, rand);
 
-    const int *gstart = (const int *)&group_starts[gindex];
+    const int gstart = group_starts[gindex];
     bool any_hit = false;
-    for (int i = 0; i < (*gsize); i++) {
-      int g_start = (*gstart) + i;
-      const HittableParam ht = get_hparam(gstart, group_id);
-      const ImageParam imp =
-          get_image_param(gstart, group_id);
+    for (int i = 0; i < gsize; i++) {
+      int g_start = gstart + i;
+      const HittableParam ht = get_hparam(g_start);
+      const ImageParam imp = get_image_param(g_start);
       const TextureParam tp =
-          get_texture_param(gstart, group_id, imp);
+          get_texture_param(g_start, imp);
       const MaterialParam mp =
-          get_material_param(gstart, group_id, tp);
-      const int *gindex =
-          (const int *)&prim_group_indices[gstart];
-      const int *gid = (const int *)&group_id;
-      Primitive p(mp, ht, gindex, gid);
+          get_material_param(g_start, tp);
+      const int gindex = prim_group_indices[g_start];
+      Primitive p(mp, ht, gindex, g_id);
       any_hit = SceneHittable<Primitive>::hit(p, r, d_min,
                                               d_max, rec);
     }
@@ -1045,10 +1025,10 @@ struct SceneObjects {
     bool hit_anything = false;
     float closest_far = d_max;
     for (int i = 0; i < nb_groups; i++) {
-      GroupParam g = fill_group(i, rand);
+
       int gstart = group_starts[i];
-      bool is_hit = SceneHittable<GroupParam>::hit(
-          g, r, d_min, closest_far, temp);
+      bool is_hit =
+          group_hit(i, r, d_min, closest_far, rec);
       if (is_hit == true) {
         hit_anything = is_hit;
         closest_far = temp.t;
@@ -1065,7 +1045,9 @@ struct SceneObjects {
     bool hit_anything = false;
     float closest_far = d_max;
     for (int i = 0; i < nb_groups; i++) {
-      bool is_hit = group_hit(i, r, d_min, d_max, rec);
+      bool is_hit =
+          group_hit(i, r, d_min, closest_far, temp);
+      int gstart = group_starts[i];
       if (is_hit == true) {
         hit_anything = is_hit;
         closest_far = temp.t;
@@ -1087,19 +1069,16 @@ struct SceneObjects {
   __device__ bool scatter(const Ray &r,
                           const HitRecord &rec,
                           Color &attenuation, Ray &r_out,
-                          float &pdf_v) const {
+                          float &pdf_v,
+                          curandState *loc) const {
     int prim_index = rec.primitive_index;
-    int group_id = rec.group_id;
-    MaterialParam prim =
-        get_material_param(prim_index, group_id, rand);
+    MaterialParam prim = get_material_param(prim_index);
     return SceneMaterial<MaterialParam>::scatter(
-        prim, r, rec, attenuation, r_out, pdf_v, rand);
+        prim, r, rec, attenuation, r_out, pdf_v, loc);
   }
-  __device__ Color emitted(const HitRecord &rec) const {
+  __device__ Color emitted(HitRecord &rec) const {
     int prim_index = rec.primitive_index;
-    int group_id = rec.group_id;
-    MaterialParam prim =
-        get_material_param(prim_index, group_id, rand);
+    MaterialParam prim = get_material_param(prim_index);
     return SceneMaterial<MaterialParam>::emitted(
         prim, rec.u, rec.v, rec.p);
   }
@@ -1108,9 +1087,8 @@ struct SceneObjects {
                                   const Ray &r_out) const {
     //
     int prim_index = rec.primitive_index;
-    int group_id = rec.group_id;
     MaterialParam prim =
-        get_material_param(prim_index, group_id, rand);
+        get_material_param(prim_index, rand);
     return SceneMaterial<MaterialParam>::scattering_pdf(
         prim, r, rec, r_out);
   }

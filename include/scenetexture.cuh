@@ -18,7 +18,7 @@ template <> struct SceneTexture<NoiseTexture> {
   __device__ static Color value(const NoiseTexture &txt,
                                 float u, float v,
                                 const Point3 &p) {
-    float zscale = *txt.scale * p.z();
+    float zscale = txt.scale * p.z();
     float turbulance = 10.0f * txt.noise.turb(p);
     Color white(1.0f, 1.0f, 1.0f);
     return white * 0.5f * (1.0f + sin(zscale + turbulance));
@@ -33,17 +33,17 @@ template <> struct SceneTexture<ImageTexture> {
     }
     u = clamp(u, 0.0, 1.0);
     v = 1.0 - clamp(v, 0.0, 1.0); // flip v to im coords
-    int w = *txt.width;
-    int h = *txt.height;
+    int w = txt.width;
+    int h = txt.height;
     int xi = (int)(u * w);
     int yj = (int)(v * h);
     xi = xi >= w ? w - 1 : xi;
     yj = yj >= h ? h - 1 : yj;
 
     //
-    int bpp = *txt.bytes_per_pixel;
+    int bpp = txt.bytes_per_pixel;
     int bytes_per_line = bpp * w;
-    int idx = *txt.index;
+    int idx = txt.index;
     int pixel = yj * bytes_per_line + xi * bpp + idx;
     Color c(0.0f, 0.0f, 0.0f);
     for (int i = 0; i < bpp; i++) {

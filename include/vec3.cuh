@@ -1,47 +1,51 @@
-#pragma once
+// vec3.hpp for cuda
+#ifndef VEC3_CUH
+#define VEC3_CUH
+
 #include <external.hpp>
 #include <utils.cuh>
 
 class Vec3 {
 public:
-  float *e1;
-  float *e2;
-  float *e3;
+  float e[3];
 
-  __host__ __device__ Vec3()
-      : e1(nullptr), e2(nullptr), e3(nullptr) {}
-  __host__ __device__ Vec3(float _e1, float _e2,
-                           float _e3) {
-    e1 = &_e1;
-    e2 = &_e2;
-    e3 = &_e3;
+  __host__ __device__ Vec3() {}
+  __host__ __device__ Vec3(float e1, float e2, float e3) {
+    e[0] = e1;
+    e[1] = e2;
+    e[2] = e3;
   }
-  __host__ __device__ Vec3(float *_e1, float *_e2,
-                           float *_e3) {
-    e1 = _e1;
-    e2 = _e2;
-    e3 = _e3;
+  __host__ __device__ Vec3(float e1) {
+    e[0] = e1;
+    e[1] = e1;
+    e[2] = e1;
   }
-
   __host__ __device__ Vec3(float es[3]) {
-    e1 = &es[0];
-    e2 = &es[1];
-    e3 = &es[2];
+    e[0] = es[0];
+    e[1] = es[1];
+    e[2] = e[2];
   }
-  __host__ __device__ Vec3(const Vec3 &v) {
-    e1 = v.e1;
-    e2 = v.e2;
-    e3 = v.e3;
+  __host__ __device__ inline float x() const {
+    return e[0];
   }
-  __host__ __device__ inline float x() const { return *e1; }
-  __host__ __device__ inline float y() const { return *e2; }
-  __host__ __device__ inline float z() const { return *e3; }
+  __host__ __device__ inline float y() const {
+    return e[1];
+  }
+  __host__ __device__ inline float z() const {
+    return e[2];
+  }
   __host__ __device__ inline float r() const { return x(); }
   __host__ __device__ inline float g() const { return y(); }
   __host__ __device__ inline float b() const { return z(); }
 
   __host__ __device__ inline Vec3 operator-() const {
-    return Vec3(-x(), -y(), -z());
+    return Vec3(-e[0], -e[1], -e[2]);
+  }
+  __host__ __device__ inline float operator[](int i) const {
+    return e[i];
+  }
+  __host__ __device__ inline float &operator[](int i) {
+    return e[i];
   }
   __host__ __device__ inline Vec3 &
   operator+=(const Vec3 &v);
@@ -59,26 +63,9 @@ public:
   operator+=(const float t);
   __host__ __device__ inline Vec3 &
   operator-=(const float t);
-  __host__ __device__ inline float operator[](int i) const {
-    if (i <= 0) {
-      return x();
-    } else if (i == 1) {
-      return y();
-    } else {
-      return z();
-    }
-  }
-  __host__ __device__ inline float &operator[](int i) {
-    if (i <= 0) {
-      return *e1;
-    } else if (i == 1) {
-      return *e2;
-    } else {
-      return *e3;
-    }
-  }
+
   __host__ __device__ inline float squared_length() const {
-    return x() * x() + y() * y() + z() * z();
+    return e[0] * e[0] + e[1] * e[1] + e[2] * e[2];
   }
   __host__ __device__ inline float length() const {
     return sqrt(squared_length());
@@ -129,10 +116,6 @@ __host__ __device__ inline Vec3 operator*(const Vec3 &v1,
                                           float t) {
   return Vec3(v1.x() * t, v1.y() * t, v1.z() * t);
 }
-__host__ __device__ inline Vec3 operator*(float t,
-                                          const Vec3 &v1) {
-  return v1 * t;
-}
 __host__ __device__ inline Vec3 operator/(const Vec3 &v1,
                                           float t) {
   return Vec3(v1.x() / t, v1.y() / t, v1.z() / t);
@@ -145,10 +128,6 @@ __host__ __device__ inline Vec3 operator-(const Vec3 &v1,
                                           float t) {
   return Vec3(v1.x() - t, v1.y() - t, v1.z() - t);
 }
-__host__ __device__ inline Vec3 operator-(float t,
-                                          const Vec3 &v1) {
-  return Vec3(t - v1.x(), t - v1.y(), t - v1.z());
-}
 
 __host__ __device__ inline float dot(const Vec3 &v1,
                                      const Vec3 &v2) {
@@ -158,62 +137,62 @@ __host__ __device__ inline float dot(const Vec3 &v1,
 
 __host__ __device__ inline Vec3 cross(const Vec3 &v1,
                                       const Vec3 &v2) {
-  return Vec3(v1.y() * v2.z() - v1.z() * v2.y(),
-              v1.z() * v2.x() - v1.x() * v2.z(),
+  return Vec3((v1.y() * v2.z() - v1.z() * v2.y()),
+              (-(v1.x() * v2.z() - v1.z() * v2.x())),
               (v1.x() * v2.y() - v1.y() * v2.x()));
 }
 
 __host__ __device__ inline Vec3 &Vec3::
 operator+=(const Vec3 &v) {
-  *e1 += v.x();
-  *e2 += v.y();
-  *e3 += v.z();
+  e[0] += v.x();
+  e[1] += v.y();
+  e[2] += v.z();
   return *this;
 }
 __host__ __device__ inline Vec3 &Vec3::
 operator*=(const Vec3 &v) {
-  *e1 *= v.x();
-  *e2 *= v.y();
-  *e3 *= v.z();
+  e[0] *= v.x();
+  e[1] *= v.y();
+  e[2] *= v.z();
   return *this;
 }
 __host__ __device__ inline Vec3 &Vec3::
 operator/=(const Vec3 &v) {
-  *e1 /= v.x();
-  *e2 /= v.y();
-  *e3 /= v.z();
+  e[0] /= v.x();
+  e[1] /= v.y();
+  e[2] /= v.z();
   return *this;
 }
 __host__ __device__ inline Vec3 &Vec3::
 operator-=(const Vec3 &v) {
-  *e1 -= v.x();
-  *e2 -= v.y();
-  *e3 -= v.z();
+  e[0] -= v.x();
+  e[1] -= v.y();
+  e[2] -= v.z();
   return *this;
 }
 
 __host__ __device__ inline Vec3 &Vec3::operator+=(float v) {
-  *e1 += v;
-  *e2 += v;
-  *e3 += v;
+  e[0] += v;
+  e[1] += v;
+  e[2] += v;
   return *this;
 }
 __host__ __device__ inline Vec3 &Vec3::operator-=(float v) {
-  *e1 -= v;
-  *e2 -= v;
-  *e3 -= v;
+  e[0] -= v;
+  e[1] -= v;
+  e[2] -= v;
   return *this;
 }
 __host__ __device__ inline Vec3 &Vec3::operator*=(float v) {
-  *e1 *= v;
-  *e2 *= v;
-  *e3 *= v;
+  e[0] *= v;
+  e[1] *= v;
+  e[2] *= v;
   return *this;
 }
 __host__ __device__ inline Vec3 &Vec3::operator/=(float v) {
-  *e1 /= v;
-  *e2 /= v;
-  *e3 /= v;
+  e[0] /= v;
+  e[1] /= v;
+  e[2] /= v;
   return *this;
 }
 __host__ __device__ inline Vec3 to_unit(Vec3 v) {
@@ -238,6 +217,12 @@ __host__ __device__ Vec3 max_vec(const Vec3 v1,
   float zmax = fmax(v1.z(), v2.z());
   return Vec3(xmax, ymax, zmax);
 }
+__host__ __device__ Vec3 sqrt(const Vec3 &v1) {
+  float x = sqrt(v1.x());
+  float y = sqrt(v1.y());
+  float z = sqrt(v1.z());
+  return Vec3(x, y, z);
+}
 
 __host__ __device__ bool refract(const Vec3 &v,
                                  const Vec3 &n,
@@ -248,9 +233,8 @@ __host__ __device__ bool refract(const Vec3 &v,
   float discriminant =
       1.0f - ni_over_nt * ni_over_nt * (1 - dt * dt);
   if (discriminant > 0) {
-    Vec3 uv_n = uv - n;
     refracted =
-        ni_over_nt * (uv_n * dt) - n * sqrt(discriminant);
+        ni_over_nt * (uv - n * dt) - n * sqrt(discriminant);
     return true;
   } else {
     return false;
@@ -276,15 +260,16 @@ __device__ int random_int(curandState *loc, int mn,
   return (int)random_float(loc, (float)mn, (float)mx);
 }
 
-__device__ Vec3 random_vec(curandState *loc) {
-  return Vec3(curand_uniform(loc), curand_uniform(loc),
-              curand_uniform(loc));
+__device__ Vec3 random_vec(curandState *local_rand_state) {
+  return Vec3(curand_uniform(local_rand_state),
+              curand_uniform(local_rand_state),
+              curand_uniform(local_rand_state));
 }
-__device__ Vec3 random_vec(curandState *loc, float mn,
-                           float mx) {
-  return Vec3(random_float(loc, mn, mx),
-              random_float(loc, mn, mx),
-              random_float(loc, mn, mx));
+__device__ Vec3 random_vec(curandState *local_rand_state,
+                           float mn, float mx) {
+  return Vec3(random_float(local_rand_state, mn, mx),
+              random_float(local_rand_state, mn, mx),
+              random_float(local_rand_state, mn, mx));
 }
 __device__ Vec3 random_vec(curandState *local_rand_state,
                            float mx, float my, float mz) {
@@ -298,7 +283,7 @@ random_in_unit_sphere(curandState *local_rand_state) {
   while (true) {
     Vec3 p =
         2.0f * random_vec(local_rand_state, -1.0f, 1.0f) -
-        Vec3(1.0f, 1.0f, 1.0f);
+        Vec3(1.0f);
     if (p.squared_length() < 1.0f)
       return p;
   }
@@ -352,3 +337,5 @@ random_to_sphere(float radius, float distance_squared,
 
 using Point3 = Vec3;
 using Color = Vec3;
+
+#endif

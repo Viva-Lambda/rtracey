@@ -56,6 +56,15 @@ __host__ __device__ int randint(unsigned int seed, int mn,
   return static_cast<int>(randf(seed, mn, mx));
 }
 
+template <typename T>
+__host__ __device__ T from_nullptr(T *f) {
+  int fval = 0;
+  if (f) {
+    return *f;
+  } else {
+    return static_cast<T>(fval);
+  }
+}
 // imutils
 
 std::vector<unsigned char> imread(const char *impath,
@@ -137,6 +146,22 @@ __host__ __device__ void odd_even_sort(T *&hlist, U *&ulst,
       }
     }
   }
+}
+
+__host__ __device__ float fresnelCT(float costheta,
+                                    float ridx) {
+  // cook torrence fresnel equation
+  float etao = 1 + sqrt(ridx);
+  float etau = 1 - sqrt(ridx);
+  float eta = etao / etau;
+  float g = sqrt(pow(eta, 2) + pow(costheta, 2) - 1);
+  float g_c = g - costheta;
+  float gplusc = g + costheta;
+  float gplus_cc = (gplusc * costheta) - 1;
+  float g_cc = (g_c * costheta) + 1;
+  float oneplus_gcc = 1 + pow(gplus_cc / g_cc, 2);
+  float half_plus_minus = 0.5 * pow(g_c / gplusc, 2);
+  return half_plus_minus * oneplus_gcc;
 }
 
 // bvh related utils

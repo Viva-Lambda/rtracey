@@ -9,14 +9,14 @@ struct Lambertian : Material {
 };
 struct Metal : Material {
   const TextureParam albedo;
-  const float *fuzz;
+  const float fuzz;
   __host__ __device__ Metal(const TextureParam &mp,
-                            const float *f)
+                            const float f)
       : albedo(mp), fuzz(f) {}
 };
 struct Dielectric : Material {
-  const float *ref_idx;
-  __host__ __device__ Dielectric(const float *f)
+  const float ref_idx;
+  __host__ __device__ Dielectric(const float f)
       : ref_idx(f) {}
 };
 struct DiffuseLight : Material {

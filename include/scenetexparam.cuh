@@ -9,7 +9,7 @@ template <> struct SceneTexture<TextureParam> {
   __device__ static Color value(TextureParam tp, float u,
                                 float v, const Point3 &p) {
     Color c(0.0f, 0.0f, 0.0f);
-    const int ttype = *tp.ttype;
+    const int ttype = tp.ttype;
     if (ttype == NONE_TEXTURE) {
       c = Color(0.0f, 0.0f, 0.0f);
     } else if (ttype == SOLID_COLOR) {

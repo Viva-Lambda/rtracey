@@ -5,6 +5,7 @@
 #include <ray.cuh>
 #include <record.cuh>
 #include <scenetexparam.cuh>
+#include <utils.cuh>
 #include <vec3.cuh>
 
 template <class MaT> struct SceneMaterial {
@@ -62,10 +63,10 @@ template <> struct SceneMaterial<Metal> {
           Ray &scattered, float &pdf, curandState *loc) {
     Vec3 reflected =
         reflect(to_unit(r_in.direction()), rec.normal);
-    scattered = Ray(
-        rec.p,
-        reflected + (*m.fuzz) * random_in_unit_sphere(loc),
-        r_in.time());
+    scattered =
+        Ray(rec.p,
+            reflected + m.fuzz * random_in_unit_sphere(loc),
+            r_in.time());
     attenuation = SceneTexture<TextureParam>::value(
         m.albedo, rec.u, rec.v, rec.p);
     pdf = 1.0f;
@@ -83,21 +84,6 @@ template <> struct SceneMaterial<Metal> {
     return Color(0.0f, 0.0f, 0.0f);
   }
 };
-__host__ __device__ float fresnelCT(float costheta,
-                                    float ridx) {
-  // cook torrence fresnel equation
-  float etao = 1 + sqrt(ridx);
-  float etau = 1 - sqrt(ridx);
-  float eta = etao / etau;
-  float g = sqrt(pow(eta, 2) + pow(costheta, 2) - 1);
-  float g_c = g - costheta;
-  float gplusc = g + costheta;
-  float gplus_cc = (gplusc * costheta) - 1;
-  float g_cc = (g_c * costheta) + 1;
-  float oneplus_gcc = 1 + pow(gplus_cc / g_cc, 2);
-  float half_plus_minus = 0.5 * pow(g_c / gplusc, 2);
-  return half_plus_minus * oneplus_gcc;
-}
 template <> struct SceneMaterial<Dielectric> {
   __device__ static bool
   scatter(const Dielectric &m, const Ray &r_in,
@@ -113,7 +99,7 @@ template <> struct SceneMaterial<Dielectric> {
     float cosine;
     if (dot(r_in.direction(), rec.normal) > 0.0f) {
       outward_normal = -rec.normal;
-      ni_over_nt = *m.ref_idx;
+      ni_over_nt = m.ref_idx;
       cosine = dot(r_in.direction(), rec.normal) /
                r_in.direction().length();
       cosine = sqrt(1.0f -
@@ -121,13 +107,13 @@ template <> struct SceneMaterial<Dielectric> {
                         (1 - cosine * cosine));
     } else {
       outward_normal = rec.normal;
-      ni_over_nt = 1.0f / (*m.ref_idx);
+      ni_over_nt = 1.0f / m.ref_idx;
       cosine = -dot(r_in.direction(), rec.normal) /
                r_in.direction().length();
     }
     if (refract(r_in.direction(), outward_normal,
                 ni_over_nt, refracted))
-      reflect_prob = fresnelCT(cosine, *m.ref_idx);
+      reflect_prob = fresnelCT(cosine, m.ref_idx);
     else
       reflect_prob = 1.0f;
     if (curand_uniform(loc) < reflect_prob)

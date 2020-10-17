@@ -7,12 +7,13 @@
 
 struct MaterialParam {
   const TextureParam tparam;
-  const int *mtype;
-  const float *fuzz_ref_idx;
-  __host__ __device__ MaterialParam() {}
+  const int mtype;
+  const float fuzz_ref_idx;
+  __host__ __device__ MaterialParam()
+      : mtype(0), fuzz_ref_idx(0.0f) {}
   __host__ __device__ MaterialParam(const TextureParam &tp,
-                                    const int *mt,
-                                    const float *fri)
+                                    const int mt,
+                                    const float fri)
       : tparam(tp), mtype(mt), fuzz_ref_idx(fri) {}
   __host__ __device__ MaterialParam(const MaterialParam &tp)
       : tparam(tp.tparam), mtype(tp.mtype),
@@ -43,28 +44,28 @@ struct MaterialParam {
 __host__ __device__ MaterialParam
 mkLambertParam(const TextureParam &t) {
   const float f = 0.0f;
-  MaterialParam mp(t, (const int *)&LAMBERTIAN, &f);
+  MaterialParam mp(t, LAMBERTIAN, f);
   return mp;
 }
 __host__ __device__ MaterialParam
-mkMetalParam(const TextureParam &t, const float *f) {
-  MaterialParam mp(t, (const int *)&METAL, f);
+mkMetalParam(const TextureParam &t, const float f) {
+  MaterialParam mp(t, METAL, f);
   return mp;
 }
 __host__ __device__ MaterialParam
-mkDielectricParam(const TextureParam &t, const float *f) {
-  MaterialParam mp(t, (const int *)&DIELECTRIC, f);
+mkDielectricParam(const TextureParam &t, const float f) {
+  MaterialParam mp(t, DIELECTRIC, f);
   return mp;
 }
 __host__ __device__ MaterialParam
 mkDiffuseLightParam(const TextureParam &t) {
   const float f = 0.0f;
-  MaterialParam mp(t, (const int *)&DIFFUSE_LIGHT, &f);
+  MaterialParam mp(t, DIFFUSE_LIGHT, f);
   return mp;
 }
 __host__ __device__ MaterialParam
 mkIsotropicParam(const TextureParam &t) {
   const float f = 0.0f;
-  MaterialParam mp(t, (const int *)&ISOTROPIC, &f);
+  MaterialParam mp(t, ISOTROPIC, f);
   return mp;
 }
