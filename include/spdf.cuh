@@ -25,16 +25,15 @@ pdf_value(const SceneObjects &s, const Point3 &o,
 
 template <>
 __host__ __device__ float
-pdf_value<SPHERE_HIT>(const SceneObjects &s,
-                      const Point3 &o, const Point3 &v,
-                      int prim_idx) {
+pdf_value<SPHERE>(const SceneObjects &s, const Point3 &o,
+                  const Point3 &v, int prim_idx) {
   Point3 center(s.p1xs[prim_idx], s.p1ys[prim_idx],
                 s.p1zs[prim_idx]);
   float radius = s.rads[prim_idx];
 
   HitRecord rec;
   rec.primitive_index = prim_idx;
-  if (!hit<SPHERE_HIT>(s, Ray(o, v), 0.001, FLT_MAX, rec))
+  if (!hit<SPHERE>(s, Ray(o, v), 0.001, FLT_MAX, rec))
     return 0.0f;
 
   float rad2 = radius * radius;
@@ -47,9 +46,10 @@ pdf_value<SPHERE_HIT>(const SceneObjects &s,
 }
 
 template <>
-__host__ __device__ float pdf_value<MOVING_SPHERE_HIT>(
-    const SceneObjects &s, const Point3 &o, const Point3 &v,
-    int prim_idx) {
+__host__ __device__ float
+pdf_value<MOVING_SPHERE>(const SceneObjects &s,
+                         const Point3 &o, const Point3 &v,
+                         int prim_idx) {
   Point3 center1(s.p1xs[prim_idx], s.p1ys[prim_idx],
                  s.p1zs[prim_idx]);
   Point3 center2(s.p2xs[prim_idx], s.p2ys[prim_idx],
@@ -64,8 +64,8 @@ __host__ __device__ float pdf_value<MOVING_SPHERE_HIT>(
 
   HitRecord rec;
   rec.primitive_index = prim_idx;
-  if (!hit<MOVING_SPHERE_HIT>(s, Ray(o, v), 0.001, FLT_MAX,
-                              rec))
+  if (!hit<MOVING_SPHERE>(s, Ray(o, v), 0.001, FLT_MAX,
+                          rec))
     return 0.0f;
 
   float rad2 = radius * radius;
@@ -79,17 +79,15 @@ __host__ __device__ float pdf_value<MOVING_SPHERE_HIT>(
 
 template <>
 __host__ __device__ float
-pdf_value<TRIANGLE_HIT>(const SceneObjects &s,
-                        const Point3 &o, const Point3 &v,
-                        int prim_idx) {
+pdf_value<TRIANGLE>(const SceneObjects &s, const Point3 &o,
+                    const Point3 &v, int prim_idx) {
   return 1.0f;
 }
 
 template <>
 __host__ __device__ float
-pdf_value<RECT_HIT>(const SceneObjects &s, const Point3 &o,
-                    const Point3 &v, int prim_idx) {
-  float k = s.rads[prim_idx];
+pdf_value<RECTANGLE>(const SceneObjects &s, const Point3 &o,
+                     const Point3 &v, int prim_idx) {
   float a0 = s.p1xs[prim_idx];
   float a1 = s.p1ys[prim_idx];
   float b0 = s.p2xs[prim_idx];
@@ -100,7 +98,7 @@ pdf_value<RECT_HIT>(const SceneObjects &s, const Point3 &o,
 
   HitRecord rec;
   rec.primitive_index = prim_idx;
-  if (!hit<RECT_HIT>(s, Ray(o, v), 0.001, FLT_MAX, rec))
+  if (!hit<RECTANGLE>(s, Ray(o, v), 0.001, FLT_MAX, rec))
     return 0;
 
   float area = (a1 - a0) * (b1 - b0);
@@ -109,26 +107,23 @@ pdf_value<RECT_HIT>(const SceneObjects &s, const Point3 &o,
 
 template <>
 __host__ __device__ float
-pdf_value<XY_RECT_HIT>(const SceneObjects &s,
-                       const Point3 &o, const Point3 &v,
-                       int prim_idx) {
-  return pdf_value<RECT_HIT>(s, o, v, prim_idx);
+pdf_value<XY_RECT>(const SceneObjects &s, const Point3 &o,
+                   const Point3 &v, int prim_idx) {
+  return pdf_value<RECTANGLE>(s, o, v, prim_idx);
 }
 
 template <>
 __host__ __device__ float
-pdf_value<XZ_RECT_HIT>(const SceneObjects &s,
-                       const Point3 &o, const Point3 &v,
-                       int prim_idx) {
-  return pdf_value<RECT_HIT>(s, o, v, prim_idx);
+pdf_value<XZ_RECT>(const SceneObjects &s, const Point3 &o,
+                   const Point3 &v, int prim_idx) {
+  return pdf_value<RECTANGLE>(s, o, v, prim_idx);
 }
 
 template <>
 __host__ __device__ float
-pdf_value<YZ_RECT_HIT>(const SceneObjects &s,
-                       const Point3 &o, const Point3 &v,
-                       int prim_idx) {
-  return pdf_value<RECT_HIT>(s, o, v, prim_idx);
+pdf_value<YZ_RECT>(const SceneObjects &s, const Point3 &o,
+                   const Point3 &v, int prim_idx) {
+  return pdf_value<RECTANGLE>(s, o, v, prim_idx);
 }
 
 template <>
@@ -139,26 +134,26 @@ pdf_value<HITTABLE>(const SceneObjects &s, const Point3 &o,
   int htype_ = s.htypes[prim_idx];
   HittableType htype = static_cast<HittableType>(htype_);
   float pdf = 0.0f;
-  if (htype == SPHERE_HIT) {
-    pdf = pdf_value<SPHERE_HIT>(s, o, v, prim_idx);
-  } else if (htype == MOVING_SPHERE_HIT) {
-    pdf = pdf_value<MOVING_SPHERE_HIT>(s, o, v, prim_idx);
-  } else if (XY_TRIANGLE_HIT) {
-    pdf = pdf_value<XY_TRIANGLE_HIT>(s, o, v, prim_idx);
-  } else if (XZ_TRIANGLE_HIT) {
-    pdf = pdf_value<XZ_TRIANGLE_HIT>(s, o, v, prim_idx);
-  } else if (YZ_TRIANGLE_HIT) {
-    pdf = pdf_value<YZ_TRIANGLE_HIT>(s, o, v, prim_idx);
-  } else if (TRIANGLE_HIT) {
-    pdf = pdf_value<TRIANGLE_HIT>(s, o, v, prim_idx);
-  } else if (RECT_HIT) {
-    pdf = pdf_value<RECT_HIT>(s, o, v, prim_idx);
-  } else if (XY_RECT_HIT) {
-    pdf = pdf_value<XY_RECT_HIT>(s, o, v, prim_idx);
-  } else if (XZ_RECT_HIT) {
-    pdf = pdf_value<XZ_RECT_HIT>(s, o, v, prim_idx);
-  } else if (YZ_RECT_HIT) {
-    pdf = pdf_value<YZ_RECT_HIT>(s, o, v, prim_idx);
+  if (htype == SPHERE) {
+    pdf = pdf_value<SPHERE>(s, o, v, prim_idx);
+  } else if (htype == MOVING_SPHERE) {
+    pdf = pdf_value<MOVING_SPHERE>(s, o, v, prim_idx);
+  } else if (XY_TRIANGLE) {
+    pdf = pdf_value<XY_TRIANGLE>(s, o, v, prim_idx);
+  } else if (XZ_TRIANGLE) {
+    pdf = pdf_value<XZ_TRIANGLE>(s, o, v, prim_idx);
+  } else if (YZ_TRIANGLE) {
+    pdf = pdf_value<YZ_TRIANGLE>(s, o, v, prim_idx);
+  } else if (TRIANGLE) {
+    pdf = pdf_value<TRIANGLE>(s, o, v, prim_idx);
+  } else if (RECTANGLE) {
+    pdf = pdf_value<RECTANGLE>(s, o, v, prim_idx);
+  } else if (XY_RECT) {
+    pdf = pdf_value<XY_RECT>(s, o, v, prim_idx);
+  } else if (XZ_RECT) {
+    pdf = pdf_value<XZ_RECT>(s, o, v, prim_idx);
+  } else if (YZ_RECT) {
+    pdf = pdf_value<YZ_RECT>(s, o, v, prim_idx);
   }
   return pdf;
 }
@@ -179,54 +174,53 @@ pdf_value<NONE_GRP>(const SceneObjects &s, const Point3 &o,
   float sum = 0.0f;
   for (int i = group_start; i < group_size; i++) {
     int prim_idx = i;
-    sum += weight * pdf_value<HITTABLE>(s, o, v);
+    sum += weight * pdf_value<HITTABLE>(s, o, v, prim_idx);
   }
   return sum;
 }
 
 template <>
 __host__ __device__ float
-pdf_value<BOX_GRP>(const SceneObjects &s, const Point3 &o,
-                   const Point3 &v, int group_idx) {
-  return pdf_value<NONE_GRP>(s, o, v, group_idx);
-}
-template <>
-__host__ __device__ float pdf_value<CONSTANT_MEDIUM_GRP>(
-    const SceneObjects &s, const Point3 &o, const Point3 &v,
-    int group_idx) {
+pdf_value<BOX>(const SceneObjects &s, const Point3 &o,
+               const Point3 &v, int group_idx) {
   return pdf_value<NONE_GRP>(s, o, v, group_idx);
 }
 template <>
 __host__ __device__ float
-pdf_value<SIMPLE_MESH_GRP>(const SceneObjects &s,
+pdf_value<CONSTANT_MEDIUM>(const SceneObjects &s,
                            const Point3 &o, const Point3 &v,
                            int group_idx) {
   return pdf_value<NONE_GRP>(s, o, v, group_idx);
 }
 template <>
 __host__ __device__ float
-pdf_value<SCENE_GRP>(const SceneObjects &s, const Point3 &o,
-                     const Point3 &v, int group_idx = 0) {
-
+pdf_value<SIMPLE_MESH>(const SceneObjects &s,
+                       const Point3 &o, const Point3 &v,
+                       int group_idx) {
+  return pdf_value<NONE_GRP>(s, o, v, group_idx);
+}
+template <>
+__host__ __device__ float
+pdf_value<SCENE>(const SceneObjects &s, const Point3 &o,
+                 const Point3 &v, int gindex) {
   int nb_group = s.nb_groups;
   float pdf_v = 1.0f;
   for (int i = 0; i < nb_group; i++) {
     int group_idx = i;
     int gtype_ = s.g_ttypes[group_idx];
     GroupType gtype = static_cast<GroupType>(gtype_);
-    if (gtype == SIMPLE_MESH_GRP) {
-      pdf_v =
-          pdf_value<SIMPLE_MESH_GRP>(s, o, v, group_idx);
+    if (gtype == SIMPLE_MESH) {
+      pdf_v = pdf_value<SIMPLE_MESH>(s, o, v, group_idx);
       return pdf_v;
     } else if (gtype == NONE_GRP) {
       pdf_v = pdf_value<NONE_GRP>(s, o, v, group_idx);
       return pdf_v;
-    } else if (gtype == BOX_GRP) {
-      pdf_v = pdf_value<BOX_GRP>(s, o, v, group_idx);
+    } else if (gtype == BOX) {
+      pdf_v = pdf_value<BOX>(s, o, v, group_idx);
       return pdf_v;
-    } else if (gtype == CONSTANT_MEDIUM_GRP) {
-      pdf_v = pdf_value<CONSTANT_MEDIUM_GRP>(s, o, v,
-                                             group_idx);
+    } else if (gtype == CONSTANT_MEDIUM) {
+      pdf_v =
+          pdf_value<CONSTANT_MEDIUM>(s, o, v, group_idx);
       return pdf_v;
     }
   }

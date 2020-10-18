@@ -7,12 +7,12 @@
 
 struct MaterialParam {
   const TextureParam tparam;
-  const int mtype;
+  const MaterialType mtype;
   const float fuzz_ref_idx;
   __host__ __device__ MaterialParam()
-      : mtype(0), fuzz_ref_idx(0.0f) {}
+      : mtype(NONE_MATERIAL), fuzz_ref_idx(0.0f) {}
   __host__ __device__ MaterialParam(const TextureParam &tp,
-                                    const int mt,
+                                    const MaterialType &mt,
                                     const float fri)
       : tparam(tp), mtype(mt), fuzz_ref_idx(fri) {}
   __host__ __device__ MaterialParam(const MaterialParam &tp)

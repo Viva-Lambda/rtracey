@@ -1,4 +1,5 @@
 #pragma once
+#include <scenetype.cuh>
 #include <texture.cuh>
 #include <vec3.cuh>
 
@@ -13,7 +14,7 @@ struct ImageParam {
         index(i) {}
 };
 struct TextureParam {
-  const int ttype;
+  const TextureType ttype;
   const float tp1x, tp1y, tp1z;
   const float scale;
   const int width, height, bytes_per_pixel, index;
@@ -22,37 +23,33 @@ struct TextureParam {
 
   __host__ __device__ TextureParam()
       : tdata(nullptr), scale(0.0f), tp1x(0.0f), tp1y(0.0f),
-        tp1z(0.0f), loc(nullptr), ttype(0), width(0),
-        height(0), bytes_per_pixel(0), index(0) {}
+        tp1z(0.0f), loc(nullptr), ttype(NONE_TEXTURE),
+        width(0), height(0), bytes_per_pixel(0), index(0) {}
 
-  __host__ __device__
-  TextureParam(const int &texture_type, const float &_tp1x,
-               const float &_tp1y, const float &_tp1z,
-               const float &s, const int &w, const int &h,
-               const int &bpp, const int &i)
+  __host__ __device__ TextureParam(
+      const TextureType &texture_type, const float &_tp1x,
+      const float &_tp1y, const float &_tp1z,
+      const float &s, const int &w, const int &h,
+      const int &bpp, const int &i)
       : tdata(nullptr), loc(nullptr), ttype(texture_type),
         tp1x(_tp1x), tp1y(_tp1y), tp1z(_tp1z), width(w),
         height(h), bytes_per_pixel(bpp), index(i),
         scale(s) {}
-  __host__ __device__ TextureParam(const int &texture_type,
-                                   const float &_tp1x,
-                                   const float &_tp1y,
-                                   const float &_tp1z,
-                                   const float &s,
-                                   const ImageParam &imp)
+  __host__ __device__ TextureParam(
+      const TextureType &texture_type, const float &_tp1x,
+      const float &_tp1y, const float &_tp1z,
+      const float &s, const ImageParam &imp)
       : tdata(nullptr), loc(nullptr), ttype(texture_type),
         tp1x(_tp1x), tp1y(_tp1y), tp1z(_tp1z),
         width(imp.width), height(imp.height),
         bytes_per_pixel(imp.bytes_per_pixel),
         index(imp.index), scale(s) {}
 
-  __host__ __device__ TextureParam(unsigned char *td,
-                                   const int texture_type,
-                                   const float _tp1x,
-                                   const float _tp1y,
-                                   const float _tp1z,
-                                   const float s,
-                                   const ImageParam &imp)
+  __host__ __device__ TextureParam(
+      unsigned char *td, const TextureType texture_type,
+      const float _tp1x, const float _tp1y,
+      const float _tp1z, const float s,
+      const ImageParam &imp)
       : tdata(td), loc(nullptr), ttype(texture_type),
         tp1x(_tp1x), tp1y(_tp1y), tp1z(_tp1z),
         width(imp.width), height(imp.height),
@@ -61,20 +58,22 @@ struct TextureParam {
 
   __device__
   TextureParam(unsigned char *td, curandState *lc,
-               const int texture_type, const float _tp1x,
-               const float _tp1y, const float _tp1z,
-               const float s, const ImageParam &imp)
+               const TextureType texture_type,
+               const float _tp1x, const float _tp1y,
+               const float _tp1z, const float s,
+               const ImageParam &imp)
       : tdata(td), loc(lc), ttype(texture_type),
         tp1x(_tp1x), tp1y(_tp1y), tp1z(_tp1z),
         width(imp.width), height(imp.height),
         bytes_per_pixel(imp.bytes_per_pixel),
         index(imp.index), scale(s) {}
 
-  __device__
-  TextureParam(curandState *lc, const int texture_type,
-               const float _tp1x, const float _tp1y,
-               const float _tp1z, const float s,
-               const ImageParam &imp)
+  __device__ TextureParam(curandState *lc,
+                          const TextureType texture_type,
+                          const float _tp1x,
+                          const float _tp1y,
+                          const float _tp1z, const float s,
+                          const ImageParam &imp)
       : tdata(nullptr), loc(lc), ttype(texture_type),
         tp1x(_tp1x), tp1y(_tp1y), tp1z(_tp1z),
         width(imp.width), height(imp.height),

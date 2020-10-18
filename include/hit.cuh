@@ -1,8 +1,10 @@
 #pragma once
 // shade utils
 #include <aabb.cuh>
+#include <attenuation.cuh>
 #include <ray.cuh>
 #include <record.cuh>
+#include <scattering.cuh>
 #include <sceneobj.cuh>
 #include <scenetype.cuh>
 #include <vec3.cuh>
@@ -24,8 +26,8 @@ __host__ __device__ bool hit(const SceneObjects &sobjs,
 
 template <>
 __host__ __device__ bool
-hit<SPHERE_HIT>(const SceneObjects &s, const Ray &r,
-                float d_min, float d_max, HitRecord &rec) {
+hit<SPHERE>(const SceneObjects &s, const Ray &r,
+            float d_min, float d_max, HitRecord &rec) {
   int prim_idx = rec.primitive_index;
   Point3 center(s.p1xs[prim_idx], s.p1ys[prim_idx],
                 s.p1zs[prim_idx]);
@@ -60,9 +62,9 @@ hit<SPHERE_HIT>(const SceneObjects &s, const Ray &r,
 
 template <>
 __host__ __device__ bool
-hit<MOVING_SPHERE_HIT>(const SceneObjects &s, const Ray &r,
-                       float d_min, float d_max,
-                       HitRecord &rec) {
+hit<MOVING_SPHERE>(const SceneObjects &s, const Ray &r,
+                   float d_min, float d_max,
+                   HitRecord &rec) {
   int prim_idx = rec.primitive_index;
   Point3 center1(s.p1xs[prim_idx], s.p1ys[prim_idx],
                  s.p1zs[prim_idx]);
@@ -101,9 +103,8 @@ hit<MOVING_SPHERE_HIT>(const SceneObjects &s, const Ray &r,
 }
 template <>
 __host__ __device__ bool
-hit<TRIANGLE_HIT>(const SceneObjects &s, const Ray &r,
-                  float d_min, float d_max,
-                  HitRecord &rec) {
+hit<TRIANGLE>(const SceneObjects &s, const Ray &r,
+              float d_min, float d_max, HitRecord &rec) {
   int prim_idx = rec.primitive_index;
   Point3 p1(s.p1xs[prim_idx], s.p1ys[prim_idx],
             s.p1zs[prim_idx]);
@@ -143,30 +144,26 @@ hit<TRIANGLE_HIT>(const SceneObjects &s, const Ray &r,
 }
 template <>
 __host__ __device__ bool
-hit<XY_TRIANGLE_HIT>(const SceneObjects &s, const Ray &r,
-                     float d_min, float d_max,
-                     HitRecord &rec) {
-  return hit<TRIANGLE_HIT>(s, r, d_min, d_max, rec);
+hit<XY_TRIANGLE>(const SceneObjects &s, const Ray &r,
+                 float d_min, float d_max, HitRecord &rec) {
+  return hit<TRIANGLE>(s, r, d_min, d_max, rec);
 }
 template <>
 __host__ __device__ bool
-hit<XZ_TRIANGLE_HIT>(const SceneObjects &s, const Ray &r,
-                     float d_min, float d_max,
-                     HitRecord &rec) {
-  return hit<TRIANGLE_HIT>(s, r, d_min, d_max, rec);
+hit<XZ_TRIANGLE>(const SceneObjects &s, const Ray &r,
+                 float d_min, float d_max, HitRecord &rec) {
+  return hit<TRIANGLE>(s, r, d_min, d_max, rec);
 }
 template <>
 __host__ __device__ bool
-hit<YZ_TRIANGLE_HIT>(const SceneObjects &s, const Ray &r,
-                     float d_min, float d_max,
-                     HitRecord &rec) {
-  return hit<TRIANGLE_HIT>(s, r, d_min, d_max, rec);
+hit<YZ_TRIANGLE>(const SceneObjects &s, const Ray &r,
+                 float d_min, float d_max, HitRecord &rec) {
+  return hit<TRIANGLE>(s, r, d_min, d_max, rec);
 }
 template <>
 __host__ __device__ bool
-hit<RECT_HIT>(const SceneObjects &s, const Ray &r,
-              float d_min, float d_max, HitRecord &rec) {
-  //
+hit<RECTANGLE>(const SceneObjects &s, const Ray &r,
+               float d_min, float d_max, HitRecord &rec) {
   int prim_idx = rec.primitive_index;
   float k = s.rads[prim_idx];
   float a0 = s.p1xs[prim_idx];
@@ -200,21 +197,21 @@ hit<RECT_HIT>(const SceneObjects &s, const Ray &r,
 }
 template <>
 __host__ __device__ bool
-hit<XY_RECT_HIT>(const SceneObjects &s, const Ray &r,
-                 float d_min, float d_max, HitRecord &rec) {
-  return hit<RECT_HIT>(s, r, d_min, d_max, rec);
+hit<XY_RECT>(const SceneObjects &s, const Ray &r,
+             float d_min, float d_max, HitRecord &rec) {
+  return hit<RECTANGLE>(s, r, d_min, d_max, rec);
 }
 template <>
 __host__ __device__ bool
-hit<XZ_RECT_HIT>(const SceneObjects &s, const Ray &r,
-                 float d_min, float d_max, HitRecord &rec) {
-  return hit<RECT_HIT>(s, r, d_min, d_max, rec);
+hit<XZ_RECT>(const SceneObjects &s, const Ray &r,
+             float d_min, float d_max, HitRecord &rec) {
+  return hit<RECTANGLE>(s, r, d_min, d_max, rec);
 }
 template <>
 __host__ __device__ bool
-hit<YZ_RECT_HIT>(const SceneObjects &s, const Ray &r,
-                 float d_min, float d_max, HitRecord &rec) {
-  return hit<RECT_HIT>(s, r, d_min, d_max, rec);
+hit<YZ_RECT>(const SceneObjects &s, const Ray &r,
+             float d_min, float d_max, HitRecord &rec) {
+  return hit<RECTANGLE>(s, r, d_min, d_max, rec);
 }
 
 template <>
@@ -225,57 +222,63 @@ hit<HITTABLE>(const SceneObjects &s, const Ray &r,
   int htype_ = s.htypes[prim_idx];
   HittableType htype = static_cast<HittableType>(htype_);
   bool res = false;
-  if (htype == SPHERE_HIT) {
-    res = hit<SPHERE_HIT>(s, r, d_min, d_max, rec);
-  } else if (htype == MOVING_SPHERE_HIT) {
-    res = hit<MOVING_SPHERE_HIT>(s, r, d_min, d_max, rec);
-  } else if (htype == XY_RECT_HIT) {
-    res = hit<XY_RECT_HIT>(s, r, d_min, d_max, rec);
-  } else if (htype == XZ_RECT_HIT) {
-    res = hit<XZ_RECT_HIT>(s, r, d_min, d_max, rec);
-  } else if (htype == YZ_RECT_HIT) {
-    res = hit<YZ_RECT_HIT>(s, r, d_min, d_max, rec);
-  } else if (htype == YZ_TRIANGLE_HIT) {
-    res = hit<YZ_TRIANGLE_HIT>(s, r, d_min, d_max, rec);
-  } else if (htype == XZ_TRIANGLE_HIT) {
-    res = hit<XZ_TRIANGLE_HIT>(s, r, d_min, d_max, rec);
-  } else if (htype == XY_TRIANGLE_HIT) {
-    res = hit<XY_TRIANGLE_HIT>(s, r, d_min, d_max, rec);
+  if (htype == SPHERE) {
+    res = hit<SPHERE>(s, r, d_min, d_max, rec);
+  } else if (htype == MOVING_SPHERE) {
+    res = hit<MOVING_SPHERE>(s, r, d_min, d_max, rec);
+  } else if (htype == XY_RECT) {
+    res = hit<XY_RECT>(s, r, d_min, d_max, rec);
+  } else if (htype == XZ_RECT) {
+    res = hit<XZ_RECT>(s, r, d_min, d_max, rec);
+  } else if (htype == YZ_RECT) {
+    res = hit<YZ_RECT>(s, r, d_min, d_max, rec);
+  } else if (htype == YZ_TRIANGLE) {
+    res = hit<YZ_TRIANGLE>(s, r, d_min, d_max, rec);
+  } else if (htype == XZ_TRIANGLE) {
+    res = hit<XZ_TRIANGLE>(s, r, d_min, d_max, rec);
+  } else if (htype == XY_TRIANGLE) {
+    res = hit<XY_TRIANGLE>(s, r, d_min, d_max, rec);
   }
   return res;
 }
 
 template <GroupType g>
-__host__ __device__ bool hit(const SceneObjects &s,
-                             const Ray &r, float d_min,
-                             float d_max, HitRecord &rec) {
+__device__ bool hit(const SceneObjects &s, const Ray &r,
+                    float d_min, float d_max,
+                    HitRecord &rec) {
   return false;
 }
 template <>
-__host__ __device__ bool
-hit<NONE_GRP>(const SceneObjects &s, const Ray &r,
-              float d_min, float d_max, HitRecord &rec) {
-  int group_idx = rec.group_index;
-  int group_start = s.group_starts[group_idx];
-  int group_size = s.group_sizes[group_idx];
+__device__ bool hit<NONE_GRP>(const SceneObjects &s,
+                              const Ray &r, float d_min,
+                              float d_max, HitRecord &rec) {
+  int group_index = rec.group_index;
+  int group_start = s.group_starts[group_index];
+  int group_size = s.group_sizes[group_index];
   bool res = false;
+  int j = 0;
   for (int i = group_start; i < group_size; i++) {
     rec.primitive_index = i;
-    res = hit<HITTABLE>(s, r, d_min, d_max, rec);
+    bool is_hit = hit<HITTABLE>(s, r, d_min, d_max, rec);
+    if (is_hit) {
+      res = is_hit;
+      j = i;
+    }
   }
+  rec.primitive_index = j;
   return res;
 }
 template <>
-__host__ __device__ bool
-hit<BOX_GRP>(const SceneObjects &s, const Ray &r,
-             float d_min, float d_max, HitRecord &rec) {
+__device__ bool hit<BOX>(const SceneObjects &s,
+                         const Ray &r, float d_min,
+                         float d_max, HitRecord &rec) {
   return hit<NONE_GRP>(s, r, d_min, d_max, rec);
 }
 template <>
-__host__ __device__ bool
-hit<CONSTANT_MEDIUM_GRP>(const SceneObjects &s,
-                         const Ray &r, float d_min,
-                         float d_max, HitRecord &rec) {
+__device__ bool
+hit<CONSTANT_MEDIUM>(const SceneObjects &s, const Ray &r,
+                     float d_min, float d_max,
+                     HitRecord &rec) {
   // Print occasional samples when debugging. To enable,
   const bool enableDebug = false;
   const bool debugging =
@@ -340,31 +343,83 @@ hit<CONSTANT_MEDIUM_GRP>(const SceneObjects &s,
   return true;
 }
 template <>
-__host__ __device__ bool
-hit<SIMPLE_MESH_GRP>(const SceneObjects &s, const Ray &r,
-                     float d_min, float d_max,
-                     HitRecord &rec) {
+__device__ bool
+hit<SIMPLE_MESH>(const SceneObjects &s, const Ray &r,
+                 float d_min, float d_max, HitRecord &rec) {
   return hit<NONE_GRP>(s, r, d_min, d_max, rec);
 }
 template <>
-__host__ __device__ bool
-hit<SCENE_GRP>(const SceneObjects &s, const Ray &r,
-               float d_min, float d_max, HitRecord &rec) {
+__device__ bool hit<SCENE>(const SceneObjects &s,
+                           const Ray &r, float d_min,
+                           float d_max, HitRecord &rec) {
   int nb_group = s.nb_groups;
   bool res = false;
   for (int i = 0; i < nb_group; i++) {
     rec.group_index = i;
-    int gtype_ = s.g_ttypes[rec.group_index];
+    int gtype_ = s.gtypes[rec.group_index];
+    GroupType gtype = static_cast<GroupType>(gtype_);
+    bool is_hit = false;
+    if (gtype == NONE_GRP) {
+      is_hit = hit<NONE_GRP>(s, r, d_min, d_max, rec);
+    } else if (gtype == BOX) {
+      is_hit = hit<BOX>(s, r, d_min, d_max, rec);
+    } else if (gtype == CONSTANT_MEDIUM) {
+      is_hit =
+          hit<CONSTANT_MEDIUM>(s, r, d_min, d_max, rec);
+    } else if (gtype == SIMPLE_MESH) {
+      is_hit = hit<SIMPLE_MESH>(s, r, d_min, d_max, rec);
+    }
+    if (is_hit) {
+      res = is_hit;
+    }
+  }
+  return res;
+}
+
+__host__ __device__ bool hit_prim(const SceneObjects &s,
+                                  HitRecord &rec) {
+  int prim_idx = rec.primitive_index;
+  int htype_ = s.htypes[prim_idx];
+  HittableType htype = static_cast<HittableType>(htype_);
+  return true;
+}
+
+__host__ __device__ bool hit_group(const SceneObjects &s,
+                                   HitRecord &rec) {
+  int group_index = rec.group_index;
+  int group_start = s.group_starts[group_index];
+  int group_size = s.group_sizes[group_index];
+  bool res = false;
+  for (int i = group_start; i < group_size; i++) {
+    rec.primitive_index = i;
+    hit_prim(s, rec);
+    Color cmat = color_material(s, rec);
+    MaterialType hres = scatter_material(s, rec);
+  }
+  return res;
+}
+
+__host__ __device__ int hit_scene(const SceneObjects &s,
+                                  HitRecord &rec) {
+  // cpu version
+  int nb_group = s.nb_groups;
+  bool res = false;
+  for (int i = 0; i < nb_group; i++) {
+    rec.group_index = i;
+    int gtype_ = s.gtypes[rec.group_index];
     GroupType gtype = static_cast<GroupType>(gtype_);
     if (gtype == NONE_GRP) {
-      res = hit<NONE_GRP>(s, r, d_min, d_max, rec);
-    } else if (gtype == BOX_GRP) {
-      res = hit<BOX_GRP>(s, r, d_min, d_max, rec);
-    } else if (gtype == CONSTANT_MEDIUM_GRP) {
-      res =
-          hit<CONSTANT_MEDIUM_GRP>(s, r, d_min, d_max, rec);
-    } else if (gtype == SIMPLE_MESH_GRP) {
-      res = hit<SIMPLE_MESH_GRP>(s, r, d_min, d_max, rec);
+      res = hit_group(s, rec);
+      return res;
+    } else if (gtype == BOX) {
+      res = hit_group(s, rec);
+      return res;
+    } else if (gtype == CONSTANT_MEDIUM) {
+      res = gtype;
+      return res;
+    } else if (gtype == SIMPLE_MESH) {
+      res = gtype;
+      return res;
     }
   }
   return res;

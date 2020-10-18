@@ -3,7 +3,7 @@
 #include <vec3.cuh>
 
 struct HittableParam {
-  const int htype; //
+  const HittableType htype; //
 
   const float p1x, p1y, p1z;
   const float p2x, p2y, p2z;
@@ -12,12 +12,12 @@ struct HittableParam {
   __host__ __device__ HittableParam()
       : p1x(0.0f), p1y(0.0f), p1z(0.0f), p2x(0.0f),
         p2y(0.0f), p2z(0.0f), n1x(0.0f), n1y(0.0f),
-        n1z(0.0f), radius(0.0f), htype(0) {}
+        n1z(0.0f), radius(0.0f), htype(NONE_HITTABLE) {}
   __host__ __device__ HittableParam(
-      const int ht, const float _p1x, const float _p1y,
-      const float _p1z, const float _p2x, const float _p2y,
-      const float _p2z, const float _n1x, const float _n1y,
-      const float _n1z, const float r)
+      const HittableType ht, const float _p1x,
+      const float _p1y, const float _p1z, const float _p2x,
+      const float _p2y, const float _p2z, const float _n1x,
+      const float _n1y, const float _n1z, const float r)
       : htype(ht), p1x(_p1x), p1y(_p1y), p1z(_p1z),
         p2x(_p2x), p2y(_p2y), p2z(_p2z), n1x(_n1x),
         n1y(_n1y), n1z(_n1z), radius(r) {}
@@ -27,7 +27,7 @@ __host__ __device__ HittableParam mkRectHittable(
     const float a0, const float a1, const float b0,
     const float b1, Vec3 anormal, const float k) {
 
-  int htype;
+  HittableType htype;
   if (anormal.z() == 1) {
     htype = XY_RECT;
   } else if (anormal.y() == 1) {
@@ -37,8 +37,11 @@ __host__ __device__ HittableParam mkRectHittable(
   } else {
     htype = NONE_HITTABLE;
   }
-  HittableParam param(htype, a0, a1, 0, b0, b1, 0, 0, 0, 0,
-                      k);
+  float nx = anormal.x();
+  float ny = anormal.y();
+  float nz = anormal.z();
+  HittableParam param(htype, a0, a1, 0, b0, b1, 0, nx, ny,
+                      nz, k);
   return param;
 }
 __host__ __device__ HittableParam mkYZRectHittable(

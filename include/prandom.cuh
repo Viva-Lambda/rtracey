@@ -16,9 +16,9 @@ __device__ Vec3 random(const SceneObjects &s,
 }
 
 template <>
-__device__ Vec3 random<SPHERE_HIT>(const SceneObjects &s,
-                                   const Point3 &o,
-                                   int prim_idx) {
+__device__ Vec3 random<SPHERE>(const SceneObjects &s,
+                               const Point3 &o,
+                               int prim_idx) {
   Point3 center(s.p1xs[prim_idx], s.p1ys[prim_idx],
                 s.p1zs[prim_idx]);
   float radius = s.rads[prim_idx];
@@ -32,8 +32,9 @@ __device__ Vec3 random<SPHERE_HIT>(const SceneObjects &s,
 }
 
 template <>
-__device__ Vec3 random<MOVING_SPHERE_HIT>(
-    const SceneObjects &s, const Point3 &o, int prim_idx) {
+__device__ Vec3 random<MOVING_SPHERE>(const SceneObjects &s,
+                                      const Point3 &o,
+                                      int prim_idx) {
   Point3 center1(s.p1xs[prim_idx], s.p1ys[prim_idx],
                  s.p1zs[prim_idx]);
   Point3 center2(s.p2xs[prim_idx], s.p2ys[prim_idx],
@@ -54,9 +55,9 @@ __device__ Vec3 random<MOVING_SPHERE_HIT>(
       random_to_sphere(radius, distance_squared, s.rand));
 }
 template <>
-__device__ Vec3 random<TRIANGLE_HIT>(const SceneObjects &s,
-                                     const Point3 &o,
-                                     int prim_idx) {
+__device__ Vec3 random<TRIANGLE>(const SceneObjects &s,
+                                 const Point3 &o,
+                                 int prim_idx) {
   //
   Point3 p1(s.p1xs[prim_idx], s.p1ys[prim_idx],
             s.p1zs[prim_idx]);
@@ -67,34 +68,37 @@ __device__ Vec3 random<TRIANGLE_HIT>(const SceneObjects &s,
 
   // from A. Glassner, Graphics Gems, 1995, p. 24
   float t = curand_uniform(s.rand);
-  float s = curand_uniform(s.rand);
+  float ss = curand_uniform(s.rand);
   auto a = 1 - sqrt(t);
-  auto b = (1 - s) * sqrt(t);
-  auto c = s * sqrt(t);
+  auto b = (1 - ss) * sqrt(t);
+  auto c = ss * sqrt(t);
   auto random_point = a * p1 + b * p2 + c * p3;
   return random_point - o;
 }
 
 template <>
-__device__ Vec3 random<XY_TRIANGLE_HIT>(
-    const SceneObjects &s, const Point3 &o, int prim_idx) {
-  return random<TRIANGLE_HIT>(s, o, prim_idx);
+__device__ Vec3 random<XY_TRIANGLE>(const SceneObjects &s,
+                                    const Point3 &o,
+                                    int prim_idx) {
+  return random<TRIANGLE>(s, o, prim_idx);
 }
 template <>
-__device__ Vec3 random<XZ_TRIANGLE_HIT>(
-    const SceneObjects &s, const Point3 &o, int prim_idx) {
-  return random<TRIANGLE_HIT>(s, o, prim_idx);
+__device__ Vec3 random<XZ_TRIANGLE>(const SceneObjects &s,
+                                    const Point3 &o,
+                                    int prim_idx) {
+  return random<TRIANGLE>(s, o, prim_idx);
 }
 template <>
-__device__ Vec3 random<YZ_TRIANGLE_HIT>(
-    const SceneObjects &s, const Point3 &o, int prim_idx) {
-  return random<TRIANGLE_HIT>(s, o, prim_idx);
+__device__ Vec3 random<YZ_TRIANGLE>(const SceneObjects &s,
+                                    const Point3 &o,
+                                    int prim_idx) {
+  return random<TRIANGLE>(s, o, prim_idx);
 }
 template <>
-__device__ Vec3 random<RECT_HIT>(const SceneObjects &s,
-                                 const Point3 &o,
+__device__ Vec3 random<RECTANGLE>(const SceneObjects &s,
+                                  const Point3 &o,
 
-                                 int prim_idx) {
+                                  int prim_idx) {
   float k = s.rads[prim_idx];
   float a0 = s.p1xs[prim_idx];
   float a1 = s.p1ys[prim_idx];
@@ -107,46 +111,46 @@ __device__ Vec3 random<RECT_HIT>(const SceneObjects &s,
 }
 
 template <>
-__device__ Vec3 random<XY_RECT_HIT>(const SceneObjects &s,
-                                    const Point3 &o,
-                                    int prim_idx) {
-  return random<RECT_HIT>(s, o, prim_idx);
+__device__ Vec3 random<XY_RECT>(const SceneObjects &s,
+                                const Point3 &o,
+                                int prim_idx) {
+  return random<RECTANGLE>(s, o, prim_idx);
 }
 template <>
-__device__ Vec3 random<XZ_RECT_HIT>(const SceneObjects &s,
-                                    const Point3 &o,
-                                    int prim_idx) {
-  return random<RECT_HIT>(s, o, prim_idx);
+__device__ Vec3 random<XZ_RECT>(const SceneObjects &s,
+                                const Point3 &o,
+                                int prim_idx) {
+  return random<RECTANGLE>(s, o, prim_idx);
 }
 template <>
-__device__ Vec3 random<YZ_RECT_HIT>(const SceneObjects &s,
-                                    const Point3 &o,
-                                    int prim_idx) {
-  return random<RECT_HIT>(s, o, prim_idx);
+__device__ Vec3 random<YZ_RECT>(const SceneObjects &s,
+                                const Point3 &o,
+                                int prim_idx) {
+  return random<RECTANGLE>(s, o, prim_idx);
 }
 template <>
 __device__ Vec3 random<HITTABLE>(const SceneObjects &s,
                                  const Point3 &o,
                                  int prim_idx) {
   int htype_ = s.htypes[prim_idx];
-  HittableType htype = static_cast<HittableType>(htype);
+  HittableType htype = static_cast<HittableType>(htype_);
   Vec3 c(0.0f);
-  if (htype == SPHERE_HIT) {
-    c = random<SPHERE_HIT>(s, o, prim_idx);
-  } else if (htype == MOVING_SPHERE_HIT) {
-    c = random<MOVING_SPHERE_HIT>(s, o, prim_idx);
-  } else if (htype == XY_RECT_HIT) {
-    c = random<XY_RECT_HIT>(s, o, prim_idx);
-  } else if (htype == XZ_RECT_HIT) {
-    c = random<XZ_RECT_HIT>(s, o, prim_idx);
-  } else if (htype == YZ_RECT_HIT) {
-    c = random<YZ_RECT_HIT>(s, o, prim_idx);
-  } else if (htype == YZ_TRIANGLE_HIT) {
-    c = random<YZ_TRIANGLE_HIT>(s, o, prim_idx);
-  } else if (htype == XZ_TRIANGLE_HIT) {
-    c = random<XZ_TRIANGLE_HIT>(s, o, prim_idx);
-  } else if (htype == XY_TRIANGLE_HIT) {
-    c = random<XY_TRIANGLE_HIT>(s, o, prim_idx);
+  if (htype == SPHERE) {
+    c = random<SPHERE>(s, o, prim_idx);
+  } else if (htype == MOVING_SPHERE) {
+    c = random<MOVING_SPHERE>(s, o, prim_idx);
+  } else if (htype == XY_RECT) {
+    c = random<XY_RECT>(s, o, prim_idx);
+  } else if (htype == XZ_RECT) {
+    c = random<XZ_RECT>(s, o, prim_idx);
+  } else if (htype == YZ_RECT) {
+    c = random<YZ_RECT>(s, o, prim_idx);
+  } else if (htype == YZ_TRIANGLE) {
+    c = random<YZ_TRIANGLE>(s, o, prim_idx);
+  } else if (htype == XZ_TRIANGLE) {
+    c = random<XZ_TRIANGLE>(s, o, prim_idx);
+  } else if (htype == XY_TRIANGLE) {
+    c = random<XY_TRIANGLE>(s, o, prim_idx);
   }
   return c;
 }
@@ -167,18 +171,19 @@ __device__ Vec3 random<NONE_GRP>(const SceneObjects &s,
   return random<HITTABLE>(s, o, obj_index);
 }
 template <>
-__device__ Vec3 random<BOX_GRP>(const SceneObjects &s,
-                                const Point3 &o,
-                                int group_idx) {
+__device__ Vec3 random<BOX>(const SceneObjects &s,
+                            const Point3 &o,
+                            int group_idx) {
   return random<NONE_GRP>(s, o, group_idx);
 }
 template <>
-__device__ Vec3 random<CONSTANT_MEDIUM_GRP>(
+__device__ Vec3 random<CONSTANT_MEDIUM>(
     const SceneObjects &s, const Point3 &o, int group_idx) {
   return random<NONE_GRP>(s, o, group_idx);
 }
 template <>
-__device__ Vec3 random<SIMPLE_MESH_GRP>(
-    const SceneObjects &s, const Point3 &o, int group_idx) {
+__device__ Vec3 random<SIMPLE_MESH>(const SceneObjects &s,
+                                    const Point3 &o,
+                                    int group_idx) {
   return random<NONE_GRP>(s, o, group_idx);
 }

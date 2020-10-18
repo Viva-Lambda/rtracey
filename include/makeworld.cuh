@@ -22,16 +22,20 @@ SceneObjects make_cornell_box() {
       mkSolidColorParam(Color(15, 15, 15));
 
   const MaterialParam red_param = mkLambertParam(red_solid);
+  //
   const float fzz = 0.3f;
   const MaterialParam green_param =
-      mkMetalParam(green_solid, fzz);
+      mkLambertParam(green_solid);
+  //
   const MaterialParam blue_param =
       mkLambertParam(blue_solid);
+  //
   const MaterialParam white_param =
       mkLambertParam(white_solid);
+  //
   const MaterialParam light_param =
       mkDiffuseLightParam(light_solid);
-
+  //
   const HittableParam green_wall =
       mkYZRectHittable(0, 555, 0, 555, 555);
   const auto red_wall = mkYZRectHittable(0, 555, 0, 555, 0);
@@ -72,7 +76,6 @@ SceneObjects make_cornell_box() {
 __global__ void make_cornell_box_k(SceneObjects world,
                                    curandState *loc) {
   if (threadIdx.x == 0 && blockIdx.x == 0) {
-    // Hittables hs = sobjs.to_hittables();
     const TextureParam red_solid =
         mkSolidColorParam(Color(.65, .05, .05));
     const TextureParam green_solid =
@@ -86,17 +89,20 @@ __global__ void make_cornell_box_k(SceneObjects world,
 
     const MaterialParam red_param =
         mkLambertParam(red_solid);
-
+    //
     const float fzz = 0.3f;
     const MaterialParam green_param =
-        mkMetalParam(green_solid, fzz);
+        mkLambertParam(green_solid);
+    //
     const MaterialParam blue_param =
         mkLambertParam(blue_solid);
+    //
     const MaterialParam white_param =
         mkLambertParam(white_solid);
+    //
     const MaterialParam light_param =
         mkDiffuseLightParam(light_solid);
-
+    //
     const HittableParam green_wall =
         mkYZRectHittable(0, 555, 0, 555, 555);
     const auto red_wall =
@@ -111,16 +117,14 @@ __global__ void make_cornell_box_k(SceneObjects world,
         mkXYRectHittable(0, 555, 0, 555, 555);
     //
     const int prim_count = 6;
-    //
-    const int group_id = 0;
-    const TextureParam tp;
-    const float g_dens = 0.0f;
+
     int pcount0 = 0;
     int pcount1 = 1;
     int pcount2 = 2;
     int pcount3 = 3;
     int pcount4 = 4;
     int pcount5 = 5;
+    const int group_id = 0;
     Primitive ps[] = {
         Primitive(green_param, green_wall, pcount0,
                   group_id),
@@ -133,10 +137,13 @@ __global__ void make_cornell_box_k(SceneObjects world,
                   group_id),
         Primitive(blue_param, blue_wall, pcount5,
                   group_id)};
+    const TextureParam tp;
+    const float g_dens = 0.0f;
     GroupParam sg(ps, prim_count, group_id, BOX, g_dens,
                   tp);
     GroupParam sgs[] = {sg};
     SceneObjects sobjs(sgs, 1, loc);
+    // Hittables hs = sobjs.to_hittables();
     // Hittables hs = sobjs.to_hittables();
     world = sobjs;
   }

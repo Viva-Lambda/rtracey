@@ -24,21 +24,21 @@ __device__ Color ray_color(const Ray &r,
 
   while (bounceNb > 0) {
     HitRecord rec;
-    bool anyHit =
-        world.hit(current_ray, 0.001f, FLT_MAX, rec);
+    bool anyHit = hit<SCENE>(world, current_ray, 0.001f,
+                             FLT_MAX, rec);
     if (anyHit) {
       // rec.mat_ptr.tparam.tdata = world.tdata;
-      Color emittedColor = world.emitted(rec);
+      Color emittedColor = emitted<MATERIAL>(world, rec);
       Ray scattered;
       Vec3 attenuation;
       float pdf_val = 1.0f;
-      bool isScattered =
-          world.scatter(current_ray, rec, attenuation,
-                        scattered, pdf_val, loc);
+      bool isScattered = scatter<MATERIAL>(
+          world, current_ray, rec, attenuation, scattered,
+          pdf_val, loc);
       if (isScattered) {
         bounceNb--;
-        float s_pdf = world.scattering_pdf(rec, current_ray,
-                                           scattered);
+        float s_pdf = scattering_pdf<MATERIAL>(
+            world, current_ray, rec, scattered);
         result += (current_attenuation * emittedColor);
         current_attenuation *=
             attenuation * s_pdf / pdf_val;
@@ -48,12 +48,12 @@ __device__ Color ray_color(const Ray &r,
         return result;
       }
     } else {
-      return Color(0.0f, 0.0f, 0.0f);
+      return Color(0.0f);
     }
   }
-  // return Vec3(1.0f); // background color
-  return result;
+  return Color(0.0f); // background color
 }
+
 __global__ void render(Vec3 *fb, int maximum_x,
                        int maximum_y, int sample_nb,
                        int bounceNb, Camera dcam,

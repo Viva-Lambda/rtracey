@@ -146,6 +146,8 @@ int main() {
 
   // declare world
   SceneObjects sobjs = make_cornell_box();
+  // HitRecord rec;
+  // int hscene = hit_scene(sobjs, rec);
 
   // make_final_world(hs, world);
   // make_cornell(hs, world, lshape);

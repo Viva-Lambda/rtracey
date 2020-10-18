@@ -95,6 +95,7 @@ struct SceneObjects {
       // group_starts[i] = gstart == 0 ? g.group_size :
       // gstart;
       group_starts[i] = gstart;
+      set_group_texture(g, i);
 
       for (int j = 0; j < g.group_size; j++) {
         int gindex = gstart + j;
@@ -132,6 +133,7 @@ struct SceneObjects {
     tp1xs[gindex] = p.mparam.tparam.tp1x;
     tp1ys[gindex] = p.mparam.tparam.tp1y;
     tp1zs[gindex] = p.mparam.tparam.tp1z;
+
     scales[gindex] = p.mparam.tparam.scale;
     widths[gindex] = p.mparam.tparam.width;
     heights[gindex] = p.mparam.tparam.height;
