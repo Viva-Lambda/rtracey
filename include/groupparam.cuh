@@ -31,17 +31,4 @@ struct GroupParam {
       return prims[group_size - 1];
     }
   }
-  __host__ __device__ Box to_box() const {
-    Box b(prims, group_size);
-    return b;
-  }
-  __host__ __device__ SimpleMesh to_simple_mesh() const {
-    SimpleMesh sm(prims, group_size);
-    return sm;
-  }
-  __host__ __device__ ConstantMedium
-  to_constant_medium() const {
-    ConstantMedium cm(prims, density, tparam, group_size);
-    return cm;
-  }
 };
