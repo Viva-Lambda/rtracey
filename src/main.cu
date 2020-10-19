@@ -109,8 +109,8 @@ int main() {
   int HEIGHT = static_cast<int>(WIDTH / aspect_ratio);
   int BLOCK_WIDTH = 16;
   int BLOCK_HEIGHT = 8;
-  int SAMPLE_NB = 10;
-  int BOUNCE_NB = 10;
+  int SAMPLE_NB = 50;
+  int BOUNCE_NB = 50;
 
   get_device_props();
 
