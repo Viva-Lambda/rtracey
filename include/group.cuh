@@ -14,13 +14,13 @@ struct Box {
     Primitive p_1 = prims[0];
     Primitive p_2 = prims[1];
 
-    float p0x = p_1.hparam.p1x; // p0x
-    float p1x = p_1.hparam.p1y; // p1x
-    float p0y = p_1.hparam.p2x; // p0y
-    float p1y = p_1.hparam.p2y; // p1y
+    float p0x = p_1.p1x; // p0x
+    float p1x = p_1.p1y; // p1x
+    float p0y = p_1.p2x; // p0y
+    float p1y = p_1.p2y; // p1y
 
-    float p0z = p_2.hparam.radius; // p0z
-    float p1z = p_1.hparam.radius; // p1z
+    float p0z = p_2.radius; // p0z
+    float p1z = p_1.radius; // p1z
 
     p1 = Point3(p0x, p0y, p0z);
     p2 = Point3(p1x, p1y, p1z);

@@ -144,20 +144,20 @@ struct SceneObjects {
     image_indices[gindex] = p.mparam.tparam.index;
     mtypes[gindex] = p.mparam.mtype;
     fuzz_ref_idxs[gindex] = p.mparam.fuzz_ref_idx;
-    htypes[gindex] = p.hparam.htype;
+    htypes[gindex] = p.htype;
 
-    p1xs[gindex] = p.hparam.p1x;
-    p1ys[gindex] = p.hparam.p1y;
-    p1zs[gindex] = p.hparam.p1z;
+    p1xs[gindex] = p.p1x;
+    p1ys[gindex] = p.p1y;
+    p1zs[gindex] = p.p1z;
 
-    p2xs[gindex] = p.hparam.p2x;
-    p2ys[gindex] = p.hparam.p2y;
-    p2zs[gindex] = p.hparam.p2z;
+    p2xs[gindex] = p.p2x;
+    p2ys[gindex] = p.p2y;
+    p2zs[gindex] = p.p2z;
 
-    n1xs[gindex] = p.hparam.n1x;
-    n1ys[gindex] = p.hparam.n1y;
-    n1zs[gindex] = p.hparam.n1z;
-    rads[gindex] = p.hparam.radius;
+    n1xs[gindex] = p.n1x;
+    n1ys[gindex] = p.n1y;
+    n1zs[gindex] = p.n1z;
+    rads[gindex] = p.radius;
     prim_group_indices[gindex] = p.group_index;
   }
   __host__ __device__ void alloc_group_params(int nb_g) {
