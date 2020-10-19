@@ -86,12 +86,14 @@ struct SceneObjects {
     set_groups(gs);
   }
   __host__ __device__ void set_groups(GroupParam *gs) {
+    int gcount = 0;
     for (int i = 0; i < nb_groups; i++) {
       GroupParam g = gs[i];
       group_sizes[i] = g.group_size;
       group_ids[i] = (g.group_id);
       gtypes[i] = g.gtype;
-      int gstart = i * group_sizes[i];
+      int gstart = gcount;
+      gcount += group_sizes[i];
       // group_starts[i] = gstart == 0 ? g.group_size :
       // gstart;
       group_starts[i] = gstart;
