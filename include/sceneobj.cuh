@@ -118,15 +118,15 @@ struct SceneObjects {
   __host__ __device__ void
   set_group_texture(const GroupParam &g, int i) {
     g_densities[i] = g.density;
-    g_ttypes[i] = g.tparam.ttype;
-    g_tp1xs[i] = g.tparam.tp1x;
-    g_tp1ys[i] = g.tparam.tp1y;
-    g_tp1zs[i] = g.tparam.tp1z;
-    g_scales[i] = g.tparam.scale;
-    g_widths[i] = g.tparam.width;
-    g_heights[i] = g.tparam.height;
-    g_bpps[i] = g.tparam.bytes_per_pixel;
-    g_indices[i] = g.tparam.index;
+    g_ttypes[i] = g.ttype;
+    g_tp1xs[i] = g.tp1x;
+    g_tp1ys[i] = g.tp1y;
+    g_tp1zs[i] = g.tp1z;
+    g_scales[i] = g.scale;
+    g_widths[i] = g.width;
+    g_heights[i] = g.height;
+    g_bpps[i] = g.bytes_per_pixel;
+    g_indices[i] = g.index;
   }
   __host__ __device__ void set_primitive(const Primitive &p,
                                          int gindex) {
