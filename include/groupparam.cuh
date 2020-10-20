@@ -41,3 +41,37 @@ struct GroupParam {
     }
   }
 };
+
+GroupParam makeBox(const Point3 &p0, const Point3 &p1,
+                   MaterialParam mp, int g_id) {
+  HittableParam h_xyr1 = mkXYRectHittable(
+      p0.x(), p1.x(), p0.y(), p1.y(), p1.z());
+  Primitive side1(mp, h_xyr1, 0, g_id);
+
+  HittableParam h_xyr2 = mkXYRectHittable(
+      p0.x(), p1.x(), p0.y(), p1.y(), p0.z());
+  Primitive side2(mp, h_xyr2, 1, g_id);
+
+  HittableParam h_xzr1 = mkXZRectHittable(
+      p0.x(), p1.x(), p0.z(), p1.z(), p1.y());
+  Primitive side3(mp, h_xzr1, 2, g_id);
+
+  HittableParam h_xzr2 = mkXZRectHittable(
+      p0.x(), p1.x(), p0.z(), p1.z(), p0.y());
+  Primitive side4(mp, h_xzr2, 3, g_id);
+
+  HittableParam h_yzr1 = mkYZRectHittable(
+      p0.y(), p1.y(), p0.z(), p1.z(), p1.x());
+  Primitive side5(mp, h_yzr1, 4, g_id);
+
+  HittableParam h_yzr2 = mkYZRectHittable(
+      p0.y(), p1.y(), p0.z(), p1.z(), p0.x());
+  Primitive side6(mp, h_yzr2, 5, g_id);
+  const TextureParam tp;
+  const float g_dens = 0.0f;
+
+  Primitive ps[] = {side1, side2, side3,
+                    side4, side5, side6};
+  GroupParam sg(ps, 6, g_id, BOX, g_dens, tp);
+  return sg;
+}
