@@ -70,6 +70,15 @@ __host__ __device__ T from_nullptr(T *f) {
     return static_cast<T>(fval);
   }
 }
+
+template <typename T>
+__host__ __device__ void deepcopy(T *&dest, T *src,
+                                  int size) {
+  dest = new T[size];
+  for (int i = 0; i < size; i++) {
+    dest[i] = T(src[i]);
+  }
+}
 // imutils
 
 std::vector<unsigned char> imread(const char *impath,

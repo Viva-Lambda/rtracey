@@ -40,7 +40,7 @@ __global__ void render_init(int mx, int my,
 
 int gpu_main(int WIDTH, int HEIGHT, int BLOCK_WIDTH,
              int BLOCK_HEIGHT, int SAMPLE_NB, int BOUNCE_NB,
-             float aspect_ratio, SceneObjects sobjs,
+             float aspect_ratio, SceneObjects &sobjs,
              Camera cam) {
   int total_pixel_size = WIDTH * HEIGHT;
   size_t frameSize = 3 * total_pixel_size;

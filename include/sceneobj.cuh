@@ -66,7 +66,7 @@ struct SceneObjects {
     alloc_prim_params(nb_prims);
     set_groups(gs);
   }
-  __device__ SceneObjects(GroupParam *gs, int nb_g,
+  __device__ SceneObjects(GroupParam *&gs, int nb_g,
                           unsigned char *td, int ts,
                           curandState *r)
       : nb_groups(nb_g), tdata(td), tsize(ts), rand(r) {
@@ -75,7 +75,8 @@ struct SceneObjects {
     alloc_prim_params(nb_prims);
     set_groups(gs);
   }
-  __host__ __device__ SceneObjects(GroupParam *gs, int nb_g,
+  __host__ __device__ SceneObjects(GroupParam *&gs,
+                                   int nb_g,
                                    unsigned char *td,
                                    int ts)
       : nb_groups(nb_g), tdata(td), tsize(ts),

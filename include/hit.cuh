@@ -262,9 +262,10 @@ __host__ __device__ bool hit_group(const SceneObjects &s,
   int group_index = rec.group_index;
   int group_start = s.group_starts[group_index];
   int group_size = s.group_sizes[group_index];
+  int group_end = group_start + group_size;
   bool res = false;
   int j = 0;
-  for (int i = group_start; i < group_size; i++) {
+  for (int i = group_start; i < group_end; i++) {
     rec.primitive_index = i;
     bool is_hit = hit<HITTABLE>(s, r, d_min, d_max, rec);
     if (is_hit) {
@@ -282,9 +283,9 @@ __device__ bool hit<NONE_GRP>(const SceneObjects &s,
   return hit_group(s, r, d_min, d_max, rec);
 }
 template <>
-__device__ bool
-h_hit<NONE_GRP>(const SceneObjects &s, const Ray &r,
-                float d_min, float d_max, HitRecord &rec) {
+__host__ bool h_hit<NONE_GRP>(const SceneObjects &s,
+                              const Ray &r, float d_min,
+                              float d_max, HitRecord &rec) {
   return hit_group(s, r, d_min, d_max, rec);
 }
 template <>
@@ -294,9 +295,9 @@ __device__ bool hit<BOX>(const SceneObjects &s,
   return hit<NONE_GRP>(s, r, d_min, d_max, rec);
 }
 template <>
-__device__ bool h_hit<BOX>(const SceneObjects &s,
-                           const Ray &r, float d_min,
-                           float d_max, HitRecord &rec) {
+__host__ bool h_hit<BOX>(const SceneObjects &s,
+                         const Ray &r, float d_min,
+                         float d_max, HitRecord &rec) {
   return h_hit<NONE_GRP>(s, r, d_min, d_max, rec);
 }
 __host__ __device__ bool
@@ -390,10 +391,10 @@ hit<SIMPLE_MESH>(const SceneObjects &s, const Ray &r,
   return hit<NONE_GRP>(s, r, d_min, d_max, rec);
 }
 template <>
-__device__ bool h_hit<SIMPLE_MESH>(const SceneObjects &s,
-                                   const Ray &r,
-                                   float d_min, float d_max,
-                                   HitRecord &rec) {
+__host__ bool h_hit<SIMPLE_MESH>(const SceneObjects &s,
+                                 const Ray &r, float d_min,
+                                 float d_max,
+                                 HitRecord &rec) {
   return h_hit<NONE_GRP>(s, r, d_min, d_max, rec);
 }
 template <>
@@ -402,6 +403,7 @@ __device__ bool hit<SCENE>(const SceneObjects &s,
                            float d_max, HitRecord &rec) {
   int nb_group = s.nb_groups;
   bool res = false;
+  int j = 0;
   for (int i = 0; i < nb_group; i++) {
     rec.group_index = i;
     int gtype_ = s.gtypes[rec.group_index];
@@ -419,8 +421,10 @@ __device__ bool hit<SCENE>(const SceneObjects &s,
     }
     if (is_hit) {
       res = is_hit;
+      j = i;
     }
   }
+  rec.group_index = j;
   return res;
 }
 template <>
@@ -429,6 +433,7 @@ __host__ bool h_hit<SCENE>(const SceneObjects &s,
                            float d_max, HitRecord &rec) {
   int nb_group = s.nb_groups;
   bool res = false;
+  int j = 0;
   for (int i = 0; i < nb_group; i++) {
     rec.group_index = i;
     int gtype_ = s.gtypes[rec.group_index];
@@ -446,7 +451,9 @@ __host__ bool h_hit<SCENE>(const SceneObjects &s,
     }
     if (is_hit) {
       res = is_hit;
+      j = i;
     }
   }
+  rec.group_index = j;
   return res;
 }

@@ -7,19 +7,19 @@
 
 struct Primitive {
   // material params
-  const MaterialParam mparam;
+  MaterialParam mparam;
 
   // hittable params
-  const HittableType htype; //
+  HittableType htype; //
 
-  const float p1x, p1y, p1z;
-  const float p2x, p2y, p2z;
-  const float radius;
-  const float n1x, n1y, n1z;
+  float p1x, p1y, p1z;
+  float p2x, p2y, p2z;
+  float radius;
+  float n1x, n1y, n1z;
 
   // group params
-  const int group_id;
-  const int group_index;
+  int group_id;
+  int group_index;
 
   __host__ __device__ Primitive()
       : group_id(0), group_index(0), p1x(0.0f), p1y(0.0f),
@@ -41,4 +41,27 @@ struct Primitive {
         p2z(p.p2z), n1x(p.n1x), n1y(p.n1y), n1z(p.n1z),
         radius(p.radius), group_id(p.group_id),
         group_index(p.group_index) {}
+  __host__ __device__ Primitive &
+  operator=(const Primitive &p) {
+    //
+    mparam = p.mparam;
+    htype = p.htype;
+
+    p1x = p.p1x;
+    p1y = p.p1y;
+    p1z = p.p1z;
+    //
+    p2x = p.p2x;
+    p2y = p.p2y;
+    p2z = p.p2z;
+    //
+    n1x = p.n1x;
+    n1y = p.n1y;
+    n1z = p.n1z;
+    //
+    radius = p.radius;
+    group_id = p.group_id;
+    group_index = p.group_index;
+    return *this;
+  }
 };

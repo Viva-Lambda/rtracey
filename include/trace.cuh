@@ -123,7 +123,7 @@ __host__ Color h_ray_color(const Ray &r,
         return result;
       }
     } else {
-      return Color(0.0f);
+      return Color(0.3f);
     }
   }
   return Color(0.0f); // background color

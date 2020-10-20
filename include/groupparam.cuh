@@ -1,36 +1,42 @@
 #pragma once
 #include <group.cuh>
 #include <scenetype.cuh>
+#include <utils.cuh>
 #include <vec3.cuh>
 
 struct GroupParam {
   // group params
-  const int gtype;
-  const int group_size;
-  const int group_id;
+  GroupType gtype;
+  int group_size;
+  int group_id;
   Primitive *prims;
   //
-  const float density;
+  float density;
 
-  const TextureType ttype;
-  const float tp1x, tp1y, tp1z;
-  const float scale;
-  const int width, height, bytes_per_pixel, index;
+  TextureType ttype;
+  float tp1x, tp1y, tp1z;
+  float scale;
+  int width, height, bytes_per_pixel, index;
 
   __host__ __device__ GroupParam()
-      : gtype(0), group_size(0), group_id(0), density(0.0f),
-        prims(nullptr), width(0), height(0),
+      : gtype(NONE_GRP), group_size(0), group_id(0),
+        density(0.0f), prims(nullptr), width(0), height(0),
         bytes_per_pixel(0), index(0), tp1x(0), tp1y(0),
         tp1z(0), scale(0), ttype(NONE_TEXTURE) {}
-  __host__ __device__ GroupParam(
-      Primitive *prm, const int gsize, const int gid,
-      const int gtp, const float d, const TextureParam &tp)
-      : prims(prm), group_size(gsize), group_id(gid),
-        gtype(gtp), density(d), width(tp.width),
-        height(tp.height),
+  __host__ __device__ GroupParam(Primitive *prm,
+                                 const int gsize,
+                                 const int gid,
+                                 const GroupType gtp,
+                                 const float d,
+                                 const TextureParam &tp)
+      : group_size(gsize), group_id(gid), gtype(gtp),
+        density(d), width(tp.width), height(tp.height),
         bytes_per_pixel(tp.bytes_per_pixel),
         index(tp.index), tp1x(tp.tp1x), tp1y(tp.tp1y),
-        tp1z(tp.tp1z), scale(tp.scale), ttype(tp.ttype) {}
+        tp1z(tp.tp1z), scale(tp.scale), ttype(tp.ttype) {
+    deepcopy(prims, prm, group_size);
+  }
+  __host__ __device__ void g_free() { delete[] prims; }
   __host__ __device__ Primitive get(int i) const {
     if (i <= 0) {
       return prims[0];
@@ -40,10 +46,32 @@ struct GroupParam {
       return prims[group_size - 1];
     }
   }
+  __host__ __device__ GroupParam &
+  operator=(const GroupParam &g) {
+    //
+    gtype = g.gtype;
+    group_size = g.group_size;
+    group_id = g.group_id;
+
+    deepcopy(prims, g.prims, g.group_size);
+    density = g.density;
+    ttype = g.ttype;
+    tp1x = g.tp1x;
+    tp1y = g.tp1y;
+    tp1z = g.tp1z;
+    scale = g.scale;
+    width = g.width;
+    height = g.height;
+    bytes_per_pixel = g.bytes_per_pixel;
+    index = g.index;
+    return *this;
+  }
 };
 
-GroupParam makeBox(const Point3 &p0, const Point3 &p1,
-                   MaterialParam mp, int g_id) {
+__host__ __device__ GroupParam makeBox(const Point3 &p0,
+                                       const Point3 &p1,
+                                       MaterialParam mp,
+                                       int g_id) {
   HittableParam h_xyr1 = mkXYRectHittable(
       p0.x(), p1.x(), p0.y(), p1.y(), p1.z());
   Primitive side1(mp, h_xyr1, 0, g_id);
@@ -67,11 +95,13 @@ GroupParam makeBox(const Point3 &p0, const Point3 &p1,
   HittableParam h_yzr2 = mkYZRectHittable(
       p0.y(), p1.y(), p0.z(), p1.z(), p0.x());
   Primitive side6(mp, h_yzr2, 5, g_id);
-  const TextureParam tp;
-  const float g_dens = 0.0f;
 
   Primitive ps[] = {side1, side2, side3,
                     side4, side5, side6};
+
+  const TextureParam tp;
+  const float g_dens = 0.0f;
+
   GroupParam sg(ps, 6, g_id, BOX, g_dens, tp);
   return sg;
 }

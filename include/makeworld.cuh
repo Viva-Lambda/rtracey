@@ -68,8 +68,26 @@ SceneObjects make_cornell_box() {
   const TextureParam tp;
   const float g_dens = 0.0f;
   GroupParam sg(ps, prim_count, group_id, BOX, g_dens, tp);
-  GroupParam sgs[] = {sg};
-  SceneObjects sobjs(sgs, 1);
+
+  // first box
+  GroupParam box1 =
+      makeBox(Point3(130, 0, 65), Point3(295, 165, 230),
+              white_param, 1);
+
+  // second box
+  GroupParam box2 =
+      makeBox(Point3(265, 0, 295), Point3(430, 330, 460),
+              white_param, 2);
+  //
+
+  GroupParam *sgs = new GroupParam[3];
+  sgs[0] = sg;
+  sgs[1] = box1;
+  sgs[2] = box2;
+  SceneObjects sobjs(sgs, 3);
+  // box1.g_free();
+  // box2.g_free();
+  // sg.g_free();
   // Hittables hs = sobjs.to_hittables();
   return sobjs;
 }
@@ -141,11 +159,26 @@ __global__ void make_cornell_box_k(SceneObjects world,
     const float g_dens = 0.0f;
     GroupParam sg(ps, prim_count, group_id, BOX, g_dens,
                   tp);
-    GroupParam sgs[] = {sg};
-    SceneObjects sobjs(sgs, 1, loc);
+
+    // first box
+    GroupParam box1 =
+        makeBox(Point3(130, 0, 65), Point3(295, 165, 230),
+                white_param, 1);
+
+    // second box
+    GroupParam box2 =
+        makeBox(Point3(265, 0, 295), Point3(430, 330, 460),
+                white_param, 2);
+    //
+
+    GroupParam sgs[] = {sg, box1, box2};
+    SceneObjects sobjs(sgs, 3, loc);
     // Hittables hs = sobjs.to_hittables();
     // Hittables hs = sobjs.to_hittables();
     world = sobjs;
+    box1.g_free();
+    box2.g_free();
+    sg.g_free();
   }
 }
 
