@@ -1,5 +1,4 @@
-#ifndef CAMERA_CUH
-#define CAMERA_CUH
+#pragma once
 
 #include <ray.cuh>
 #include <vec3.cuh>
@@ -33,14 +32,28 @@ public:
     vertical = 2 * half_height * focus_dist * v;
   }
 
-  __device__ Ray get_ray(float s, float t,
-                         curandState *lo) const {
-    Vec3 rd = lens_radius * random_in_unit_disk(lo);
+  __host__ __device__ Ray _get_ray(float s, float t,
+                                   Vec3 riud,
+                                   float rf) const {
+    //
+    Vec3 rd = lens_radius * riud;
     Vec3 offset = u * rd.x() + v * rd.y();
     return Ray(origin + offset,
                lower_left_corner + s * horizontal +
                    t * vertical - origin - offset,
-               random_float(lo, time0, time1));
+               rf);
+  }
+
+  __device__ Ray get_ray(float s, float t,
+                         curandState *lo) const {
+    Vec3 riud = random_in_unit_disk(lo);
+    float rf = random_float(lo, time0, time1);
+    return _get_ray(s, t, riud, rf);
+  }
+  __host__ Ray h_get_ray(float s, float t) const {
+    Vec3 riud = h_random_in_unit_disk();
+    float rf = h_random_float(time0, time1);
+    return _get_ray(s, t, riud, rf);
   }
 
   Vec3 origin;
@@ -51,5 +64,3 @@ public:
   float lens_radius;
   float time0, time1;
 };
-
-#endif

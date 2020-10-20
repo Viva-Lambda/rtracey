@@ -248,10 +248,17 @@ __device__ bool hit(const SceneObjects &s, const Ray &r,
                     HitRecord &rec) {
   return false;
 }
-template <>
-__device__ bool hit<NONE_GRP>(const SceneObjects &s,
-                              const Ray &r, float d_min,
-                              float d_max, HitRecord &rec) {
+template <GroupType g>
+__host__ bool h_hit(const SceneObjects &s, const Ray &r,
+                    float d_min, float d_max,
+                    HitRecord &rec) {
+  return false;
+}
+__host__ __device__ bool hit_group(const SceneObjects &s,
+                                   const Ray &r,
+                                   float d_min, float d_max,
+                                   HitRecord &rec) {
+  //
   int group_index = rec.group_index;
   int group_start = s.group_starts[group_index];
   int group_size = s.group_sizes[group_index];
@@ -269,32 +276,45 @@ __device__ bool hit<NONE_GRP>(const SceneObjects &s,
   return res;
 }
 template <>
+__device__ bool hit<NONE_GRP>(const SceneObjects &s,
+                              const Ray &r, float d_min,
+                              float d_max, HitRecord &rec) {
+  return hit_group(s, r, d_min, d_max, rec);
+}
+template <>
+__device__ bool
+h_hit<NONE_GRP>(const SceneObjects &s, const Ray &r,
+                float d_min, float d_max, HitRecord &rec) {
+  return hit_group(s, r, d_min, d_max, rec);
+}
+template <>
 __device__ bool hit<BOX>(const SceneObjects &s,
                          const Ray &r, float d_min,
                          float d_max, HitRecord &rec) {
   return hit<NONE_GRP>(s, r, d_min, d_max, rec);
 }
 template <>
-__device__ bool
-hit<CONSTANT_MEDIUM>(const SceneObjects &s, const Ray &r,
-                     float d_min, float d_max,
-                     HitRecord &rec) {
-  // Print occasional samples when debugging. To enable,
+__device__ bool h_hit<BOX>(const SceneObjects &s,
+                           const Ray &r, float d_min,
+                           float d_max, HitRecord &rec) {
+  return h_hit<NONE_GRP>(s, r, d_min, d_max, rec);
+}
+__host__ __device__ bool
+hit_constant_medium(const SceneObjects &s, const Ray &r,
+                    float d_min, float d_max,
+                    HitRecord &rec, float t0, float t1) {
   const bool enableDebug = false;
-  const bool debugging =
-      enableDebug && curand_uniform(s.rand) < 0.00001;
+  const bool debugging = enableDebug && t0 < 0.00001;
 
   HitRecord rec1, rec2;
   rec1.group_index = rec.group_index;
   rec2.group_index = rec.group_index;
 
-  bool any_hit =
-      hit<NONE_GRP>(s, r, -FLT_MAX, FLT_MAX, rec1);
+  bool any_hit = hit_group(s, r, -FLT_MAX, FLT_MAX, rec1);
   if (!any_hit)
     return any_hit;
 
-  any_hit =
-      hit<NONE_GRP>(s, r, rec1.t + 0.001, FLT_MAX, rec2);
+  any_hit = hit_group(s, r, rec1.t + 0.001, FLT_MAX, rec2);
   if (!any_hit)
     return any_hit;
 
@@ -319,8 +339,7 @@ hit<CONSTANT_MEDIUM>(const SceneObjects &s, const Ray &r,
   const float ray_length = r.direction().length();
   const float distance_inside_boundary =
       (rec2.t - rec1.t) * ray_length;
-  const float hit_distance =
-      neg_inv_dens * log(curand_uniform(s.rand));
+  const float hit_distance = neg_inv_dens * log(t1);
 
   if (hit_distance > distance_inside_boundary)
     return false;
@@ -344,9 +363,38 @@ hit<CONSTANT_MEDIUM>(const SceneObjects &s, const Ray &r,
 }
 template <>
 __device__ bool
+hit<CONSTANT_MEDIUM>(const SceneObjects &s, const Ray &r,
+                     float d_min, float d_max,
+                     HitRecord &rec) {
+  // Print occasional samples when debugging. To enable,
+  float t0 = curand_uniform(s.rand);
+  float t1 = curand_uniform(s.rand);
+  return hit_constant_medium(s, r, d_min, d_max, rec, t0,
+                             t1);
+}
+template <>
+__host__ bool
+h_hit<CONSTANT_MEDIUM>(const SceneObjects &s, const Ray &r,
+                       float d_min, float d_max,
+                       HitRecord &rec) {
+  // Print occasional samples when debugging. To enable,
+  float t0 = hrandf();
+  float t1 = hrandf();
+  return hit_constant_medium(s, r, d_min, d_max, rec, t0,
+                             t1);
+}
+template <>
+__device__ bool
 hit<SIMPLE_MESH>(const SceneObjects &s, const Ray &r,
                  float d_min, float d_max, HitRecord &rec) {
   return hit<NONE_GRP>(s, r, d_min, d_max, rec);
+}
+template <>
+__device__ bool h_hit<SIMPLE_MESH>(const SceneObjects &s,
+                                   const Ray &r,
+                                   float d_min, float d_max,
+                                   HitRecord &rec) {
+  return h_hit<NONE_GRP>(s, r, d_min, d_max, rec);
 }
 template <>
 __device__ bool hit<SCENE>(const SceneObjects &s,
@@ -375,51 +423,29 @@ __device__ bool hit<SCENE>(const SceneObjects &s,
   }
   return res;
 }
-
-__host__ __device__ bool hit_prim(const SceneObjects &s,
-                                  HitRecord &rec) {
-  int prim_idx = rec.primitive_index;
-  int htype_ = s.htypes[prim_idx];
-  HittableType htype = static_cast<HittableType>(htype_);
-  return true;
-}
-
-__host__ __device__ bool hit_group(const SceneObjects &s,
-                                   HitRecord &rec) {
-  int group_index = rec.group_index;
-  int group_start = s.group_starts[group_index];
-  int group_size = s.group_sizes[group_index];
-  bool res = false;
-  for (int i = group_start; i < group_size; i++) {
-    rec.primitive_index = i;
-    hit_prim(s, rec);
-    Color cmat = color_material(s, rec);
-    MaterialType hres = scatter_material(s, rec);
-  }
-  return res;
-}
-
-__host__ __device__ int hit_scene(const SceneObjects &s,
-                                  HitRecord &rec) {
-  // cpu version
+template <>
+__host__ bool h_hit<SCENE>(const SceneObjects &s,
+                           const Ray &r, float d_min,
+                           float d_max, HitRecord &rec) {
   int nb_group = s.nb_groups;
   bool res = false;
   for (int i = 0; i < nb_group; i++) {
     rec.group_index = i;
     int gtype_ = s.gtypes[rec.group_index];
     GroupType gtype = static_cast<GroupType>(gtype_);
+    bool is_hit = false;
     if (gtype == NONE_GRP) {
-      res = hit_group(s, rec);
-      return res;
+      is_hit = h_hit<NONE_GRP>(s, r, d_min, d_max, rec);
     } else if (gtype == BOX) {
-      res = hit_group(s, rec);
-      return res;
+      is_hit = h_hit<BOX>(s, r, d_min, d_max, rec);
     } else if (gtype == CONSTANT_MEDIUM) {
-      res = gtype;
-      return res;
+      is_hit =
+          h_hit<CONSTANT_MEDIUM>(s, r, d_min, d_max, rec);
     } else if (gtype == SIMPLE_MESH) {
-      res = gtype;
-      return res;
+      is_hit = h_hit<SIMPLE_MESH>(s, r, d_min, d_max, rec);
+    }
+    if (is_hit) {
+      res = is_hit;
     }
   }
   return res;

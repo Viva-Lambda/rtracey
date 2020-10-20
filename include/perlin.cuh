@@ -1,5 +1,4 @@
-#ifndef PERLIN_CUH
-#define PERLIN_CUH
+#pragma once
 
 #include <external.hpp>
 #include <utils.cuh>
@@ -22,6 +21,22 @@ public:
     perm_y = py;
     int *pz = new int[point_count];
     perlin_generate_perm(loc, pz);
+    perm_z = pz;
+  }
+  __host__ Perlin(bool is_host) {
+    ranvec = new Vec3[point_count];
+    for (int i = 0; i < point_count; ++i) {
+      ranvec[i] = to_unit(h_random_vec(-1.0f, 1.0f));
+    }
+
+    int *px = new int[point_count];
+    h_perlin_generate_perm(px);
+    perm_x = px;
+    int *py = new int[point_count];
+    h_perlin_generate_perm(py);
+    perm_y = py;
+    int *pz = new int[point_count];
+    h_perlin_generate_perm(pz);
     perm_z = pz;
   }
 
@@ -81,12 +96,25 @@ private:
 
     permute(p, point_count, loc);
   }
+  __host__ static void h_perlin_generate_perm(int *p) {
+    for (int i = 0; i < point_count; i++)
+      p[i] = i;
+    h_permute(p, point_count);
+  }
 
   __device__ static void permute(int *p, int n,
                                  curandState *loc) {
     for (int i = n - 1; i > 0; i--) {
       int target = random_int(loc, 0, i);
       // int target = randint((unsigned int)i,0, i);
+      int tmp = p[i];
+      p[i] = p[target];
+      p[target] = tmp;
+    }
+  }
+  __host__ static void h_permute(int *p, int n) {
+    for (int i = n - 1; i > 0; i--) {
+      int target = h_random_int(0, i);
       int tmp = p[i];
       p[i] = p[target];
       p[target] = tmp;
@@ -114,5 +142,3 @@ private:
     return accum;
   }
 };
-
-#endif

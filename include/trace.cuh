@@ -86,3 +86,72 @@ __global__ void render(Vec3 *fb, int maximum_x,
   rcolor /= float(sample_nb);
   fb[pixel_index] = sqrt(rcolor);
 }
+
+/**
+  @param Ray r is the incoming ray.
+  @param Hittables** world pointer to list of hittables
+ */
+__host__ Color h_ray_color(const Ray &r,
+                           const SceneObjects &world,
+                           int bounceNb) {
+  Ray current_ray = r;
+  Vec3 current_attenuation = Vec3(1.0f, 1.0f, 1.0f);
+  Vec3 result = Vec3(0.0f, 0.0f, 0.0f);
+  while (bounceNb > 0) {
+    HitRecord rec;
+    bool anyHit = h_hit<SCENE>(world, current_ray, 0.001f,
+                               FLT_MAX, rec);
+    if (anyHit) {
+      // rec.mat_ptr.tparam.tdata = world.tdata;
+      Color emittedColor = h_emitted<MATERIAL>(world, rec);
+      Ray scattered;
+      Vec3 attenuation;
+      float pdf_val = 1.0f;
+      bool isScattered = h_scatter<MATERIAL>(
+          world, current_ray, rec, attenuation, scattered,
+          pdf_val);
+      if (isScattered) {
+        bounceNb--;
+        float s_pdf = scattering_pdf<MATERIAL>(
+            world, current_ray, rec, scattered);
+        result += (current_attenuation * emittedColor);
+        current_attenuation *=
+            attenuation * s_pdf / pdf_val;
+        current_ray = scattered;
+      } else {
+        result += (current_attenuation * emittedColor);
+        return result;
+      }
+    } else {
+      return Color(0.0f);
+    }
+  }
+  return Color(0.0f); // background color
+}
+__host__ void h_render(int WIDTH, int HEIGHT, int sample_nb,
+                       int bounceNb, Camera dcam,
+                       const SceneObjects &world) {
+  for (int j = HEIGHT - 1; j >= 0; j--) {
+    for (int i = 0; i < WIDTH; i++) {
+      Vec3 pixel(0.0f, 0.0f, 0.0f);
+      Camera cam = dcam;
+      // world.set_rand(&localS);
+      for (int s = 0; s < sample_nb; s++) {
+        float u = float(i + hrandf()) / float(WIDTH);
+        float v = float(j + hrandf()) / float(HEIGHT);
+        Ray r = cam.h_get_ray(u, v);
+        //
+        pixel += h_ray_color(r, world, bounceNb);
+      }
+      pixel /= float(sample_nb);
+      pixel = sqrt(pixel);
+
+      int ir = int(255.99 * pixel.r());
+      int ig = int(255.99 * pixel.g());
+      int ib = int(255.99 * pixel.b());
+
+      std::cout << ir << " " << ig << " " << ib
+                << std::endl;
+    }
+  }
+}

@@ -13,7 +13,7 @@ SceneObjects make_cornell_box() {
   const TextureParam red_solid =
       mkSolidColorParam(Color(.65, .05, .05));
   const TextureParam green_solid =
-      mkSolidColorParam(Color(.12, .45, .15));
+      mkSolidColorParam(Color(.12, .75, .15));
   const TextureParam blue_solid =
       mkSolidColorParam(Color(.05, .05, .65));
   const TextureParam white_solid =
@@ -23,9 +23,9 @@ SceneObjects make_cornell_box() {
 
   const MaterialParam red_param = mkLambertParam(red_solid);
   //
-  const float fzz = 0.3f;
+  const float fzz = 0.6f;
   const MaterialParam green_param =
-      mkLambertParam(green_solid);
+      mkMetalParam(green_solid, fzz);
   //
   const MaterialParam blue_param =
       mkLambertParam(blue_solid);
@@ -90,9 +90,9 @@ __global__ void make_cornell_box_k(SceneObjects world,
     const MaterialParam red_param =
         mkLambertParam(red_solid);
     //
-    const float fzz = 0.3f;
+    const float fzz = 0.6f;
     const MaterialParam green_param =
-        mkLambertParam(green_solid);
+        mkMetalParam(green_solid, fzz);
     //
     const MaterialParam blue_param =
         mkLambertParam(blue_solid);

@@ -14,11 +14,23 @@ __device__ Color emitted(const SceneObjects &s,
   return Color(0.0f);
 }
 
+template <MaterialType m>
+__host__ Color h_emitted(const SceneObjects &s,
+                         const HitRecord &rec) {
+  return Color(0.0f);
+}
+
 template <>
 __device__ Color emitted<DIFFUSE_LIGHT>(
     const SceneObjects &s, const HitRecord &rec) {
   return color_value<TEXTURE>(s, rec);
 }
+template <>
+__host__ Color h_emitted<DIFFUSE_LIGHT>(
+    const SceneObjects &s, const HitRecord &rec) {
+  return h_color_value<TEXTURE>(s, rec);
+}
+
 template <>
 __device__ Color emitted<MATERIAL>(const SceneObjects &s,
                                    const HitRecord &rec) {
@@ -31,13 +43,15 @@ __device__ Color emitted<MATERIAL>(const SceneObjects &s,
   }
   return res;
 }
-
-// cpu test function
-__host__ __device__ void
-emit_material(const SceneObjects &s, const HitRecord &rec) {
+template <>
+__host__ Color h_emitted<MATERIAL>(const SceneObjects &s,
+                                   const HitRecord &rec) {
   int prim_idx = rec.primitive_index;
   Color res(0.0f);
   MaterialType mtype =
       static_cast<MaterialType>(s.mtypes[prim_idx]);
+  if (mtype == DIFFUSE_LIGHT) {
+    res = h_emitted<DIFFUSE_LIGHT>(s, rec);
+  }
+  return res;
 }
-//

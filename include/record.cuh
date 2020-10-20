@@ -16,6 +16,11 @@ struct HitRecord {
   int primitive_index;
   bool is_group_scattering = false;
 
+  __host__ __device__ HitRecord()
+      : t(0.0f), p(Vec3(0.0f)), u(0.0f), v(0.0f),
+        front_face(false), group_id(0), group_index(0),
+        primitive_index(0) {}
+
   /**
     @brief check if ray hits the front side of the object
 

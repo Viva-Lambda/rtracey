@@ -35,7 +35,12 @@ __host__ __device__ unsigned int hash(unsigned int a) {
   a = (a ^ 0xb55a4f09) ^ (a >> 16);
   return a;
 }
-
+__host__ float hrandf() {
+  static std::uniform_real_distribution<float> distribution(
+      0.0f, 1.0f);
+  static std::mt19937 generator;
+  return distribution(generator);
+}
 __host__ __device__ float randf(unsigned int seed) {
   thrust::random::default_random_engine rng(seed);
   thrust::random::normal_distribution<float> dist(0.0f,

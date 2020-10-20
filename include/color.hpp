@@ -1,5 +1,4 @@
-#ifndef COLOR_HPP
-#define COLOR_HPP
+#pragma once
 
 #include <external.hpp>
 #include <vec3.cuh>
@@ -13,4 +12,3 @@ void write_color(std::ostream &out, Color pixel_color) {
       << std::endl;
 }
 
-#endif

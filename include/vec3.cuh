@@ -260,10 +260,24 @@ __device__ int random_int(curandState *loc, int mn,
   return (int)random_float(loc, (float)mn, (float)mx);
 }
 
+__host__ float h_random_float(float min, float max) {
+  return min + (max - min) * hrandf();
+}
+__host__ int h_random_int(int mn, int mx) {
+  return (int)h_random_float((float)mn, (float)mx);
+}
+
+__host__ __device__ float rand_float(unsigned int seed) {
+  return randf(seed);
+}
+
 __device__ Vec3 random_vec(curandState *local_rand_state) {
   return Vec3(curand_uniform(local_rand_state),
               curand_uniform(local_rand_state),
               curand_uniform(local_rand_state));
+}
+__host__ Vec3 h_random_vec() {
+  return Vec3(hrandf(), hrandf(), hrandf());
 }
 __device__ Vec3 random_vec(curandState *local_rand_state,
                            float mn, float mx) {
@@ -271,11 +285,20 @@ __device__ Vec3 random_vec(curandState *local_rand_state,
               random_float(local_rand_state, mn, mx),
               random_float(local_rand_state, mn, mx));
 }
+__host__ Vec3 h_random_vec(float mn, float mx) {
+  return Vec3(h_random_float(mn, mx),
+              h_random_float(mn, mx),
+              h_random_float(mn, mx));
+}
 __device__ Vec3 random_vec(curandState *local_rand_state,
                            float mx, float my, float mz) {
   return Vec3(random_float(local_rand_state, 0, mx),
               random_float(local_rand_state, 0, my),
               random_float(local_rand_state, 0, mz));
+}
+__host__ Vec3 h_random_vec(float mx, float my, float mz) {
+  return Vec3(h_random_float(0, mx), h_random_float(0, my),
+              h_random_float(0, mz));
 }
 
 __device__ Vec3
@@ -284,6 +307,13 @@ random_in_unit_sphere(curandState *local_rand_state) {
     Vec3 p =
         2.0f * random_vec(local_rand_state, -1.0f, 1.0f) -
         Vec3(1.0f);
+    if (p.squared_length() < 1.0f)
+      return p;
+  }
+}
+__host__ Vec3 h_random_in_unit_sphere() {
+  while (true) {
+    Vec3 p = 2.0f * h_random_vec(-1.0f, 1.0f) - Vec3(1.0f);
     if (p.squared_length() < 1.0f)
       return p;
   }
@@ -297,10 +327,26 @@ __device__ Vec3 random_in_unit_disk(curandState *lo) {
       return p;
   }
 }
+__host__ Vec3 h_random_in_unit_disk() {
+  while (true) {
+    Vec3 p = 2.0 * Vec3(h_random_float(-1.0f, 1.0f),
+                        h_random_float(-1.0f, 1.0f), 0) -
+             Vec3(1, 1, 0);
+    if (p.squared_length() < 1.0f)
+      return p;
+  }
+}
 
 __device__ Vec3 random_in_hemisphere(curandState *lo,
                                      Vec3 normal) {
   Vec3 in_unit_sphere = random_in_unit_sphere(lo);
+  if (dot(in_unit_sphere, normal) > 0.0)
+    return in_unit_sphere;
+  else
+    return -in_unit_sphere;
+}
+__host__ Vec3 h_random_in_hemisphere(Vec3 normal) {
+  Vec3 in_unit_sphere = h_random_in_unit_sphere();
   if (dot(in_unit_sphere, normal) > 0.0)
     return in_unit_sphere;
   else
@@ -318,11 +364,37 @@ __device__ Vec3 random_cosine_direction(curandState *lo) {
 
   return Vec3(x, y, z);
 }
+__host__ Vec3 h_random_cosine_direction() {
+  auto r1 = hrandf();
+  auto r2 = hrandf();
+  auto z = sqrt(1 - r2);
+
+  auto phi = 2 * M_PI * r1;
+  auto x = cos(phi) * sqrt(r2);
+  auto y = sin(phi) * sqrt(r2);
+
+  return Vec3(x, y, z);
+}
 __device__ inline Vec3
 random_to_sphere(float radius, float distance_squared,
                  curandState *loc) {
   auto r1 = curand_uniform(loc);
   auto r2 = curand_uniform(loc);
+  auto z =
+      1 +
+      r2 * (sqrt(1 - radius * radius / distance_squared) -
+            1);
+
+  auto phi = 2 * M_PI * r1;
+  auto x = cos(phi) * sqrt(1 - z * z);
+  auto y = sin(phi) * sqrt(1 - z * z);
+
+  return Vec3(x, y, z);
+}
+__host__ inline Vec3
+h_random_to_sphere(float radius, float distance_squared) {
+  auto r1 = hrandf();
+  auto r2 = hrandf();
   auto z =
       1 +
       r2 * (sqrt(1 - radius * radius / distance_squared) -

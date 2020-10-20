@@ -11,9 +11,13 @@ __device__ Color color_value(const SceneObjects &s,
                              const HitRecord &rec) {
   return Color(0.0f);
 }
-template <>
-__device__ Color color_value<SOLID_COLOR>(
-    const SceneObjects &s, const HitRecord &rec) {
+template <TextureType t>
+__host__ Color h_color_value(const SceneObjects &s,
+                             const HitRecord &rec) {
+  return Color(0.0f);
+}
+__host__ __device__ Color
+solid_value(const SceneObjects &s, const HitRecord &rec) {
   int prim_idx = rec.primitive_index;
   float tp1x = s.tp1xs[prim_idx];
   float tp1y = s.tp1ys[prim_idx];
@@ -21,11 +25,21 @@ __device__ Color color_value<SOLID_COLOR>(
   return Color(tp1x, tp1y, tp1z);
 }
 template <>
-__device__ Color color_value<CHECKER>(
+__device__ Color color_value<SOLID_COLOR>(
     const SceneObjects &s, const HitRecord &rec) {
+  return solid_value(s, rec);
+}
+template <>
+__host__ Color h_color_value<SOLID_COLOR>(
+    const SceneObjects &s, const HitRecord &rec) {
+  return solid_value(s, rec);
+}
+__host__ __device__ Color
+checker_value(const SceneObjects &s, const HitRecord &rec,
+              Color odd_val) {
   Point3 p = rec.p;
-  Color odd = color_value<SOLID_COLOR>(s, rec);
-  Color even = 1.0f - odd;
+  Color odd = odd_val;
+  Color even = 1.0f - odd_val;
   float sines = sin(10 * p.x()) * sin(10.0f * p.y()) *
                 sin(10.0f * p.z());
   if (sines < 0) {
@@ -35,20 +49,47 @@ __device__ Color color_value<CHECKER>(
   }
 }
 template <>
-__device__ Color color_value<NOISE>(const SceneObjects &s,
-                                    const HitRecord &rec) {
+__device__ Color color_value<CHECKER>(
+    const SceneObjects &s, const HitRecord &rec) {
+  Color c = color_value<SOLID_COLOR>(s, rec);
+  return checker_value(s, rec, c);
+}
+template <>
+__host__ Color h_color_value<CHECKER>(
+    const SceneObjects &s, const HitRecord &rec) {
+  Color c = h_color_value<SOLID_COLOR>(s, rec);
+  return checker_value(s, rec, c);
+}
+__host__ __device__ Color noise_value(const SceneObjects &s,
+                                      const HitRecord &rec,
+                                      float turb) {
+  //
   int prim_idx = rec.primitive_index;
   Point3 p = rec.p;
   float scale = s.scales[prim_idx];
   float zscale = scale * p.z();
-  Perlin noise(s.rand);
-  float turbulance = 10.0f * noise.turb(p);
+  float turbulance = 10.0f * turb;
   Color white(1.0f, 1.0f, 1.0f);
   return white * 0.5f * (1.0f + sin(zscale + turbulance));
 }
 template <>
-__device__ Color color_value<IMAGE>(const SceneObjects &s,
+__device__ Color color_value<NOISE>(const SceneObjects &s,
                                     const HitRecord &rec) {
+  Perlin noise(s.rand);
+  Point3 p = rec.p;
+  float turb = noise.turb(p);
+  return noise_value(s, rec, turb);
+}
+template <>
+__host__ Color h_color_value<NOISE>(const SceneObjects &s,
+                                    const HitRecord &rec) {
+  Perlin noise(true);
+  Point3 p = rec.p;
+  float turb = noise.turb(p);
+  return noise_value(s, rec, turb);
+}
+__host__ __device__ Color imcolor(const SceneObjects &s,
+                                  const HitRecord &rec) {
   int prim_idx = rec.primitive_index;
   int u = rec.u;
   int v = rec.v;
@@ -79,6 +120,16 @@ __device__ Color color_value<IMAGE>(const SceneObjects &s,
   return c;
 }
 template <>
+__device__ Color color_value<IMAGE>(const SceneObjects &s,
+                                    const HitRecord &rec) {
+  return imcolor(s, rec);
+}
+template <>
+__host__ Color h_color_value<IMAGE>(const SceneObjects &s,
+                                    const HitRecord &rec) {
+  return imcolor(s, rec);
+}
+template <>
 __device__ Color color_value<TEXTURE>(
     const SceneObjects &s, const HitRecord &rec) {
   int prim_idx = rec.primitive_index;
@@ -95,6 +146,26 @@ __device__ Color color_value<TEXTURE>(
     c = color_value<NOISE>(s, rec);
   } else if (ttype == IMAGE) {
     c = color_value<IMAGE>(s, rec);
+  }
+  return c;
+}
+template <>
+__host__ Color h_color_value<TEXTURE>(
+    const SceneObjects &s, const HitRecord &rec) {
+  int prim_idx = rec.primitive_index;
+  TextureType ttype =
+      static_cast<TextureType>(s.ttypes[prim_idx]);
+  Color c(0.0f);
+  if (ttype == NONE_TEXTURE) {
+    return c;
+  } else if (ttype == SOLID_COLOR) {
+    c = h_color_value<SOLID_COLOR>(s, rec);
+  } else if (ttype == CHECKER) {
+    c = h_color_value<CHECKER>(s, rec);
+  } else if (ttype == NOISE) {
+    c = h_color_value<NOISE>(s, rec);
+  } else if (ttype == IMAGE) {
+    c = h_color_value<IMAGE>(s, rec);
   }
   return c;
 }

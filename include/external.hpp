@@ -18,6 +18,7 @@
 #include <time.h>
 
 #include <math.h>
+#include <random>
 #include <stdlib.h>
 
 // stb image read & write
