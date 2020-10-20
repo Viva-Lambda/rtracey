@@ -265,12 +265,15 @@ __host__ __device__ bool hit_group(const SceneObjects &s,
   int group_end = group_start + group_size;
   bool res = false;
   int j = 0;
+  float closest_so_far = d_max;
   for (int i = group_start; i < group_end; i++) {
     rec.primitive_index = i;
-    bool is_hit = hit<HITTABLE>(s, r, d_min, d_max, rec);
+    bool is_hit =
+        hit<HITTABLE>(s, r, d_min, closest_so_far, rec);
     if (is_hit) {
       res = is_hit;
       j = i;
+      closest_so_far = rec.t;
     }
   }
   rec.primitive_index = j;
@@ -404,24 +407,28 @@ __device__ bool hit<SCENE>(const SceneObjects &s,
   int nb_group = s.nb_groups;
   bool res = false;
   int j = 0;
+  float closest_so_far = d_max;
   for (int i = 0; i < nb_group; i++) {
     rec.group_index = i;
     int gtype_ = s.gtypes[rec.group_index];
     GroupType gtype = static_cast<GroupType>(gtype_);
     bool is_hit = false;
     if (gtype == NONE_GRP) {
-      is_hit = hit<NONE_GRP>(s, r, d_min, d_max, rec);
-    } else if (gtype == BOX) {
-      is_hit = hit<BOX>(s, r, d_min, d_max, rec);
-    } else if (gtype == CONSTANT_MEDIUM) {
       is_hit =
-          hit<CONSTANT_MEDIUM>(s, r, d_min, d_max, rec);
+          hit<NONE_GRP>(s, r, d_min, closest_so_far, rec);
+    } else if (gtype == BOX) {
+      is_hit = hit<BOX>(s, r, d_min, closest_so_far, rec);
+    } else if (gtype == CONSTANT_MEDIUM) {
+      is_hit = hit<CONSTANT_MEDIUM>(s, r, d_min,
+                                    closest_so_far, rec);
     } else if (gtype == SIMPLE_MESH) {
-      is_hit = hit<SIMPLE_MESH>(s, r, d_min, d_max, rec);
+      is_hit = hit<SIMPLE_MESH>(s, r, d_min, closest_so_far,
+                                rec);
     }
     if (is_hit) {
       res = is_hit;
       j = i;
+      closest_so_far = rec.t;
     }
   }
   rec.group_index = j;
@@ -434,24 +441,28 @@ __host__ bool h_hit<SCENE>(const SceneObjects &s,
   int nb_group = s.nb_groups;
   bool res = false;
   int j = 0;
+  float closest_so_far = d_max;
   for (int i = 0; i < nb_group; i++) {
     rec.group_index = i;
     int gtype_ = s.gtypes[rec.group_index];
     GroupType gtype = static_cast<GroupType>(gtype_);
     bool is_hit = false;
     if (gtype == NONE_GRP) {
-      is_hit = h_hit<NONE_GRP>(s, r, d_min, d_max, rec);
-    } else if (gtype == BOX) {
-      is_hit = h_hit<BOX>(s, r, d_min, d_max, rec);
-    } else if (gtype == CONSTANT_MEDIUM) {
       is_hit =
-          h_hit<CONSTANT_MEDIUM>(s, r, d_min, d_max, rec);
+          h_hit<NONE_GRP>(s, r, d_min, closest_so_far, rec);
+    } else if (gtype == BOX) {
+      is_hit = h_hit<BOX>(s, r, d_min, closest_so_far, rec);
+    } else if (gtype == CONSTANT_MEDIUM) {
+      is_hit = h_hit<CONSTANT_MEDIUM>(s, r, d_min,
+                                      closest_so_far, rec);
     } else if (gtype == SIMPLE_MESH) {
-      is_hit = h_hit<SIMPLE_MESH>(s, r, d_min, d_max, rec);
+      is_hit = h_hit<SIMPLE_MESH>(s, r, d_min,
+                                  closest_so_far, rec);
     }
     if (is_hit) {
       res = is_hit;
       j = i;
+      closest_so_far = rec.t;
     }
   }
   rec.group_index = j;
