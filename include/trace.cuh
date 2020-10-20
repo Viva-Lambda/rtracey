@@ -102,7 +102,6 @@ __host__ Color h_ray_color(const Ray &r,
     bool anyHit = h_hit<SCENE>(world, current_ray, 0.001f,
                                FLT_MAX, rec);
     if (anyHit) {
-      // rec.mat_ptr.tparam.tdata = world.tdata;
       Color emittedColor = h_emitted<MATERIAL>(world, rec);
       Ray scattered;
       Vec3 attenuation;
@@ -123,7 +122,7 @@ __host__ Color h_ray_color(const Ray &r,
         return result;
       }
     } else {
-      return Color(0.3f);
+      return Color(0.0f);
     }
   }
   return Color(0.0f); // background color

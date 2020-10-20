@@ -406,7 +406,8 @@ __device__ bool hit<SCENE>(const SceneObjects &s,
                            float d_max, HitRecord &rec) {
   int nb_group = s.nb_groups;
   bool res = false;
-  int j = 0;
+  int g_index = 0;
+  int p_index = 0;
   float closest_so_far = d_max;
   for (int i = 0; i < nb_group; i++) {
     rec.group_index = i;
@@ -427,11 +428,13 @@ __device__ bool hit<SCENE>(const SceneObjects &s,
     }
     if (is_hit) {
       res = is_hit;
-      j = i;
+      g_index = i;
       closest_so_far = rec.t;
+      p_index = rec.primitive_index;
     }
   }
-  rec.group_index = j;
+  rec.group_index = g_index;
+  rec.primitive_index = p_index;
   return res;
 }
 template <>
@@ -440,7 +443,8 @@ __host__ bool h_hit<SCENE>(const SceneObjects &s,
                            float d_max, HitRecord &rec) {
   int nb_group = s.nb_groups;
   bool res = false;
-  int j = 0;
+  int g_index = 0;
+  int p_index = 0;
   float closest_so_far = d_max;
   for (int i = 0; i < nb_group; i++) {
     rec.group_index = i;
@@ -461,10 +465,12 @@ __host__ bool h_hit<SCENE>(const SceneObjects &s,
     }
     if (is_hit) {
       res = is_hit;
-      j = i;
+      g_index = i;
       closest_so_far = rec.t;
+      p_index = rec.primitive_index;
     }
   }
-  rec.group_index = j;
+  rec.group_index = g_index;
+  rec.primitive_index = p_index;
   return res;
 }

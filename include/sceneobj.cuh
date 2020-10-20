@@ -207,7 +207,6 @@ struct SceneObjects {
 
     prim_group_indices = new int[nb_ps];
   }
-
   __host__ SceneObjects to_device_thrust() {
     SceneObjects sobjs;
     sobjs.nb_prims = nb_prims;
