@@ -19,16 +19,19 @@ SceneObjects make_cornell_box() {
   const TextureParam white_solid =
       mkSolidColorParam(Color(.75, .75, .75));
   const TextureParam light_solid =
-      mkSolidColorParam(Color(15, 15, 15));
+      mkSolidColorParam(Color(25, 25, 25));
 
-  const MaterialParam red_param = mkLambertParam(red_solid);
+  const float fzz3 = 0.2f;
+  const MaterialParam red_param =
+      mkMetalParam(red_solid, fzz3);
   //
-  const float fzz = 0.6f;
+  const float fzz = 0.3f;
   const MaterialParam green_param =
       mkMetalParam(green_solid, fzz);
   //
+  const float fzz2 = 0.1f;
   const MaterialParam blue_param =
-      mkLambertParam(blue_solid);
+      mkMetalParam(blue_solid, fzz2);
   //
   const MaterialParam white_param =
       mkLambertParam(white_solid);
@@ -70,6 +73,7 @@ SceneObjects make_cornell_box() {
   GroupParam sg(ps, prim_count, group_id, BOX, g_dens, tp);
 
   // first box
+
   GroupParam box1 =
       makeBox(Point3(130, 0, 65), Point3(295, 165, 230),
               white_param, 1);

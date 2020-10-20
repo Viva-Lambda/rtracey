@@ -84,10 +84,10 @@ int main() {
   int HEIGHT = static_cast<int>(WIDTH / aspect_ratio);
   int BLOCK_WIDTH = 16;
   int BLOCK_HEIGHT = 8;
-  int SAMPLE_NB = 20;
-  int BOUNCE_NB = 10;
+  int SAMPLE_NB = 200;
+  int BOUNCE_NB = 100;
 
-  bool gpu_io = true;
+  bool gpu_io = false;
 
   get_device_props();
 
