@@ -152,6 +152,7 @@ scatter<DIFFUSE_LIGHT>(const SceneObjects &s, const Ray &r,
                        Color &attenuation, Ray &r_out,
                        float &pdf, curandState *loc) {
   pdf = 1.0f;
+  attenuation = color_value<TEXTURE>(s, rec);
   return false;
 }
 template <>
@@ -161,6 +162,7 @@ h_scatter<DIFFUSE_LIGHT>(const SceneObjects &s,
                          Color &attenuation, Ray &r_out,
                          float &pdf) {
   pdf = 1.0f;
+  attenuation = h_color_value<TEXTURE>(s, rec);
   return false;
 }
 

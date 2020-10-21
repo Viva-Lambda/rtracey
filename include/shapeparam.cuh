@@ -1,6 +1,7 @@
 #pragma once
 #include <scenetype.cuh>
 #include <vec3.cuh>
+#include <matrix.cuh>
 
 struct HittableParam {
   const HittableType htype; //
@@ -69,3 +70,6 @@ mkMovingSphereHittable(Point3 cent1, Point3 cent2,
                       cent2.z(), t0, t1, 0, rad);
   return param;
 }
+
+__host__ __device__ HittableParam translate(const HittableParam& hparam,
+

@@ -22,16 +22,15 @@ SceneObjects make_cornell_box() {
       mkSolidColorParam(Color(25, 25, 25));
 
   const float fzz3 = 0.2f;
-  const MaterialParam red_param =
-      mkMetalParam(red_solid, fzz3);
+  const MaterialParam red_param = mkLambertParam(red_solid);
   //
-  const float fzz = 0.3f;
+  const float fzz = 0.1f;
   const MaterialParam green_param =
       mkMetalParam(green_solid, fzz);
   //
   const float fzz2 = 0.1f;
   const MaterialParam blue_param =
-      mkMetalParam(blue_solid, fzz2);
+      mkLambertParam(blue_solid);
   //
   const MaterialParam white_param =
       mkLambertParam(white_solid);
@@ -73,10 +72,10 @@ SceneObjects make_cornell_box() {
   GroupParam sg(ps, prim_count, group_id, BOX, g_dens, tp);
 
   // first box
+  MaterialParam die = mkDielectricParam(tp, 1.5f);
 
-  GroupParam box1 =
-      makeBox(Point3(130, 0, 65), Point3(295, 165, 230),
-              white_param, 1);
+  GroupParam box1 = makeBox(Point3(130, 0, 65),
+                            Point3(295, 165, 230), die, 1);
 
   // second box
   GroupParam box2 =
