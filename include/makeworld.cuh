@@ -19,7 +19,7 @@ SceneObjects make_cornell_box() {
   const TextureParam white_solid =
       mkSolidColorParam(Color(.75, .75, .75));
   const TextureParam light_solid =
-      mkSolidColorParam(Color(10, 10, 10));
+      mkSolidColorParam(Color(15.0f, 15.0f, 15.0f));
 
   const float fzz3 = 0.2f;
   const MaterialParam red_param = mkLambertParam(red_solid);
@@ -76,8 +76,8 @@ SceneObjects make_cornell_box() {
 
   GroupParam box1 = makeBox(
       Point3(0.0f), Point3(165, 330, 165), white_param, 1);
-  box1 = rotate(box1, Vec3(0, 1, 0), 15);
-  GroupParam box4 = translate(box1, Point3(265, 0, 295));
+  // box1 = rotate(box1, Vec3(0, 1, 0), 15);
+  box1 = translate(box1, Point3(265, 0, 295));
 
   // a glass sphere
   HittableParam hsp1 =
@@ -89,14 +89,14 @@ SceneObjects make_cornell_box() {
   // second box
   GroupParam box2 =
       makeBox(Point3(0.0f), Point3(165.0f), white_param, 2);
-  box2 = rotate(box2, Vec3(0, 1, 0), -18);
-  GroupParam box3 = translate(box2, Point3(130, 0, 65));
+  // box2 = rotate(box2, Vec3(0, 1, 0), -18);
+  box2 = translate(box2, Point3(130, 0, 65));
 
   //
   GroupParam *sgs = new GroupParam[4];
   sgs[0] = sg;
-  sgs[1] = box4;
-  sgs[2] = box3;
+  sgs[1] = box1;
+  sgs[2] = box2;
   sgs[3] = sg1;
   SceneObjects sobjs(sgs, 4);
   // box1.g_free();
