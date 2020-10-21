@@ -91,7 +91,7 @@ struct SceneObjects {
     for (int i = 0; i < nb_groups; i++) {
       GroupParam g = gs[i];
       group_sizes[i] = g.group_size;
-      group_ids[i] = (g.group_id);
+      group_ids[i] = g.group_id;
       gtypes[i] = g.gtype;
       int gstart = gcount;
       gcount += group_sizes[i];

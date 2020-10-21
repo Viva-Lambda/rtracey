@@ -90,15 +90,31 @@ struct Primitive {
 __host__ __device__ Primitive translate(Primitive &p,
                                         Point3 steps) {
   HittableParam hp = translate(p.get_hparam(), steps);
-  p.set_hparam(hp);
-  Primitive pr(p);
+  Primitive pr(p.mparam, hp, p.group_index, p.group_id);
   return pr;
 }
 __host__ __device__ Primitive rotate(Primitive &p,
                                      Vec3 axis,
                                      float degree) {
   HittableParam hp = rotate(p.get_hparam(), axis, degree);
-  p.set_hparam(hp);
-  Primitive pr(p);
+  Primitive pr(p.mparam, hp, p.group_index, p.group_id);
+  return pr;
+}
+__host__ __device__ Primitive rotate_y(Primitive &p,
+                                       float degree) {
+  HittableParam hp = rotate_y(p.get_hparam(), degree);
+  Primitive pr(p.mparam, hp, p.group_index, p.group_id);
+  return pr;
+}
+__host__ __device__ Primitive rotate_x(Primitive &p,
+                                       float degree) {
+  HittableParam hp = rotate_x(p.get_hparam(), degree);
+  Primitive pr(p.mparam, hp, p.group_index, p.group_id);
+  return pr;
+}
+__host__ __device__ Primitive rotate_z(Primitive &p,
+                                       float degree) {
+  HittableParam hp = rotate_z(p.get_hparam(), degree);
+  Primitive pr(p.mparam, hp, p.group_index, p.group_id);
   return pr;
 }

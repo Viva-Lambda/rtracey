@@ -167,12 +167,12 @@ hit<RECTANGLE>(const SceneObjects &s, const Ray &r,
   int prim_idx = rec.primitive_index;
   float k = s.p1zs[prim_idx];
   float a0 = s.p1xs[prim_idx];
-  float a1 = s.p1ys[prim_idx];
-  float b0 = s.p2xs[prim_idx];
+  float a1 = s.p2xs[prim_idx];
+  float b0 = s.p1ys[prim_idx];
   float b1 = s.p2ys[prim_idx];
   Vec3 anormal = Vec3(s.n1xs[prim_idx], s.n1ys[prim_idx],
                       s.n1zs[prim_idx]);
-  AxisInfo ax = AxisInfo(anormal);
+  AxisInfo ax = AxisInfo(s.rads[prim_idx]);
 
   float t = (k - r.origin()[ax.notAligned]) /
             r.direction()[ax.notAligned];

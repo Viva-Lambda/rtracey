@@ -1,6 +1,7 @@
 #pragma once
 // matrix library from P. Shirley, Realistic Ray Tracing
 #include <external.hpp>
+#include <vec3.cuh>
 //
 class Matrix {
 public:

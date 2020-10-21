@@ -52,20 +52,24 @@ __host__ __device__ HittableParam mkRectHittable(
     const float b1, Vec3 anormal, const float k) {
 
   HittableType htype;
+  int normal_axis;
   if (anormal.z() == 1) {
     htype = XY_RECT;
+    normal_axis = 0;
   } else if (anormal.y() == 1) {
     htype = XZ_RECT;
+    normal_axis = 1;
   } else if (anormal.x() == 1) {
     htype = YZ_RECT;
+    normal_axis = 2;
   } else {
     htype = NONE_HITTABLE;
   }
   float nx = anormal.x();
   float ny = anormal.y();
   float nz = anormal.z();
-  HittableParam param(htype, a0, a1, k, b0, b1, k, nx, ny,
-                      nz, a1 - a0);
+  HittableParam param(htype, a0, b0, k, a1, b1, k, nx, ny,
+                      nz, normal_axis);
   return param;
 }
 __host__ __device__ HittableParam mkYZRectHittable(
@@ -110,10 +114,55 @@ translate(const HittableParam &hparam, Point3 steps) {
 __host__ __device__ HittableParam rotate(
     const HittableParam &hparam, Vec3 axis, float degree) {
   float radian = degree_to_radian(degree);
-  Point3 p1(hparam.p1x, hparam.p1y, hparam.p1z);
-  Point3 p2(hparam.p2x, hparam.p2y, hparam.p2z);
-  Vec3 n1(hparam.n1x, hparam.n1y, hparam.n1z);
+  Point3 p1 = hparam.get_point1();
+  Point3 p2 = hparam.get_point2();
+  Vec3 n1 = hparam.get_normal();
   Matrix rotMat = rotate(axis, radian);
+  Point3 np1 = rotMat * p1;
+  Point3 np2 = rotMat * p2;
+  Point3 nn1 = rotMat * n1;
+  HittableParam hp(hparam.htype, np1, np2, nn1,
+                   hparam.radius);
+  return hp;
+}
+__host__ __device__ HittableParam
+rotate_y(const HittableParam &hparam, float degree) {
+  float radian = degree_to_radian(degree);
+  Point3 p1 = hparam.get_point1();
+  Point3 p2 = hparam.get_point2();
+  Vec3 n1 = hparam.get_normal();
+
+  Matrix rotMat = rotateY(radian);
+  Point3 np1 = rotMat * p1;
+  Point3 np2 = rotMat * p2;
+  Point3 nn1 = rotMat * n1;
+  HittableParam hp(hparam.htype, np1, np2, nn1,
+                   hparam.radius);
+  return hp;
+}
+__host__ __device__ HittableParam
+rotate_x(const HittableParam &hparam, float degree) {
+  float radian = degree_to_radian(degree);
+  Point3 p1 = hparam.get_point1();
+  Point3 p2 = hparam.get_point2();
+  Vec3 n1 = hparam.get_normal();
+
+  Matrix rotMat = rotateX(radian);
+  Point3 np1 = rotMat * p1;
+  Point3 np2 = rotMat * p2;
+  Point3 nn1 = rotMat * n1;
+  HittableParam hp(hparam.htype, np1, np2, nn1,
+                   hparam.radius);
+  return hp;
+}
+__host__ __device__ HittableParam
+rotate_z(const HittableParam &hparam, float degree) {
+  float radian = degree_to_radian(degree);
+  Point3 p1 = hparam.get_point1();
+  Point3 p2 = hparam.get_point2();
+  Vec3 n1 = hparam.get_normal();
+
+  Matrix rotMat = rotateZ(radian);
   Point3 np1 = rotMat * p1;
   Point3 np2 = rotMat * p2;
   Point3 nn1 = rotMat * n1;

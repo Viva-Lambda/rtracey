@@ -36,6 +36,16 @@ struct GroupParam {
         tp1z(tp.tp1z), scale(tp.scale), ttype(tp.ttype) {
     deepcopy(prims, prm, group_size);
   }
+  __host__ __device__ GroupParam(const GroupParam &g)
+      : group_size(g.group_size), group_id(g.group_id),
+        gtype(g.gtype), density(g.density), width(g.width),
+        height(g.height), index(g.index),
+        bytes_per_pixel(g.bytes_per_pixel), tp1x(g.tp1x),
+        tp1y(g.tp1y), tp1z(g.tp1z), scale(g.scale),
+        ttype(g.ttype) {
+    Primitive *prm = g.prims;
+    deepcopy(prims, prm, group_size);
+  }
   __host__ __device__ void g_free() { delete[] prims; }
   __host__ __device__ Primitive get(int i) const {
     if (i <= 0) {
@@ -48,7 +58,6 @@ struct GroupParam {
   }
   __host__ __device__ GroupParam &
   operator=(const GroupParam &g) {
-    //
     gtype = g.gtype;
     group_size = g.group_size;
     group_id = g.group_id;
@@ -106,24 +115,38 @@ __host__ __device__ GroupParam makeBox(const Point3 &p0,
   return sg;
 }
 
-__host__ __device__ GroupParam translate(GroupParam &gp,
-                                         Point3 steps) {
+__host__ __device__ void translate(GroupParam &gp,
+                                   Point3 steps) {
   for (int i = 0; i < gp.group_size; i++) {
     Primitive p = gp.prims[i];
-    p = translate(p, steps);
-    gp.prims[i] = p;
+    gp.prims[i] = translate(p, steps);
   }
-  GroupParam gr(gp);
-  return gr;
 }
-__host__ __device__ GroupParam rotate(GroupParam &gp,
-                                      Vec3 axis,
-                                      float degree) {
+__host__ __device__ void rotate(GroupParam &gp, Vec3 axis,
+                                float degree) {
   for (int i = 0; i < gp.group_size; i++) {
     Primitive p = gp.prims[i];
-    p = rotate(p, axis, degree);
-    gp.prims[i] = p;
+    gp.prims[i] = rotate(p, axis, degree);
   }
-  GroupParam gr(gp);
-  return gr;
+}
+__host__ __device__ void rotate_y(GroupParam &gp,
+                                  float degree) {
+  for (int i = 0; i < gp.group_size; i++) {
+    Primitive p = gp.prims[i];
+    gp.prims[i] = rotate_y(p, degree);
+  }
+}
+__host__ __device__ void rotate_x(GroupParam &gp,
+                                  float degree) {
+  for (int i = 0; i < gp.group_size; i++) {
+    Primitive p = gp.prims[i];
+    gp.prims[i] = rotate_x(p, degree);
+  }
+}
+__host__ __device__ void rotate_z(const GroupParam &gp,
+                                  float degree) {
+  for (int i = 0; i < gp.group_size; i++) {
+    Primitive p = gp.prims[i];
+    gp.prims[i] = rotate_z(p, degree);
+  }
 }
