@@ -224,21 +224,14 @@ __host__ __device__ Vec3 sqrt(const Vec3 &v1) {
   return Vec3(x, y, z);
 }
 
-__host__ __device__ bool refract(const Vec3 &v,
+__host__ __device__ Vec3 refract(const Vec3 &v,
                                  const Vec3 &n,
-                                 float ni_over_nt,
-                                 Vec3 &refracted) {
-  Vec3 uv = to_unit(v);
-  float dt = dot(uv, n);
-  float discriminant =
-      1.0f - ni_over_nt * ni_over_nt * (1 - dt * dt);
-  if (discriminant > 0) {
-    refracted =
-        ni_over_nt * (uv - n * dt) - n * sqrt(discriminant);
-    return true;
-  } else {
-    return false;
-  }
+                                 float ni_over_nt) {
+  float cos_theta = dot(-v, n);
+  Vec3 r_out_p = ni_over_nt * (v + cos_theta * n);
+  Vec3 r_out_par =
+      sqrt(fabs(1.0f - r_out_p.squared_length())) * n;
+  return r_out_p + r_out_par;
 }
 
 __host__ __device__ Vec3 reflect(const Vec3 &v,

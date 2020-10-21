@@ -93,36 +93,27 @@ scatter_dielectric(const SceneObjects &s, const Ray &r,
   int prim_idx = rec.primitive_index;
   float ref_idx = s.fuzz_ref_idxs[prim_idx];
   pdf = 1.0f;
+  attenuation = Vec3(1.0f, 1.0f, 1.0f);
   Vec3 outward_normal;
   Vec3 reflected = reflect(r.direction(), rec.normal);
-  float ni_over_nt;
-  attenuation = Vec3(1.0f, 1.0f, 1.0f);
-  Vec3 refracted;
-  float reflect_prob;
-  float cosine;
-  if (dot(r.direction(), rec.normal) > 0.0f) {
-    outward_normal = -rec.normal;
-    ni_over_nt = ref_idx;
-    cosine = dot(r.direction(), rec.normal) /
-             r.direction().length();
-    cosine = sqrt(1.0f -
-                  ni_over_nt * ni_over_nt *
-                      (1 - cosine * cosine));
+  //
+  float refract_ratio =
+      rec.front_face ? (1.0f / ref_idx) : ref_idx;
+  Vec3 udir = to_unit(r.direction());
+  float cos_theta = dfmin(dot(-udir, rec.normal), 1.0f);
+  float sin_theta = sqrt(1.0f - cos_theta * cos_theta);
+
+  bool no_refract = refract_ratio * sin_theta > 1.0f;
+  Vec3 dir;
+  if (no_refract ||
+      fresnelCT(cos_theta, refract_ratio) > rval) {
+    // reflect
+    dir = reflect(udir, rec.normal);
   } else {
-    outward_normal = rec.normal;
-    ni_over_nt = 1.0f / ref_idx;
-    cosine = -dot(r.direction(), rec.normal) /
-             r.direction().length();
+    // refract
+    dir = refract(udir, rec.normal, refract_ratio);
   }
-  if (refract(r.direction(), outward_normal, ni_over_nt,
-              refracted))
-    reflect_prob = fresnelCT(cosine, ref_idx);
-  else
-    reflect_prob = 1.0f;
-  if (rval < reflect_prob)
-    r_out = Ray(rec.p, reflected, r.time());
-  else
-    r_out = Ray(rec.p, refracted, r.time());
+  r_out = Ray(rec.p, dir, r.time());
   return true;
 }
 template <>

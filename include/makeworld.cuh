@@ -19,7 +19,7 @@ SceneObjects make_cornell_box() {
   const TextureParam white_solid =
       mkSolidColorParam(Color(.75, .75, .75));
   const TextureParam light_solid =
-      mkSolidColorParam(Color(25, 25, 25));
+      mkSolidColorParam(Color(10, 10, 10));
 
   const float fzz3 = 0.2f;
   const MaterialParam red_param = mkLambertParam(red_solid);
@@ -74,20 +74,31 @@ SceneObjects make_cornell_box() {
   // first box
   MaterialParam die = mkDielectricParam(tp, 1.5f);
 
-  GroupParam box1 = makeBox(Point3(130, 0, 65),
-                            Point3(295, 165, 230), die, 1);
+  GroupParam box1 = makeBox(
+      Point3(0.0f), Point3(165, 330, 165), white_param, 1);
+  box1 = rotate(box1, Vec3(0, 1, 0), 15);
+  GroupParam box4 = translate(box1, Point3(265, 0, 295));
+
+  // a glass sphere
+  HittableParam hsp1 =
+      mkSphereHittable(Point3(190, 350, 190), 90);
+  Primitive glass_sphere(die, hsp1, 0, 2);
+  Primitive ps1[] = {glass_sphere};
+  GroupParam sg1(ps1, 1, 3, NONE_GRP, g_dens, tp);
 
   // second box
   GroupParam box2 =
-      makeBox(Point3(265, 0, 295), Point3(430, 330, 460),
-              white_param, 2);
-  //
+      makeBox(Point3(0.0f), Point3(165.0f), white_param, 2);
+  box2 = rotate(box2, Vec3(0, 1, 0), -18);
+  GroupParam box3 = translate(box2, Point3(130, 0, 65));
 
-  GroupParam *sgs = new GroupParam[3];
+  //
+  GroupParam *sgs = new GroupParam[4];
   sgs[0] = sg;
-  sgs[1] = box1;
-  sgs[2] = box2;
-  SceneObjects sobjs(sgs, 3);
+  sgs[1] = box4;
+  sgs[2] = box3;
+  sgs[3] = sg1;
+  SceneObjects sobjs(sgs, 4);
   // box1.g_free();
   // box2.g_free();
   // sg.g_free();
@@ -100,21 +111,23 @@ __global__ void make_cornell_box_k(SceneObjects world,
     const TextureParam red_solid =
         mkSolidColorParam(Color(.65, .05, .05));
     const TextureParam green_solid =
-        mkSolidColorParam(Color(.12, .45, .15));
+        mkSolidColorParam(Color(.12, .75, .15));
     const TextureParam blue_solid =
         mkSolidColorParam(Color(.05, .05, .65));
     const TextureParam white_solid =
         mkSolidColorParam(Color(.75, .75, .75));
     const TextureParam light_solid =
-        mkSolidColorParam(Color(15, 15, 15));
+        mkSolidColorParam(Color(25, 25, 25));
 
+    const float fzz3 = 0.2f;
     const MaterialParam red_param =
         mkLambertParam(red_solid);
     //
-    const float fzz = 0.6f;
+    const float fzz = 0.1f;
     const MaterialParam green_param =
         mkMetalParam(green_solid, fzz);
     //
+    const float fzz2 = 0.1f;
     const MaterialParam blue_param =
         mkLambertParam(blue_solid);
     //
@@ -164,24 +177,40 @@ __global__ void make_cornell_box_k(SceneObjects world,
                   tp);
 
     // first box
+    MaterialParam die = mkDielectricParam(tp, 1.5f);
+
     GroupParam box1 =
-        makeBox(Point3(130, 0, 65), Point3(295, 165, 230),
+        makeBox(Point3(0.0f), Point3(165, 330, 165),
                 white_param, 1);
+    box1 = rotate(box1, Vec3(0, 1, 0), 15);
+    box1 = translate(box1, Point3(265, 0, 295));
+
+    // a glass sphere
+    HittableParam hsp1 =
+        mkSphereHittable(Point3(190, 350, 190), 90);
+    Primitive glass_sphere(die, hsp1, 0, 2);
+    Primitive ps1[] = {glass_sphere};
+    GroupParam sg1(ps1, 1, 2, NONE_GRP, g_dens, tp);
 
     // second box
-    GroupParam box2 =
-        makeBox(Point3(265, 0, 295), Point3(430, 330, 460),
-                white_param, 2);
-    //
+    GroupParam box2 = makeBox(Point3(0.0f), Point3(165.0f),
+                              white_param, 3);
+    box2 = rotate(box2, Vec3(0, 1, 0), -18);
+    box2 = translate(box2, Point3(130, 0, 65));
 
-    GroupParam sgs[] = {sg, box1, box2};
+    //
+    GroupParam *sgs = new GroupParam[4];
+    sgs[0] = sg;
+    sgs[1] = box1;
+    sgs[2] = box2;
+    sgs[3] = sg1;
     SceneObjects sobjs(sgs, 3, loc);
     // Hittables hs = sobjs.to_hittables();
     // Hittables hs = sobjs.to_hittables();
     world = sobjs;
-    box1.g_free();
-    box2.g_free();
-    sg.g_free();
+    // box1.g_free();
+    // box2.g_free();
+    // sg.g_free();
   }
 }
 

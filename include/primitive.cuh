@@ -64,4 +64,41 @@ struct Primitive {
     group_index = p.group_index;
     return *this;
   }
+  __host__ __device__ HittableParam get_hparam() const {
+    HittableParam hp(htype, p1x, p1y, p1z, p2x, p2y, p2z,
+                     n1x, n1y, n1z, radius);
+    return hp;
+  }
+  __host__ __device__ void set_hparam(HittableParam hp) {
+    htype = hp.htype;
+
+    p1x = hp.p1x;
+    p1y = hp.p1y;
+    p1z = hp.p1z;
+
+    p2x = hp.p2x;
+    p2y = hp.p2y;
+    p2z = hp.p2z;
+
+    n1x = hp.n1x;
+    n1y = hp.n1y;
+    n1z = hp.n1z;
+    radius = hp.radius;
+  }
 };
+
+__host__ __device__ Primitive translate(Primitive &p,
+                                        Point3 steps) {
+  HittableParam hp = translate(p.get_hparam(), steps);
+  p.set_hparam(hp);
+  Primitive pr(p);
+  return pr;
+}
+__host__ __device__ Primitive rotate(Primitive &p,
+                                     Vec3 axis,
+                                     float degree) {
+  HittableParam hp = rotate(p.get_hparam(), axis, degree);
+  p.set_hparam(hp);
+  Primitive pr(p);
+  return pr;
+}

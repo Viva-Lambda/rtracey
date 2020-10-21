@@ -16,9 +16,9 @@ bounding_box(const SceneObjects &s, float t0, float t1,
 }
 template <>
 __host__ __device__ bool
-bounding_box<SPHERE_HIT>(const SceneObjects &s, float t0,
-                         float t1, Aabb &output_box,
-                         int prim_idx) {
+bounding_box<SPHERE>(const SceneObjects &s, float t0,
+                     float t1, Aabb &output_box,
+                     int prim_idx) {
   Point3 center(s.p1xs[prim_idx], s.p1ys[prim_idx],
                 s.p1zs[prim_idx]);
   float radius = s.rads[prim_idx];
@@ -28,9 +28,10 @@ bounding_box<SPHERE_HIT>(const SceneObjects &s, float t0,
 }
 
 template <>
-__host__ __device__ bool bounding_box<MOVING_SPHERE_HIT>(
-    const SceneObjects &s, float t0, float t1,
-    Aabb &output_box, int prim_idx) {
+__host__ __device__ bool
+bounding_box<MOVING_SPHERE>(const SceneObjects &s, float t0,
+                            float t1, Aabb &output_box,
+                            int prim_idx) {
   Point3 center1(s.p1xs[prim_idx], s.p1ys[prim_idx],
                  s.p1zs[prim_idx]);
   Point3 center2(s.p2xs[prim_idx], s.p2ys[prim_idx],
@@ -44,9 +45,9 @@ __host__ __device__ bool bounding_box<MOVING_SPHERE_HIT>(
 }
 template <>
 __host__ __device__ bool
-bounding_box<TRIANGLE_HIT>(const SceneObjects &s, float t0,
-                           float t1, Aabb &output_box,
-                           int prim_idx) {
+bounding_box<TRIANGLE>(const SceneObjects &s, float t0,
+                       float t1, Aabb &output_box,
+                       int prim_idx) {
   Point3 p1(s.p1xs[prim_idx], s.p1ys[prim_idx],
             s.p1zs[prim_idx]);
   Point3 p2(s.p2xs[prim_idx], s.p2ys[prim_idx],
@@ -61,32 +62,35 @@ bounding_box<TRIANGLE_HIT>(const SceneObjects &s, float t0,
   return true;
 }
 template <>
-__host__ __device__ bool bounding_box<XY_TRIANGLE_HIT>(
-    const SceneObjects &s, float t0, float t1,
-    Aabb &output_box, int prim_idx) {
-  return bounding_box<TRIANGLE_HIT>(s, t0, t1, output_box,
-                                    prim_idx);
+__host__ __device__ bool
+bounding_box<XY_TRIANGLE>(const SceneObjects &s, float t0,
+                          float t1, Aabb &output_box,
+                          int prim_idx) {
+  return bounding_box<TRIANGLE>(s, t0, t1, output_box,
+                                prim_idx);
 }
 template <>
-__host__ __device__ bool bounding_box<XZ_TRIANGLE_HIT>(
-    const SceneObjects &s, float t0, float t1,
-    Aabb &output_box, int prim_idx) {
-  return bounding_box<TRIANGLE_HIT>(s, t0, t1, output_box,
-                                    prim_idx);
+__host__ __device__ bool
+bounding_box<XZ_TRIANGLE>(const SceneObjects &s, float t0,
+                          float t1, Aabb &output_box,
+                          int prim_idx) {
+  return bounding_box<TRIANGLE>(s, t0, t1, output_box,
+                                prim_idx);
 }
 template <>
-__host__ __device__ bool bounding_box<YZ_TRIANGLE_HIT>(
-    const SceneObjects &s, float t0, float t1,
-    Aabb &output_box, int prim_idx) {
-  return bounding_box<TRIANGLE_HIT>(s, t0, t1, output_box,
-                                    prim_idx);
+__host__ __device__ bool
+bounding_box<YZ_TRIANGLE>(const SceneObjects &s, float t0,
+                          float t1, Aabb &output_box,
+                          int prim_idx) {
+  return bounding_box<TRIANGLE>(s, t0, t1, output_box,
+                                prim_idx);
 }
 
 template <>
 __host__ __device__ bool
-bounding_box<RECT_HIT>(const SceneObjects &s, float t0,
-                       float t1, Aabb &output_box,
-                       int prim_idx) {
+bounding_box<RECTANGLE>(const SceneObjects &s, float t0,
+                        float t1, Aabb &output_box,
+                        int prim_idx) {
   float k = s.rads[prim_idx];
   float a0 = s.p1xs[prim_idx];
   float a1 = s.p1ys[prim_idx];
@@ -121,29 +125,29 @@ bounding_box<RECT_HIT>(const SceneObjects &s, float t0,
 
 template <>
 __host__ __device__ bool
-bounding_box<XY_RECT_HIT>(const SceneObjects &s, float t0,
-                          float t1, Aabb &output_box,
-                          int prim_idx) {
-  return bounding_box<RECT_HIT>(s, t0, t1, output_box,
-                                prim_idx);
+bounding_box<XY_RECT>(const SceneObjects &s, float t0,
+                      float t1, Aabb &output_box,
+                      int prim_idx) {
+  return bounding_box<RECTANGLE>(s, t0, t1, output_box,
+                                 prim_idx);
 }
 
 template <>
 __host__ __device__ bool
-bounding_box<XZ_RECT_HIT>(const SceneObjects &s, float t0,
-                          float t1, Aabb &output_box,
-                          int prim_idx) {
-  return bounding_box<RECT_HIT>(s, t0, t1, output_box,
-                                prim_idx);
+bounding_box<XZ_RECT>(const SceneObjects &s, float t0,
+                      float t1, Aabb &output_box,
+                      int prim_idx) {
+  return bounding_box<RECTANGLE>(s, t0, t1, output_box,
+                                 prim_idx);
 }
 
 template <>
 __host__ __device__ bool
-bounding_box<YZ_RECT_HIT>(const SceneObjects &s, float t0,
-                          float t1, Aabb &output_box,
-                          int prim_idx) {
-  return bounding_box<RECT_HIT>(s, t0, t1, output_box,
-                                prim_idx);
+bounding_box<YZ_RECT>(const SceneObjects &s, float t0,
+                      float t1, Aabb &output_box,
+                      int prim_idx) {
+  return bounding_box<RECTANGLE>(s, t0, t1, output_box,
+                                 prim_idx);
 }
 template <>
 __host__ __device__ bool
@@ -154,47 +158,47 @@ bounding_box<HITTABLE>(const SceneObjects &s, float t0,
   HittableType htype = static_cast<HittableType>(htype);
   bool res = false;
   switch (htype) {
-  case NONE_HIT: {
+  case NONE_HITTABLE: {
     break;
   }
-  case SPHERE_HIT: {
-    res = bounding_box<SPHERE_HIT>(s, t0, t1, output_box,
-                                   prim_idx);
+  case SPHERE: {
+    res = bounding_box<SPHERE>(s, t0, t1, output_box,
+                               prim_idx);
     break;
   }
-  case MOVING_SPHERE_HIT: {
-    res = bounding_box<MOVING_SPHERE_HIT>(
-        s, t0, t1, output_box, prim_idx);
+  case MOVING_SPHERE: {
+    res = bounding_box<MOVING_SPHERE>(s, t0, t1, output_box,
+                                      prim_idx);
     break;
   }
-  case XY_RECT_HIT: {
-    res = bounding_box<XY_RECT_HIT>(s, t0, t1, output_box,
+  case XY_RECT: {
+    res = bounding_box<XY_RECT>(s, t0, t1, output_box,
+                                prim_idx);
+    break;
+  }
+  case XZ_RECT: {
+    res = bounding_box<XZ_RECT>(s, t0, t1, output_box,
+                                prim_idx);
+    break;
+  }
+  case YZ_RECT: {
+    res = bounding_box<YZ_RECT>(s, t0, t1, output_box,
+                                prim_idx);
+    break;
+  }
+  case YZ_TRIANGLE: {
+    res = bounding_box<YZ_TRIANGLE>(s, t0, t1, output_box,
                                     prim_idx);
     break;
   }
-  case XZ_RECT_HIT: {
-    res = bounding_box<XZ_RECT_HIT>(s, t0, t1, output_box,
+  case XZ_TRIANGLE: {
+    res = bounding_box<XZ_TRIANGLE>(s, t0, t1, output_box,
                                     prim_idx);
     break;
   }
-  case YZ_RECT_HIT: {
-    res = bounding_box<YZ_RECT_HIT>(s, t0, t1, output_box,
+  case XY_TRIANGLE: {
+    res = bounding_box<XY_TRIANGLE>(s, t0, t1, output_box,
                                     prim_idx);
-    break;
-  }
-  case YZ_TRIANGLE_HIT: {
-    res = bounding_box<YZ_TRIANGLE_HIT>(
-        s, t0, t1, output_box, prim_idx);
-    break;
-  }
-  case XZ_TRIANGLE_HIT: {
-    res = bounding_box<XZ_TRIANGLE_HIT>(
-        s, t0, t1, output_box, prim_idx);
-    break;
-  }
-  case XY_TRIANGLE_HIT: {
-    res = bounding_box<XY_TRIANGLE_HIT>(
-        s, t0, t1, output_box, prim_idx);
     break;
   }
   }
@@ -214,10 +218,11 @@ bounding_box(const SceneObjects &s, float t0, float t1,
 
   int group_start = s.group_starts[group_idx];
   int group_size = s.group_sizes[group_idx];
+  int group_end = group_start + group_size;
   bool is_bounding = false;
   Aabb temp;
   bool first_box = true;
-  for (int i = group_start; i < group_size; i++) {
+  for (int i = group_start; i < group_end; i++) {
     int prim_idx = i;
     int htype_ = s.htypes[prim_idx];
     res = bounding_box<HITTABLE>(s, t0, t1, output_box,

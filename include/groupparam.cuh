@@ -105,3 +105,25 @@ __host__ __device__ GroupParam makeBox(const Point3 &p0,
   GroupParam sg(ps, 6, g_id, BOX, g_dens, tp);
   return sg;
 }
+
+__host__ __device__ GroupParam translate(GroupParam &gp,
+                                         Point3 steps) {
+  for (int i = 0; i < gp.group_size; i++) {
+    Primitive p = gp.prims[i];
+    p = translate(p, steps);
+    gp.prims[i] = p;
+  }
+  GroupParam gr(gp);
+  return gr;
+}
+__host__ __device__ GroupParam rotate(GroupParam &gp,
+                                      Vec3 axis,
+                                      float degree) {
+  for (int i = 0; i < gp.group_size; i++) {
+    Primitive p = gp.prims[i];
+    p = rotate(p, axis, degree);
+    gp.prims[i] = p;
+  }
+  GroupParam gr(gp);
+  return gr;
+}

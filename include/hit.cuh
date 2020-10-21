@@ -165,7 +165,7 @@ __host__ __device__ bool
 hit<RECTANGLE>(const SceneObjects &s, const Ray &r,
                float d_min, float d_max, HitRecord &rec) {
   int prim_idx = rec.primitive_index;
-  float k = s.rads[prim_idx];
+  float k = s.p1zs[prim_idx];
   float a0 = s.p1xs[prim_idx];
   float a1 = s.p1ys[prim_idx];
   float b0 = s.p2xs[prim_idx];
