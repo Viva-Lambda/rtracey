@@ -110,20 +110,21 @@ __host__ Color h_color_value<NOISE>(const SceneObjects &s,
 }
 __host__ __device__ Color imcolor(const SceneObjects &s,
                                   const HitRecord &rec) {
-  int width, height, bpp, idx, prim_idx;
+  int width, height, bpp, end_idx, prim_idx;
   if (!rec.group_scattering) {
     prim_idx = rec.primitive_index;
     width = s.widths[prim_idx];
     height = s.heights[prim_idx];
     bpp = s.bytes_per_pixels[prim_idx];
-    idx = s.image_indices[prim_idx];
+    end_idx = s.image_indices[prim_idx];
   } else {
     prim_idx = rec.group_index;
     width = s.g_widths[prim_idx];
     height = s.g_heights[prim_idx];
     bpp = s.g_bpps[prim_idx];
-    idx = s.g_indices[prim_idx];
+    end_idx = s.g_indices[prim_idx];
   }
+  int start_index = end_idx - (width * height * bpp);
 
   int u = rec.u;
   int v = rec.v;
@@ -132,20 +133,22 @@ __host__ __device__ Color imcolor(const SceneObjects &s,
     return Color(1.0, 0.0, 0.0);
   }
   u = clamp(u, 0.0, 1.0);
-  v = 1.0 - clamp(v, 0.0, 1.0); // flip v to im coords
+  v = 1 - clamp(v, 0.0, 1.0); // flip v to im coords
   int w = width;
   int h = height;
-  int xi = (int)(u * w);
-  int yj = (int)(v * h);
+  int xi = static_cast<int>(u * w);
+  int yj = static_cast<int>(v * h);
   xi = xi >= w ? w - 1 : xi;
   yj = yj >= h ? h - 1 : yj;
   int bytes_per_line = bpp * w;
-  int pixel = yj * bytes_per_line + xi * bpp + idx;
+  int pixel =
+      (yj * bytes_per_line + xi * bpp) + start_index;
+  //
   Color c(0.0f, 0.0f, 0.0f);
   for (int i = 0; i < bpp; i++) {
     float pixel_val =
         static_cast<float>(s.tdata[pixel + i]);
-    c[i] = pixel_val / 255;
+    c[i] = pixel_val / 255.0f;
   }
   return c;
 }
@@ -190,9 +193,16 @@ __device__ Color color_value<TEXTURE>(const SceneObjects &s,
 template <>
 __host__ Color h_color_value<TEXTURE>(
     const SceneObjects &s, const HitRecord &rec) {
-  int prim_idx = rec.primitive_index;
-  TextureType ttype =
-      static_cast<TextureType>(s.ttypes[prim_idx]);
+  int prim_idx;
+  TextureType ttype;
+  if (rec.group_scattering) {
+    prim_idx = rec.group_index;
+    ttype = static_cast<TextureType>(s.g_ttypes[prim_idx]);
+  } else {
+    prim_idx = rec.primitive_index;
+    ttype = static_cast<TextureType>(s.ttypes[prim_idx]);
+  }
+
   Color c(0.0f);
   if (ttype == NONE_TEXTURE) {
     return c;

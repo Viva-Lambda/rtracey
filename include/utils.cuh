@@ -1,5 +1,4 @@
-#ifndef UTILS_CUH
-#define UTILS_CUH
+#pragma once
 
 // some utility functions
 #include <external.hpp>
@@ -95,7 +94,8 @@ std::vector<unsigned char> imread(const char *impath,
 void imread(std::vector<const char *> impaths,
             std::vector<int> &ws, std::vector<int> &hs,
             std::vector<int> &nbChannels,
-            std::vector<unsigned char> &imdata, int &size) {
+            std::vector<unsigned char> &imdata,
+            std::vector<int> &indices) {
   for (int i = 0; i < impaths.size(); i++) {
     int w, h, c;
     unsigned char *data =
@@ -103,7 +103,7 @@ void imread(std::vector<const char *> impaths,
     ws.push_back(w);
     hs.push_back(h);
     nbChannels.push_back(c);
-    size += w * h * c;
+    indices.push_back(w * h * c);
     for (int k = 0; k < w * h * c; k++) {
       imdata.push_back(data[k]);
     }
@@ -202,5 +202,3 @@ __host__ __device__ unsigned int morton3D(float x, float y,
   unsigned int zz = expandBits((unsigned int)z);
   return xx * 4 + yy * 2 + zz;
 }
-
-#endif

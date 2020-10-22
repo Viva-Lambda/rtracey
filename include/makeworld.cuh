@@ -69,32 +69,33 @@ SceneObjects make_cornell_box() {
   GroupParam sg(ps, prim_count, group_id, BOX, g_dens, mpp);
 
   // pictures
-  std::vector<const char *> impaths = {"media/earthmap.png",
-                                       "media/lsjimg.png"};
-  std::vector<int> ws, hes, nbChannels;
-  int totalSize;
+  std::vector<const char *> impaths = {
+      "media/earthmap.jpg"
+      // "media/lsjimg.png"
+  };
+  std::vector<int> ws, hes, nbChannels, indices;
   std::vector<unsigned char> imdata_h;
-  imread(impaths, ws, hes, nbChannels, imdata_h, totalSize);
+  imread(impaths, ws, hes, nbChannels, imdata_h, indices);
   // a glass sphere
   const TextureParam tp;
-  const TextureParam tp2 =
-      mkImageTextureParam(ws[0], hes[0], nbChannels[0], 0);
+  const TextureParam tp2 = mkImageTextureParam(
+      ws[0], hes[0], nbChannels[0], indices[0]);
   MaterialParam lamb = mkLambertParam(tp2);
   HittableParam hsp1 = mkSphereHittable(
       Point3(190.0f, 350.0f, 190.0f), 90.0f);
-  Primitive glass_sphere(lamb, hsp1, 0, 2);
+  Primitive glass_sphere(lamb, hsp1, 0, 1);
   Primitive ps1[] = {glass_sphere};
-  GroupParam sg1(ps1, 1, 2, NONE_GRP, g_dens, mpp);
+  GroupParam sg1(ps1, 1, 1, NONE_GRP, g_dens, mpp);
 
   // second sphere
-  const TextureParam tp3 =
-      mkImageTextureParam(ws[1], hes[1], nbChannels[1], 1);
+  const TextureParam tp3 = mkImageTextureParam(
+      ws[1], hes[1], nbChannels[1], indices[1]);
   MaterialParam lamb2 = mkLambertParam(tp3);
   HittableParam hsp2 = mkSphereHittable(
-      Point3(270.0f, 100.0f, 165.0f), 90.0f);
-  Primitive glass_sphere2(lamb2, hsp2, 0, 3);
+      Point3(370.0f, 95.0f, 265.0f), 90.0f);
+  Primitive glass_sphere2(lamb2, hsp2, 0, 2);
   Primitive ps2[] = {glass_sphere2};
-  GroupParam sg2(ps2, 1, 3, NONE_GRP, g_dens, mpp);
+  GroupParam sg2(ps2, 1, 2, NONE_GRP, g_dens, mpp);
 
   //
   GroupParam *sgs = new GroupParam[3];
