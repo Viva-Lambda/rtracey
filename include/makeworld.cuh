@@ -68,25 +68,17 @@ SceneObjects make_cornell_box() {
   const float g_dens = 0.0f;
   GroupParam sg(ps, prim_count, group_id, BOX, g_dens, mpp);
 
-  // first box
-  GroupParam box1 =
-      makeBox(Point3(0.0f), Point3(165.0f, 330.0f, 165.0f),
-              white_param, 1);
-  // rotate_y(box1, 15.0f);
-
-  // translate(box1, Point3(265.0f, 0.0f, 195.0f));
-
-  // const ImageParam imp;
-  // const TextureParam tp1(SOLID_COLOR, 0.7f, 0.2f, 0.3f,
-  //                       0.0f, imp);
-  // MaterialParam mpar(tp1, ISOTROPIC, 0.0f);
-  // GroupParam smoke(box1.prims, box1.group_size,
-  //                 box1.group_id, CONSTANT_MEDIUM, 0.01,
-  //                 mpar);
-
+  // pictures
+  std::vector<const char *> impaths = {"media/earthmap.png",
+                                       "media/lsjimg.png"};
+  std::vector<int> ws, hes, nbChannels;
+  int totalSize;
+  std::vector<unsigned char> imdata_h;
+  imread(impaths, ws, hes, nbChannels, imdata_h, totalSize);
   // a glass sphere
   const TextureParam tp;
-  const TextureParam tp2 = mkNoiseParam(5.0f);
+  const TextureParam tp2 =
+      mkImageTextureParam(ws[0], hes[0], nbChannels[0], 0);
   MaterialParam lamb = mkLambertParam(tp2);
   HittableParam hsp1 = mkSphereHittable(
       Point3(190.0f, 350.0f, 190.0f), 90.0f);
@@ -94,24 +86,26 @@ SceneObjects make_cornell_box() {
   Primitive ps1[] = {glass_sphere};
   GroupParam sg1(ps1, 1, 2, NONE_GRP, g_dens, mpp);
 
-  // second box
-  GroupParam box2 = makeBox(Point3(265.0f, 0.0f, 295.0f),
-                            Point3(430.0f, 330.0f, 460.0f),
-                            white_param, 3);
-  // rotate_y(box2, 65.0f);
-  // translate(box2, Point3(130.0f, 0.0f, 165.0f));
+  // second sphere
+  const TextureParam tp3 =
+      mkImageTextureParam(ws[1], hes[1], nbChannels[1], 1);
+  MaterialParam lamb2 = mkLambertParam(tp3);
+  HittableParam hsp2 =
+      mkSphereHittable(Point3(130.0f, 0.0f, 65.0f), 90.0f);
+  Primitive glass_sphere2(lamb2, hsp2, 0, 3);
+  Primitive ps2[] = {glass_sphere2};
+  GroupParam sg2(ps2, 1, 3, NONE_GRP, g_dens, mpp);
 
   //
-  GroupParam *sgs = new GroupParam[2];
+  GroupParam *sgs = new GroupParam[3];
   sgs[0] = sg;
-  // sgs[1] = box1;
   // sgs[2] = box2;
   sgs[1] = sg1;
-  SceneObjects sobjs(sgs, 2);
-  box1.g_free();
-  box2.g_free();
+  sgs[2] = sg2;
+  SceneObjects sobjs(sgs, 2, imdata_h.data(), totalSize);
   sg.g_free();
   sg1.g_free();
+  sg2.g_free();
   // smoke.g_free();
   return sobjs;
 }
