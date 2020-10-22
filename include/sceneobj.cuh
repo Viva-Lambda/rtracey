@@ -376,6 +376,16 @@ struct SceneObjects {
     upload_thrust<int>(d_g_indices, g_indices, nb_groups);
     sobjs.g_indices = thrust::raw_pointer_cast(d_g_indices);
 
+    thrust::device_ptr<int> d_g_mtypes;
+    upload_thrust<int>(d_g_mtypes, g_mtypes, nb_groups);
+    sobjs.g_mtypes = thrust::raw_pointer_cast(d_g_mtypes);
+
+    thrust::device_ptr<float> d_g_fuzz_ref_idxs;
+    upload_thrust<float>(d_g_fuzz_ref_idxs, g_fuzz_ref_idxs,
+                         nb_groups);
+    sobjs.g_fuzz_ref_idxs =
+        thrust::raw_pointer_cast(d_g_fuzz_ref_idxs);
+
     return sobjs;
   }
   __host__ SceneObjects to_device() {
@@ -567,6 +577,16 @@ struct SceneObjects {
 
     sobjs.g_indices =
         upload<int>(d_g_indices, g_indices, nb_groups, err);
+    CUDA_CONTROL(err);
+
+    int *d_g_mtypes;
+    sobjs.g_mtypes =
+        upload<int>(d_g_mtypes, g_mtypes, nb_groups, err);
+    CUDA_CONTROL(err);
+
+    float *d_g_fuzz_ref_idxs;
+    sobjs.g_fuzz_ref_idxs = upload<float>(
+        d_g_fuzz_ref_idxs, g_fuzz_ref_idxs, nb_groups, err);
     CUDA_CONTROL(err);
 
     return sobjs;
@@ -767,9 +787,18 @@ struct SceneObjects {
     CUDA_CONTROL(err);
 
     int *d_g_indices;
-
     sobjs.g_indices = download<int>(d_g_indices, g_indices,
                                     nb_groups, err);
+    CUDA_CONTROL(err);
+
+    int *d_g_mtypes;
+    sobjs.g_mtypes =
+        download<int>(d_g_mtypes, g_mtypes, nb_groups, err);
+    CUDA_CONTROL(err);
+
+    float *d_g_fuzz_ref_idxs;
+    sobjs.g_fuzz_ref_idxs = download<float>(
+        d_g_fuzz_ref_idxs, g_fuzz_ref_idxs, nb_groups, err);
     CUDA_CONTROL(err);
 
     return sobjs;
