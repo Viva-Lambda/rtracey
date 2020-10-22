@@ -400,6 +400,15 @@ h_random_to_sphere(float radius, float distance_squared) {
   return Vec3(x, y, z);
 }
 
+__host__ __device__ Vec3 moving_center(Vec3 c1, Vec3 c2,
+                                       float time0,
+                                       float time1,
+                                       float time) {
+  //
+  return c1 +
+         ((time - time0) / (time1 - time0)) * (c2 - c1);
+}
+
 using Point3 = Vec3;
 using Color = Vec3;
 

@@ -52,16 +52,12 @@ __host__ __device__ HittableParam mkRectHittable(
     const float b1, Vec3 anormal, const float k) {
 
   HittableType htype;
-  int normal_axis;
   if (anormal.z() == 1) {
     htype = XY_RECT;
-    normal_axis = 0;
   } else if (anormal.y() == 1) {
     htype = XZ_RECT;
-    normal_axis = 1;
   } else if (anormal.x() == 1) {
     htype = YZ_RECT;
-    normal_axis = 2;
   } else {
     htype = NONE_HITTABLE;
   }
@@ -69,7 +65,7 @@ __host__ __device__ HittableParam mkRectHittable(
   float ny = anormal.y();
   float nz = anormal.z();
   HittableParam param(htype, a0, b0, k, a1, b1, k, nx, ny,
-                      nz, normal_axis);
+                      nz, k);
   return param;
 }
 __host__ __device__ HittableParam mkYZRectHittable(

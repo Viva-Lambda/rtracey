@@ -59,8 +59,8 @@ pdf_value<MOVING_SPHERE>(const SceneObjects &s,
   float time0 = s.n1xs[prim_idx];
   float time1 = s.n1ys[prim_idx];
   float rt = time1 - time0;
-  Point3 center = MovingSphere::mcenter(center1, center2,
-                                        time0, time1, rt);
+  Point3 center =
+      moving_center(center1, center2, time0, time1, rt);
 
   HitRecord rec;
   rec.primitive_index = prim_idx;
@@ -94,7 +94,7 @@ pdf_value<RECTANGLE>(const SceneObjects &s, const Point3 &o,
   float b1 = s.p2ys[prim_idx];
   Vec3 anormal = Vec3(s.n1xs[prim_idx], s.n1ys[prim_idx],
                       s.n1zs[prim_idx]);
-  AxisInfo ax = AxisInfo(anormal);
+  AxisInfo ax = AxisInfo(s.rads[prim_idx]);
 
   HitRecord rec;
   rec.primitive_index = prim_idx;

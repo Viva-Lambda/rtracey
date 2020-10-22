@@ -14,7 +14,7 @@ struct HitRecord {
   int group_id;
   int group_index;
   int primitive_index;
-  bool is_group_scattering = false;
+  bool group_scattering = false;
 
   __host__ __device__ HitRecord()
       : t(0.0f), p(Vec3(0.0f)), u(0.0f), v(0.0f),
@@ -44,16 +44,31 @@ struct AxisInfo {
   int aligned2;
   int notAligned;
   __host__ __device__ AxisInfo() {}
-  __host__ __device__ AxisInfo(int anormal) {
-    if (anormal == 0) {
+  __host__ __device__ AxisInfo(Vec3 anormal) {
+    if (anormal.z() == 1.0) {
       aligned1 = 0;
       aligned2 = 1;
       notAligned = 2;
-    } else if (anormal == 1) {
+    } else if (anormal.x() == 1.0) {
       aligned1 = 1;
       aligned2 = 2;
       notAligned = 0;
+    } else if (anormal.y() == 1.0) {
+      aligned1 = 0;
+      aligned2 = 2;
+      notAligned = 1;
+    }
+  }
+  __host__ __device__ AxisInfo(int anormal) {
+    if (anormal == 1) {
+      aligned1 = 0;
+      aligned2 = 1;
+      notAligned = 2;
     } else if (anormal == 2) {
+      aligned1 = 1;
+      aligned2 = 2;
+      notAligned = 0;
+    } else if (anormal == 3) {
       aligned1 = 0;
       aligned2 = 2;
       notAligned = 1;

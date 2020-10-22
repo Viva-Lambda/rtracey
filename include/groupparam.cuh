@@ -18,22 +18,29 @@ struct GroupParam {
   float scale;
   int width, height, bytes_per_pixel, index;
 
+  MaterialType mtype;
+  float fuzz_ref_idx;
+
   __host__ __device__ GroupParam()
       : gtype(NONE_GRP), group_size(0), group_id(0),
         density(0.0f), prims(nullptr), width(0), height(0),
         bytes_per_pixel(0), index(0), tp1x(0), tp1y(0),
-        tp1z(0), scale(0), ttype(NONE_TEXTURE) {}
+        tp1z(0), scale(0), ttype(NONE_TEXTURE),
+        mtype(NONE_MATERIAL), fuzz_ref_idx(0.0f) {}
   __host__ __device__ GroupParam(Primitive *prm,
                                  const int gsize,
                                  const int gid,
                                  const GroupType gtp,
                                  const float d,
-                                 const TextureParam &tp)
+                                 const MaterialParam &mp)
       : group_size(gsize), group_id(gid), gtype(gtp),
-        density(d), width(tp.width), height(tp.height),
-        bytes_per_pixel(tp.bytes_per_pixel),
-        index(tp.index), tp1x(tp.tp1x), tp1y(tp.tp1y),
-        tp1z(tp.tp1z), scale(tp.scale), ttype(tp.ttype) {
+        density(d), width(mp.tparam.width),
+        height(mp.tparam.height), mtype(mp.mtype),
+        fuzz_ref_idx(mp.fuzz_ref_idx),
+        bytes_per_pixel(mp.tparam.bytes_per_pixel),
+        index(mp.tparam.index), tp1x(mp.tparam.tp1x),
+        tp1y(mp.tparam.tp1y), tp1z(mp.tparam.tp1z),
+        scale(mp.tparam.scale), ttype(mp.tparam.ttype) {
     deepcopy(prims, prm, group_size);
   }
   __host__ __device__ GroupParam(const GroupParam &g)
@@ -42,7 +49,8 @@ struct GroupParam {
         height(g.height), index(g.index),
         bytes_per_pixel(g.bytes_per_pixel), tp1x(g.tp1x),
         tp1y(g.tp1y), tp1z(g.tp1z), scale(g.scale),
-        ttype(g.ttype) {
+        ttype(g.ttype), mtype(g.mtype),
+        fuzz_ref_idx(g.fuzz_ref_idx) {
     Primitive *prm = g.prims;
     deepcopy(prims, prm, group_size);
   }
@@ -73,6 +81,8 @@ struct GroupParam {
     height = g.height;
     bytes_per_pixel = g.bytes_per_pixel;
     index = g.index;
+    mtype = g.mtype;
+    fuzz_ref_idx = g.fuzz_ref_idx;
     return *this;
   }
 };
@@ -108,10 +118,10 @@ __host__ __device__ GroupParam makeBox(const Point3 &p0,
   Primitive ps[] = {side1, side2, side3,
                     side4, side5, side6};
 
-  const TextureParam tp;
+  const MaterialParam mpp;
   const float g_dens = 0.0f;
 
-  GroupParam sg(ps, 6, g_id, BOX, g_dens, tp);
+  GroupParam sg(ps, 6, g_id, BOX, g_dens, mpp);
   return sg;
 }
 

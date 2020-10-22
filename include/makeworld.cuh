@@ -1,4 +1,3 @@
-// make world kernel
 #pragma once
 
 #include <groupparam.cuh>
@@ -65,46 +64,57 @@ SceneObjects make_cornell_box() {
       Primitive(white_param, white_wall2, pcount4,
                 group_id),
       Primitive(blue_param, blue_wall, pcount5, group_id)};
-  const TextureParam tp;
+  const MaterialParam mpp;
   const float g_dens = 0.0f;
-  GroupParam sg(ps, prim_count, group_id, BOX, g_dens, tp);
+  GroupParam sg(ps, prim_count, group_id, BOX, g_dens, mpp);
 
   // first box
+  const TextureParam tp;
   MaterialParam die = mkDielectricParam(tp, 1.5f);
 
-  GroupParam box1 =
-      makeBox(Point3(0.0f), Point3(165.0f, 330.0f, 165.0f),
-              white_param, 1);
-  rotate_y(box1, 15.0f);
+  GroupParam box1 = makeBox(Point3(130.0f, 0.0f, 65.0f),
+                            Point3(295.0f, 165.0f, 230.0f),
+                            white_param, 1);
+  // rotate_y(box1, 15.0f);
 
-  translate(box1, Point3(265.0f, 0.0f, 195.0f));
+  // translate(box1, Point3(265.0f, 0.0f, 195.0f));
+
+  const ImageParam imp;
+  const TextureParam tp1(SOLID_COLOR, 0.7f, 0.2f, 0.3f,
+                         0.0f, imp);
+  MaterialParam mpar(tp1, ISOTROPIC, 0.0f);
+  GroupParam smoke(box1.prims, box1.group_size,
+                   box1.group_id, CONSTANT_MEDIUM, 0.05,
+                   mpar);
 
   // a glass sphere
-  HittableParam hsp1 = mkSphereHittable(
-      Point3(190.0f, 350.0f, 190.0f), 90.0f);
-  Primitive glass_sphere(die, hsp1, 0, 2);
-  Primitive ps1[] = {glass_sphere};
-  GroupParam sg1(ps1, 1, 2, NONE_GRP, g_dens, tp);
+  // HittableParam hsp1 = mkSphereHittable(
+  //    Point3(190.0f, 350.0f, 190.0f), 90.0f);
+  // Primitive glass_sphere(die, hsp1, 0, 2);
+  // Primitive ps1[] = {glass_sphere};
+  // GroupParam sg1(ps1, 1, 2, NONE_GRP, g_dens, mpp);
 
   // second box
-  GroupParam box2 =
-      makeBox(Point3(0.0f), Point3(165.0f), white_param, 3);
-  rotate_y(box2, 65.0f);
-  translate(box2, Point3(130.0f, 0.0f, 165.0f));
+  GroupParam box2 = makeBox(Point3(265.0f, 0.0f, 295.0f),
+                            Point3(430.0f, 330.0f, 460.0f),
+                            white_param, 3);
+  // rotate_y(box2, 65.0f);
+  // translate(box2, Point3(130.0f, 0.0f, 165.0f));
 
   //
-  GroupParam *sgs = new GroupParam[4];
+  GroupParam *sgs = new GroupParam[3];
   sgs[0] = sg;
-  sgs[1] = box1;
-  sgs[2] = sg1;
-  sgs[3] = box2;
-  SceneObjects sobjs(sgs, 4);
+  sgs[1] = smoke;
+  sgs[2] = box2;
+  // sgs[1] = sg1;
+  SceneObjects sobjs(sgs, 3);
   box1.g_free();
   box2.g_free();
   sg.g_free();
-  sg1.g_free();
+  // sg1.g_free();
   return sobjs;
 }
+
 __global__ void make_cornell_box_k(SceneObjects world,
                                    curandState *loc) {
   if (threadIdx.x == 0 && blockIdx.x == 0) {
@@ -119,7 +129,6 @@ __global__ void make_cornell_box_k(SceneObjects world,
     const TextureParam light_solid =
         mkSolidColorParam(Color(15.0f, 15.0f, 15.0f));
 
-    const float fzz3 = 0.2f;
     const MaterialParam red_param =
         mkLambertParam(red_solid);
     //
@@ -127,7 +136,6 @@ __global__ void make_cornell_box_k(SceneObjects world,
     const MaterialParam green_param =
         mkMetalParam(green_solid, fzz);
     //
-    const float fzz2 = 0.1f;
     const MaterialParam blue_param =
         mkLambertParam(blue_solid);
     //
@@ -158,7 +166,7 @@ __global__ void make_cornell_box_k(SceneObjects world,
     int pcount3 = 3;
     int pcount4 = 4;
     int pcount5 = 5;
-    const int group_id = 0;
+    int group_id = 0;
     Primitive ps[] = {
         Primitive(green_param, green_wall, pcount0,
                   group_id),
@@ -171,48 +179,57 @@ __global__ void make_cornell_box_k(SceneObjects world,
                   group_id),
         Primitive(blue_param, blue_wall, pcount5,
                   group_id)};
-    const TextureParam tp;
+    const MaterialParam mpp;
     const float g_dens = 0.0f;
     GroupParam sg(ps, prim_count, group_id, BOX, g_dens,
-                  tp);
+                  mpp);
 
     // first box
+    const TextureParam tp;
     MaterialParam die = mkDielectricParam(tp, 1.5f);
 
     GroupParam box1 = makeBox(
-        Point3(0.0f), Point3(165.0f, 330.0f, 165.0f),
-        white_param, 1);
-    rotate(box1, Vec3(0.0f, 1.0f, 0.0f), 45.0f);
-    translate(box1, Point3(-50.0f, 5.0f, 5.0f));
+        Point3(130.0f, 0.0f, 65.0f),
+        Point3(295.0f, 165.0f, 230.0f), white_param, 1);
+    const ImageParam imp;
+    const TextureParam tp1(SOLID_COLOR, 0.7f, 0.2f, 0.3f,
+                           0.0f, imp);
+    MaterialParam mpar(tp1, ISOTROPIC, 0.0f);
+    GroupParam smoke(box1.prims, box1.group_size,
+                     box1.group_id, CONSTANT_MEDIUM, 0.05,
+                     mpar);
+    // rotate_y(box1, 15.0f);
+
+    // translate(box1, Point3(265.0f, 0.0f, 195.0f));
 
     // a glass sphere
     HittableParam hsp1 = mkSphereHittable(
         Point3(190.0f, 350.0f, 190.0f), 90.0f);
     Primitive glass_sphere(die, hsp1, 0, 2);
     Primitive ps1[] = {glass_sphere};
-    GroupParam sg1(ps1, 1, 2, NONE_GRP, g_dens, tp);
+    GroupParam sg1(ps1, 1, 2, NONE_GRP, g_dens, mpp);
 
     // second box
-    // GroupParam box2 =
-    //    makeBox(Point3(0.0f), Point3(165.0f), white_param,
-    //    2);
-    //// box2 = rotate(box2, Vec3(0, 1, 0), -18);
-    // box2 = translate(box2, Point3(50.0f, 8.0f, 150.0f));
+    GroupParam box2 = makeBox(
+        Point3(265.0f, 0.0f, 295.0f),
+        Point3(430.0f, 330.0f, 460.0f), white_param, 3);
+    // rotate_y(box2, 65.0f);
+    // translate(box2, Point3(130.0f, 0.0f, 165.0f));
 
     //
-    GroupParam *sgs = new GroupParam[3];
+    GroupParam *sgs = new GroupParam[4];
     sgs[0] = sg;
-    sgs[1] = box1;
-    // sgs[2] = box2;
+    sgs[1] = smoke;
     sgs[2] = sg1;
-
-    SceneObjects sobjs(sgs, 3, loc);
-    // Hittables hs = sobjs.to_hittables();
-    // Hittables hs = sobjs.to_hittables();
+    sgs[3] = box2;
+    //
+    SceneObjects sobjs(sgs, 4, loc);
+    //
     world = sobjs;
-    // box1.g_free();
-    // box2.g_free();
-    // sg.g_free();
+    box1.g_free();
+    box2.g_free();
+    sg.g_free();
+    sg1.g_free();
   }
 }
 

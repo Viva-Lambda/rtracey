@@ -18,10 +18,19 @@ __host__ Color h_color_value(const SceneObjects &s,
 }
 __host__ __device__ Color
 solid_value(const SceneObjects &s, const HitRecord &rec) {
-  int prim_idx = rec.primitive_index;
-  float tp1x = s.tp1xs[prim_idx];
-  float tp1y = s.tp1ys[prim_idx];
-  float tp1z = s.tp1zs[prim_idx];
+  int prim_idx;
+  float tp1x, tp1y, tp1z;
+  if (rec.group_scattering) {
+    prim_idx = rec.group_index;
+    tp1x = s.g_tp1xs[prim_idx];
+    tp1y = s.g_tp1ys[prim_idx];
+    tp1z = s.g_tp1zs[prim_idx];
+  } else {
+    prim_idx = rec.primitive_index;
+    tp1x = s.tp1xs[prim_idx];
+    tp1y = s.tp1ys[prim_idx];
+    tp1z = s.tp1zs[prim_idx];
+  }
   return Color(tp1x, tp1y, tp1z);
 }
 template <>
@@ -64,9 +73,16 @@ __host__ __device__ Color noise_value(const SceneObjects &s,
                                       const HitRecord &rec,
                                       float turb) {
   //
-  int prim_idx = rec.primitive_index;
+  int prim_idx;
+  float scale;
+  if (rec.group_scattering) {
+    prim_idx = rec.primitive_index;
+    scale = s.scales[prim_idx];
+  } else {
+    prim_idx = rec.group_index;
+    scale = s.g_scales[prim_idx];
+  }
   Point3 p = rec.p;
-  float scale = s.scales[prim_idx];
   float zscale = scale * p.z();
   float turbulance = 10.0f * turb;
   Color white(1.0f, 1.0f, 1.0f);
@@ -90,13 +106,23 @@ __host__ Color h_color_value<NOISE>(const SceneObjects &s,
 }
 __host__ __device__ Color imcolor(const SceneObjects &s,
                                   const HitRecord &rec) {
-  int prim_idx = rec.primitive_index;
+  int width, height, bpp, idx, prim_idx;
+  if (rec.group_scattering) {
+    prim_idx = rec.primitive_index;
+    width = s.widths[prim_idx];
+    height = s.heights[prim_idx];
+    bpp = s.bytes_per_pixels[prim_idx];
+    idx = s.image_indices[prim_idx];
+  } else {
+    prim_idx = rec.group_index;
+    width = s.g_widths[prim_idx];
+    height = s.g_heights[prim_idx];
+    bpp = s.g_bpps[prim_idx];
+    idx = s.g_indices[prim_idx];
+  }
+
   int u = rec.u;
   int v = rec.v;
-  int width = s.widths[prim_idx];
-  int height = s.heights[prim_idx];
-  int bpp = s.bytes_per_pixels[prim_idx];
-  int idx = s.image_indices[prim_idx];
 
   if (s.tdata == nullptr) {
     return Color(1.0, 0.0, 0.0);
@@ -132,9 +158,15 @@ __host__ Color h_color_value<IMAGE>(const SceneObjects &s,
 template <>
 __device__ Color color_value<TEXTURE>(
     const SceneObjects &s, const HitRecord &rec) {
-  int prim_idx = rec.primitive_index;
-  TextureType ttype =
-      static_cast<TextureType>(s.ttypes[prim_idx]);
+  int prim_idx;
+  TextureType ttype;
+  if (rec.group_scattering) {
+    prim_idx = rec.group_index;
+    ttype = static_cast<TextureType>(s.ttypes[prim_idx]);
+  } else {
+    prim_idx = rec.primitive_index;
+    ttype = static_cast<TextureType>(s.g_ttypes[prim_idx]);
+  }
   Color c(0.0f);
   if (ttype == NONE_TEXTURE) {
     return c;

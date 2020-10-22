@@ -1,7 +1,6 @@
 #pragma once
 #include <matparam.cuh>
 #include <ray.cuh>
-#include <shape.cuh>
 #include <shapeparam.cuh>
 #include <vec3.cuh>
 

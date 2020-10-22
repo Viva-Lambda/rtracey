@@ -42,6 +42,8 @@ struct SceneObjects {
   float *g_tp1xs, *g_tp1ys, *g_tp1zs;
   float *g_scales;
   int *g_widths, *g_heights, *g_bpps, *g_indices;
+  int *g_mtypes;
+  float *g_fuzz_ref_idxs;
 
   int nb_groups;
   int nb_prims;
@@ -128,6 +130,8 @@ struct SceneObjects {
     g_heights[i] = g.height;
     g_bpps[i] = g.bytes_per_pixel;
     g_indices[i] = g.index;
+    g_mtypes[i] = g.mtype;
+    g_fuzz_ref_idxs[i] = g.fuzz_ref_idx;
   }
   __host__ __device__ void set_primitive(const Primitive &p,
                                          int gindex) {
@@ -176,6 +180,8 @@ struct SceneObjects {
     g_heights = new int[nb_g];
     g_bpps = new int[nb_g];
     g_indices = new int[nb_g];
+    g_mtypes = new int[nb_g];
+    g_fuzz_ref_idxs = new float[nb_g];
   }
   __host__ __device__ void alloc_prim_params(int nb_ps) {
     ttypes = new int[nb_ps];
@@ -768,6 +774,41 @@ struct SceneObjects {
 
     return sobjs;
   }
+  __host__ __device__ Primitive get_prim(int index,
+                                         int gindex) const {
+    HittableParam hp = get_hparam(index);
+    MaterialParam mp = get_mparam(index);
+    Primitive p(mp, hp, prim_group_indices[index],
+                group_ids[gindex]);
+    return p;
+  }
+  __host__ __device__ HittableParam
+  get_hparam(int idx) const {
+    HittableParam hp(static_cast<HittableType>(htypes[idx]),
+                     p1xs[idx], p1ys[idx], p1zs[idx],
+                     p2xs[idx], p2ys[idx], p2zs[idx],
+                     n1xs[idx], n1ys[idx], n1zs[idx],
+                     rads[idx]);
+    return hp;
+  }
+  __host__ __device__ TextureParam
+  get_tparam(int idx) const {
+    TextureParam t(static_cast<TextureType>(ttypes[idx]),
+                   tp1xs[idx], tp1ys[idx], tp1zs[idx],
+                   scales[idx], widths[idx], heights[idx],
+                   bytes_per_pixels[idx],
+                   image_indices[idx]);
+    return t;
+  }
+  __host__ __device__ MaterialParam
+  get_mparam(int idx) const {
+    TextureParam t = get_tparam(idx);
+    MaterialParam mp(t,
+                     static_cast<MaterialType>(mtypes[idx]),
+                     fuzz_ref_idxs[idx]);
+    return mp;
+  }
+
   __host__ void d_free() {
     cudaFree(ttypes);
     cudaFree(tp1xs);

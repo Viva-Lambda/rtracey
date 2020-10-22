@@ -44,8 +44,8 @@ __device__ Vec3 random<MOVING_SPHERE>(const SceneObjects &s,
   float time0 = s.n1xs[prim_idx];
   float time1 = s.n1ys[prim_idx];
   float tdiff = time1 - time0;
-  Point3 scenter = MovingSphere::mcenter(
-      center1, center2, time0, time1, tdiff);
+  Point3 scenter =
+      moving_center(center1, center2, time0, time1, tdiff);
 
   Vec3 direction = scenter - o;
   auto distance_squared = direction.squared_length();

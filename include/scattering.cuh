@@ -60,8 +60,16 @@ __host__ __device__ bool
 scatter_metal(const SceneObjects &s, const Ray &r,
               const HitRecord &rec, Ray &r_out, float &pdf,
               Vec3 v) {
-  int prim_idx = rec.primitive_index;
-  float fuzz = s.fuzz_ref_idxs[prim_idx];
+  int prim_idx;
+  float fuzz;
+  if (rec.group_scattering) {
+    prim_idx = rec.group_index;
+    fuzz = s.g_fuzz_ref_idxs[prim_idx];
+  } else {
+    prim_idx = rec.primitive_index;
+    fuzz = s.fuzz_ref_idxs[prim_idx];
+  }
+
   Vec3 reflected =
       reflect(to_unit(r.direction()), rec.normal);
   r_out = Ray(rec.p, reflected + fuzz * v, r.time());
@@ -90,8 +98,16 @@ __host__ __device__ bool
 scatter_dielectric(const SceneObjects &s, const Ray &r,
                    const HitRecord &rec, Color &attenuation,
                    Ray &r_out, float &pdf, float rval) {
-  int prim_idx = rec.primitive_index;
-  float ref_idx = s.fuzz_ref_idxs[prim_idx];
+  int prim_idx;
+  float ref_idx;
+  if (rec.group_scattering) {
+    prim_idx = rec.group_index;
+    ref_idx = s.g_fuzz_ref_idxs[prim_idx];
+  } else {
+    prim_idx = rec.primitive_index;
+    ref_idx = s.fuzz_ref_idxs[prim_idx];
+  }
+
   pdf = 1.0f;
   attenuation = Vec3(1.0f, 1.0f, 1.0f);
   Vec3 outward_normal;
@@ -186,10 +202,16 @@ scatter<MATERIAL>(const SceneObjects &s, const Ray &r,
                   const HitRecord &rec, Color &attenuation,
                   Ray &r_out, float &pdf,
                   curandState *loc) {
-  int prim_idx = rec.primitive_index;
+  int prim_idx;
+  MaterialType mtype;
+  if (rec.group_scattering) {
+    prim_idx = rec.group_index;
+    mtype = static_cast<MaterialType>(s.g_mtypes[prim_idx]);
+  } else {
+    prim_idx = rec.primitive_index;
+    mtype = static_cast<MaterialType>(s.mtypes[prim_idx]);
+  }
   bool res = false;
-  MaterialType mtype =
-      static_cast<MaterialType>(s.mtypes[prim_idx]);
   if (mtype == LAMBERTIAN) {
     res = scatter<LAMBERTIAN>(s, r, rec, attenuation, r_out,
                               pdf, loc);
@@ -216,10 +238,17 @@ __host__ bool h_scatter<MATERIAL>(const SceneObjects &s,
                                   const HitRecord &rec,
                                   Color &attenuation,
                                   Ray &r_out, float &pdf) {
-  int prim_idx = rec.primitive_index;
+  int prim_idx;
+  MaterialType mtype;
+  if (rec.group_scattering) {
+    prim_idx = rec.group_index;
+    mtype = static_cast<MaterialType>(s.g_mtypes[prim_idx]);
+  } else {
+    prim_idx = rec.primitive_index;
+    mtype = static_cast<MaterialType>(s.mtypes[prim_idx]);
+  }
+
   bool res = false;
-  MaterialType mtype =
-      static_cast<MaterialType>(s.mtypes[prim_idx]);
   if (mtype == LAMBERTIAN) {
     res = h_scatter<LAMBERTIAN>(s, r, rec, attenuation,
                                 r_out, pdf);
@@ -265,10 +294,17 @@ template <>
 __host__ __device__ float scattering_pdf<MATERIAL>(
     const SceneObjects &s, const Ray &r_in,
     const HitRecord &rec, const Ray &r_out) {
-  int prim_idx = rec.primitive_index;
+  int prim_idx;
+  MaterialType mtype;
+  if (rec.group_scattering) {
+    prim_idx = rec.group_index;
+    mtype = static_cast<MaterialType>(s.g_mtypes[prim_idx]);
+  } else {
+    prim_idx = rec.primitive_index;
+    mtype = static_cast<MaterialType>(s.mtypes[prim_idx]);
+  }
+
   float res = 1.0f;
-  MaterialType mtype =
-      static_cast<MaterialType>(s.mtypes[prim_idx]);
   if (mtype == LAMBERTIAN) {
     res = scattering_pdf<LAMBERTIAN>(s, r_in, rec, r_out);
   }

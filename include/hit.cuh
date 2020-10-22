@@ -76,8 +76,8 @@ hit<MOVING_SPHERE>(const SceneObjects &s, const Ray &r,
   float time1 = s.n1ys[prim_idx];
 
   float rt = r.time();
-  Point3 scenter = MovingSphere::mcenter(center1, center2,
-                                         time0, time1, rt);
+  Point3 scenter =
+      moving_center(center1, center2, time0, time1, rt);
   Vec3 oc = r.origin() - scenter;
   float a = dot(r.direction(), r.direction());
   float b = dot(oc, r.direction());
@@ -167,12 +167,13 @@ hit<RECTANGLE>(const SceneObjects &s, const Ray &r,
   int prim_idx = rec.primitive_index;
   float k = s.p1zs[prim_idx];
   float a0 = s.p1xs[prim_idx];
-  float a1 = s.p2xs[prim_idx];
   float b0 = s.p1ys[prim_idx];
+  Point3 p1(a0, b0, k);
+  float a1 = s.p2xs[prim_idx];
   float b1 = s.p2ys[prim_idx];
   Vec3 anormal = Vec3(s.n1xs[prim_idx], s.n1ys[prim_idx],
                       s.n1zs[prim_idx]);
-  AxisInfo ax = AxisInfo(s.rads[prim_idx]);
+  AxisInfo ax = AxisInfo(anormal);
 
   float t = (k - r.origin()[ax.notAligned]) /
             r.direction()[ax.notAligned];
@@ -258,7 +259,6 @@ __host__ __device__ bool hit_group(const SceneObjects &s,
                                    const Ray &r,
                                    float d_min, float d_max,
                                    HitRecord &rec) {
-  //
   int group_index = rec.group_index;
   int group_start = s.group_starts[group_index];
   int group_size = s.group_sizes[group_index];
@@ -315,12 +315,14 @@ hit_constant_medium(const SceneObjects &s, const Ray &r,
   rec2.group_index = rec.group_index;
 
   bool any_hit = hit_group(s, r, -FLT_MAX, FLT_MAX, rec1);
-  if (!any_hit)
+  if (!any_hit) {
     return any_hit;
+  }
 
   any_hit = hit_group(s, r, rec1.t + 0.001, FLT_MAX, rec2);
-  if (!any_hit)
+  if (!any_hit) {
     return any_hit;
+  }
 
   if (debugging) {
     printf("\nt0= %f", rec1.t);
@@ -345,8 +347,9 @@ hit_constant_medium(const SceneObjects &s, const Ray &r,
       (rec2.t - rec1.t) * ray_length;
   const float hit_distance = neg_inv_dens * log(t1);
 
-  if (hit_distance > distance_inside_boundary)
+  if (hit_distance > distance_inside_boundary) {
     return false;
+  }
 
   rec.t = rec1.t + hit_distance / ray_length;
   rec.p = r.at(rec.t);
@@ -361,7 +364,7 @@ hit_constant_medium(const SceneObjects &s, const Ray &r,
 
   rec.normal = Vec3(1, 0, 0); // arbitrary
   rec.front_face = true;      // also arbitrary
-  rec.is_group_scattering = true;
+  rec.group_scattering = true;
 
   return true;
 }
@@ -433,8 +436,16 @@ __device__ bool hit<SCENE>(const SceneObjects &s,
       p_index = rec.primitive_index;
     }
   }
+
+  bool group_scattering = false;
+  int gtype_ = s.gtypes[g_index];
+  GroupType gtype = static_cast<GroupType>(gtype_);
+  if (gtype == CONSTANT_MEDIUM) {
+    group_scattering = true;
+  }
   rec.group_index = g_index;
   rec.primitive_index = p_index;
+  rec.group_scattering = group_scattering;
   return res;
 }
 template <>
@@ -448,6 +459,7 @@ __host__ bool h_hit<SCENE>(const SceneObjects &s,
   float closest_so_far = d_max;
   for (int i = 0; i < nb_group; i++) {
     rec.group_index = i;
+    rec.group_id = s.group_ids[rec.group_index];
     int gtype_ = s.gtypes[rec.group_index];
     GroupType gtype = static_cast<GroupType>(gtype_);
     bool is_hit = false;
@@ -470,7 +482,15 @@ __host__ bool h_hit<SCENE>(const SceneObjects &s,
       p_index = rec.primitive_index;
     }
   }
+
+  bool group_scattering = false;
+  int gtype_ = s.gtypes[g_index];
+  GroupType gtype = static_cast<GroupType>(gtype_);
+  if (gtype == CONSTANT_MEDIUM) {
+    group_scattering = true;
+  }
   rec.group_index = g_index;
   rec.primitive_index = p_index;
+  rec.group_scattering = group_scattering;
   return res;
 }
