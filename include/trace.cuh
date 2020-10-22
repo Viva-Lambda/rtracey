@@ -25,7 +25,7 @@ __device__ Color ray_color(const Ray &r,
   while (bounceNb > 0) {
     HitRecord rec;
     bool anyHit = hit<SCENE>(world, current_ray, 0.001f,
-                             FLT_MAX, rec);
+                             FLT_MAX, rec, loc);
     if (anyHit) {
       // rec.mat_ptr.tparam.tdata = world.tdata;
       Color emittedColor = emitted<MATERIAL>(world, rec);

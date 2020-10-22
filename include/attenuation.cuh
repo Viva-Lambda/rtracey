@@ -162,10 +162,10 @@ __device__ Color color_value<TEXTURE>(
   TextureType ttype;
   if (rec.group_scattering) {
     prim_idx = rec.group_index;
-    ttype = static_cast<TextureType>(s.ttypes[prim_idx]);
+    ttype = static_cast<TextureType>(s.g_ttypes[prim_idx]);
   } else {
     prim_idx = rec.primitive_index;
-    ttype = static_cast<TextureType>(s.g_ttypes[prim_idx]);
+    ttype = static_cast<TextureType>(s.ttypes[prim_idx]);
   }
   Color c(0.0f);
   if (ttype == NONE_TEXTURE) {

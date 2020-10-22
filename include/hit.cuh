@@ -246,7 +246,7 @@ hit<HITTABLE>(const SceneObjects &s, const Ray &r,
 template <GroupType g>
 __device__ bool hit(const SceneObjects &s, const Ray &r,
                     float d_min, float d_max,
-                    HitRecord &rec) {
+                    HitRecord &rec, curandState *loc) {
   return false;
 }
 template <GroupType g>
@@ -282,7 +282,8 @@ __host__ __device__ bool hit_group(const SceneObjects &s,
 template <>
 __device__ bool hit<NONE_GRP>(const SceneObjects &s,
                               const Ray &r, float d_min,
-                              float d_max, HitRecord &rec) {
+                              float d_max, HitRecord &rec,
+                              curandState *loc) {
   return hit_group(s, r, d_min, d_max, rec);
 }
 template <>
@@ -292,10 +293,10 @@ __host__ bool h_hit<NONE_GRP>(const SceneObjects &s,
   return hit_group(s, r, d_min, d_max, rec);
 }
 template <>
-__device__ bool hit<BOX>(const SceneObjects &s,
-                         const Ray &r, float d_min,
-                         float d_max, HitRecord &rec) {
-  return hit<NONE_GRP>(s, r, d_min, d_max, rec);
+__device__ bool
+hit<BOX>(const SceneObjects &s, const Ray &r, float d_min,
+         float d_max, HitRecord &rec, curandState *loc) {
+  return hit<NONE_GRP>(s, r, d_min, d_max, rec, loc);
 }
 template <>
 __host__ bool h_hit<BOX>(const SceneObjects &s,
@@ -372,10 +373,10 @@ template <>
 __device__ bool
 hit<CONSTANT_MEDIUM>(const SceneObjects &s, const Ray &r,
                      float d_min, float d_max,
-                     HitRecord &rec) {
+                     HitRecord &rec, curandState *loc) {
   // Print occasional samples when debugging. To enable,
-  float t0 = curand_uniform(s.rand);
-  float t1 = curand_uniform(s.rand);
+  float t0 = curand_uniform(loc);
+  float t1 = curand_uniform(loc);
   return hit_constant_medium(s, r, d_min, d_max, rec, t0,
                              t1);
 }
@@ -393,8 +394,9 @@ h_hit<CONSTANT_MEDIUM>(const SceneObjects &s, const Ray &r,
 template <>
 __device__ bool
 hit<SIMPLE_MESH>(const SceneObjects &s, const Ray &r,
-                 float d_min, float d_max, HitRecord &rec) {
-  return hit<NONE_GRP>(s, r, d_min, d_max, rec);
+                 float d_min, float d_max, HitRecord &rec,
+                 curandState *loc) {
+  return hit<NONE_GRP>(s, r, d_min, d_max, rec, loc);
 }
 template <>
 __host__ bool h_hit<SIMPLE_MESH>(const SceneObjects &s,
@@ -404,9 +406,9 @@ __host__ bool h_hit<SIMPLE_MESH>(const SceneObjects &s,
   return h_hit<NONE_GRP>(s, r, d_min, d_max, rec);
 }
 template <>
-__device__ bool hit<SCENE>(const SceneObjects &s,
-                           const Ray &r, float d_min,
-                           float d_max, HitRecord &rec) {
+__device__ bool
+hit<SCENE>(const SceneObjects &s, const Ray &r, float d_min,
+           float d_max, HitRecord &rec, curandState *loc) {
   int nb_group = s.nb_groups;
   bool res = false;
   int g_index = 0;
@@ -418,16 +420,17 @@ __device__ bool hit<SCENE>(const SceneObjects &s,
     GroupType gtype = static_cast<GroupType>(gtype_);
     bool is_hit = false;
     if (gtype == NONE_GRP) {
-      is_hit =
-          hit<NONE_GRP>(s, r, d_min, closest_so_far, rec);
+      is_hit = hit<NONE_GRP>(s, r, d_min, closest_so_far,
+                             rec, loc);
     } else if (gtype == BOX) {
-      is_hit = hit<BOX>(s, r, d_min, closest_so_far, rec);
+      is_hit =
+          hit<BOX>(s, r, d_min, closest_so_far, rec, loc);
     } else if (gtype == CONSTANT_MEDIUM) {
-      is_hit = hit<CONSTANT_MEDIUM>(s, r, d_min,
-                                    closest_so_far, rec);
+      is_hit = hit<CONSTANT_MEDIUM>(
+          s, r, d_min, closest_so_far, rec, loc);
     } else if (gtype == SIMPLE_MESH) {
       is_hit = hit<SIMPLE_MESH>(s, r, d_min, closest_so_far,
-                                rec);
+                                rec, loc);
     }
     if (is_hit) {
       res = is_hit;

@@ -87,7 +87,7 @@ int main() {
   int SAMPLE_NB = 50;
   int BOUNCE_NB = 10;
 
-  bool gpu_io = false;
+  bool gpu_io = true;
 
   get_device_props();
 

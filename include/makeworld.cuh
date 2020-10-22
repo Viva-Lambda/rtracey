@@ -226,10 +226,10 @@ __global__ void make_cornell_box_k(SceneObjects world,
     SceneObjects sobjs(sgs, 4, loc);
     //
     world = sobjs;
-    box1.g_free();
-    box2.g_free();
-    sg.g_free();
-    sg1.g_free();
+    // box1.g_free();
+    // box2.g_free();
+    // sg.g_free();
+    // sg1.g_free();
   }
 }
 
