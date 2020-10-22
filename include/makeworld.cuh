@@ -69,9 +69,6 @@ SceneObjects make_cornell_box() {
   GroupParam sg(ps, prim_count, group_id, BOX, g_dens, mpp);
 
   // first box
-  const TextureParam tp;
-  MaterialParam die = mkDielectricParam(tp, 1.5f);
-
   GroupParam box1 =
       makeBox(Point3(0.0f), Point3(165.0f, 330.0f, 165.0f),
               white_param, 1);
@@ -88,9 +85,12 @@ SceneObjects make_cornell_box() {
                    mpar);
 
   // a glass sphere
+  const TextureParam tp;
+  const TextureParam tp2 = mkNoiseParam(5.0f);
+  MaterialParam lamb = mkLambertParam(tp2);
   HittableParam hsp1 = mkSphereHittable(
       Point3(190.0f, 350.0f, 190.0f), 90.0f);
-  Primitive glass_sphere(die, hsp1, 0, 2);
+  Primitive glass_sphere(lamb, hsp1, 0, 2);
   Primitive ps1[] = {glass_sphere};
   GroupParam sg1(ps1, 1, 2, NONE_GRP, g_dens, mpp);
 
@@ -203,9 +203,11 @@ __global__ void make_cornell_box_k(SceneObjects world,
     // translate(box1, Point3(265.0f, 0.0f, 195.0f));
 
     // a glass sphere
+    const TextureParam tp2 = mkNoiseParam(5.0f);
+    MaterialParam lamb = mkLambertParam(tp2);
     HittableParam hsp1 = mkSphereHittable(
         Point3(190.0f, 350.0f, 190.0f), 90.0f);
-    Primitive glass_sphere(die, hsp1, 0, 2);
+    Primitive glass_sphere(lamb, hsp1, 0, 2);
     Primitive ps1[] = {glass_sphere};
     GroupParam sg1(ps1, 1, 2, NONE_GRP, g_dens, mpp);
 
