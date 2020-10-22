@@ -72,9 +72,9 @@ SceneObjects make_cornell_box() {
   const TextureParam tp;
   MaterialParam die = mkDielectricParam(tp, 1.5f);
 
-  GroupParam box1 = makeBox(Point3(130.0f, 0.0f, 65.0f),
-                            Point3(295.0f, 165.0f, 230.0f),
-                            white_param, 1);
+  GroupParam box1 =
+      makeBox(Point3(0.0f), Point3(165.0f, 330.0f, 165.0f),
+              white_param, 1);
   // rotate_y(box1, 15.0f);
 
   // translate(box1, Point3(265.0f, 0.0f, 195.0f));
@@ -84,7 +84,7 @@ SceneObjects make_cornell_box() {
                          0.0f, imp);
   MaterialParam mpar(tp1, ISOTROPIC, 0.0f);
   GroupParam smoke(box1.prims, box1.group_size,
-                   box1.group_id, CONSTANT_MEDIUM, 0.05,
+                   box1.group_id, CONSTANT_MEDIUM, 0.01,
                    mpar);
 
   // a glass sphere
