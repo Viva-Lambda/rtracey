@@ -88,11 +88,11 @@ SceneObjects make_cornell_box() {
                    mpar);
 
   // a glass sphere
-  // HittableParam hsp1 = mkSphereHittable(
-  //    Point3(190.0f, 350.0f, 190.0f), 90.0f);
-  // Primitive glass_sphere(die, hsp1, 0, 2);
-  // Primitive ps1[] = {glass_sphere};
-  // GroupParam sg1(ps1, 1, 2, NONE_GRP, g_dens, mpp);
+  HittableParam hsp1 = mkSphereHittable(
+      Point3(190.0f, 350.0f, 190.0f), 90.0f);
+  Primitive glass_sphere(die, hsp1, 0, 2);
+  Primitive ps1[] = {glass_sphere};
+  GroupParam sg1(ps1, 1, 2, NONE_GRP, g_dens, mpp);
 
   // second box
   GroupParam box2 = makeBox(Point3(265.0f, 0.0f, 295.0f),
@@ -102,16 +102,17 @@ SceneObjects make_cornell_box() {
   // translate(box2, Point3(130.0f, 0.0f, 165.0f));
 
   //
-  GroupParam *sgs = new GroupParam[3];
+  GroupParam *sgs = new GroupParam[4];
   sgs[0] = sg;
   sgs[1] = smoke;
   sgs[2] = box2;
-  // sgs[1] = sg1;
-  SceneObjects sobjs(sgs, 3);
+  sgs[3] = sg1;
+  SceneObjects sobjs(sgs, 4);
   box1.g_free();
   box2.g_free();
   sg.g_free();
-  // sg1.g_free();
+  sg1.g_free();
+  smoke.g_free();
   return sobjs;
 }
 
@@ -181,8 +182,7 @@ __global__ void make_cornell_box_k(SceneObjects world,
                   group_id)};
     const MaterialParam mpp;
     const float g_dens = 0.0f;
-    GroupParam sg(ps, prim_count, group_id, BOX, g_dens,
-                  mpp);
+    GroupParam sg(ps, prim_count, 0, BOX, g_dens, mpp);
 
     // first box
     const TextureParam tp;
@@ -226,10 +226,11 @@ __global__ void make_cornell_box_k(SceneObjects world,
     SceneObjects sobjs(sgs, 4, loc);
     //
     world = sobjs;
-    // box1.g_free();
-    // box2.g_free();
-    // sg.g_free();
-    // sg1.g_free();
+    box1.g_free();
+    box2.g_free();
+    sg.g_free();
+    sg1.g_free();
+    smoke.g_free();
   }
 }
 

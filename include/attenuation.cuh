@@ -76,11 +76,11 @@ __host__ __device__ Color noise_value(const SceneObjects &s,
   int prim_idx;
   float scale;
   if (rec.group_scattering) {
-    prim_idx = rec.primitive_index;
-    scale = s.scales[prim_idx];
-  } else {
     prim_idx = rec.group_index;
     scale = s.g_scales[prim_idx];
+  } else {
+    prim_idx = rec.primitive_index;
+    scale = s.scales[prim_idx];
   }
   Point3 p = rec.p;
   float zscale = scale * p.z();
@@ -107,7 +107,7 @@ __host__ Color h_color_value<NOISE>(const SceneObjects &s,
 __host__ __device__ Color imcolor(const SceneObjects &s,
                                   const HitRecord &rec) {
   int width, height, bpp, idx, prim_idx;
-  if (rec.group_scattering) {
+  if (!rec.group_scattering) {
     prim_idx = rec.primitive_index;
     width = s.widths[prim_idx];
     height = s.heights[prim_idx];
