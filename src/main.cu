@@ -80,12 +80,12 @@ void make_image(thrust::device_ptr<unsigned char> &imdata,
 
 int main() {
   float aspect_ratio = 16.0f / 9.0f;
-  int WIDTH = 320;
+  int WIDTH = 640;
   int HEIGHT = static_cast<int>(WIDTH / aspect_ratio);
   int BLOCK_WIDTH = 16;
   int BLOCK_HEIGHT = 8;
-  int SAMPLE_NB = 20;
-  int BOUNCE_NB = 10;
+  int SAMPLE_NB = 300;
+  int BOUNCE_NB = 150;
 
   bool gpu_io = false;
 

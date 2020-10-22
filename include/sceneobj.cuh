@@ -71,22 +71,23 @@ struct SceneObjects {
   __device__ SceneObjects(GroupParam *&gs, int nb_g,
                           unsigned char *td, int ts,
                           curandState *r)
-      : nb_groups(nb_g), tdata(td), tsize(ts), rand(r) {
+      : nb_groups(nb_g), tsize(ts), rand(r) {
     alloc_group_params(nb_g);
     nb_prims = get_prim_nb(gs);
     alloc_prim_params(nb_prims);
     set_groups(gs);
+    deepcopy(tdata, td, tsize);
   }
   __host__ __device__ SceneObjects(GroupParam *&gs,
                                    int nb_g,
                                    unsigned char *td,
                                    int ts)
-      : nb_groups(nb_g), tdata(td), tsize(ts),
-        rand(nullptr) {
+      : nb_groups(nb_g), tsize(ts), rand(nullptr) {
     alloc_group_params(nb_g);
     nb_prims = get_prim_nb(gs);
     alloc_prim_params(nb_prims);
     set_groups(gs);
+    deepcopy(tdata, td, tsize);
   }
   __host__ __device__ void set_groups(GroupParam *gs) {
     int gcount = 0;
