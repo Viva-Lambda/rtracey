@@ -22,9 +22,9 @@ SceneObjects make_cornell_box() {
 
   const MaterialParam red_param = mkLambertParam(red_solid);
   //
-  const float fzz = 0.1f;
+  // const float fzz = 0.1f;
   const MaterialParam green_param =
-      mkMetalParam(green_solid, fzz);
+      mkLambertParam(green_solid);
   //
   const MaterialParam blue_param =
       mkLambertParam(blue_solid);
@@ -76,13 +76,13 @@ SceneObjects make_cornell_box() {
 
   // translate(box1, Point3(265.0f, 0.0f, 195.0f));
 
-  const ImageParam imp;
-  const TextureParam tp1(SOLID_COLOR, 0.7f, 0.2f, 0.3f,
-                         0.0f, imp);
-  MaterialParam mpar(tp1, ISOTROPIC, 0.0f);
-  GroupParam smoke(box1.prims, box1.group_size,
-                   box1.group_id, CONSTANT_MEDIUM, 0.01,
-                   mpar);
+  // const ImageParam imp;
+  // const TextureParam tp1(SOLID_COLOR, 0.7f, 0.2f, 0.3f,
+  //                       0.0f, imp);
+  // MaterialParam mpar(tp1, ISOTROPIC, 0.0f);
+  // GroupParam smoke(box1.prims, box1.group_size,
+  //                 box1.group_id, CONSTANT_MEDIUM, 0.01,
+  //                 mpar);
 
   // a glass sphere
   const TextureParam tp;
@@ -102,17 +102,17 @@ SceneObjects make_cornell_box() {
   // translate(box2, Point3(130.0f, 0.0f, 165.0f));
 
   //
-  GroupParam *sgs = new GroupParam[4];
+  GroupParam *sgs = new GroupParam[2];
   sgs[0] = sg;
-  sgs[1] = smoke;
-  sgs[2] = box2;
-  sgs[3] = sg1;
-  SceneObjects sobjs(sgs, 4);
+  // sgs[1] = box1;
+  // sgs[2] = box2;
+  sgs[1] = sg1;
+  SceneObjects sobjs(sgs, 2);
   box1.g_free();
   box2.g_free();
   sg.g_free();
   sg1.g_free();
-  smoke.g_free();
+  // smoke.g_free();
   return sobjs;
 }
 

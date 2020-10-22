@@ -10,7 +10,8 @@
 
 template <MaterialType m>
 __device__ Color emitted(const SceneObjects &s,
-                         const HitRecord &rec) {
+                         const HitRecord &rec,
+                         curandState *loc) {
   return Color(0.0f);
 }
 
@@ -22,8 +23,9 @@ __host__ Color h_emitted(const SceneObjects &s,
 
 template <>
 __device__ Color emitted<DIFFUSE_LIGHT>(
-    const SceneObjects &s, const HitRecord &rec) {
-  return color_value<TEXTURE>(s, rec);
+    const SceneObjects &s, const HitRecord &rec,
+    curandState *loc) {
+  return color_value<TEXTURE>(s, rec, loc);
 }
 template <>
 __host__ Color h_emitted<DIFFUSE_LIGHT>(
@@ -33,13 +35,14 @@ __host__ Color h_emitted<DIFFUSE_LIGHT>(
 
 template <>
 __device__ Color emitted<MATERIAL>(const SceneObjects &s,
-                                   const HitRecord &rec) {
+                                   const HitRecord &rec,
+                                   curandState *loc) {
   int prim_idx = rec.primitive_index;
   Color res(0.0f);
   MaterialType mtype =
       static_cast<MaterialType>(s.mtypes[prim_idx]);
   if (mtype == DIFFUSE_LIGHT) {
-    res = emitted<DIFFUSE_LIGHT>(s, rec);
+    res = emitted<DIFFUSE_LIGHT>(s, rec, loc);
   }
   return res;
 }

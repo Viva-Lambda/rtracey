@@ -43,7 +43,7 @@ scatter<LAMBERTIAN>(const SceneObjects &s, const Ray &r,
                     Color &attenuation, Ray &r_out,
                     float &pdf, curandState *loc) {
   Vec3 rcos = random_cosine_direction(loc);
-  attenuation = color_value<TEXTURE>(s, rec);
+  attenuation = color_value<TEXTURE>(s, rec, loc);
   return scatter_lambertian(s, r, rec, r_out, pdf, rcos);
 }
 template <>
@@ -82,7 +82,7 @@ scatter<METAL>(const SceneObjects &s, const Ray &r,
                const HitRecord &rec, Color &attenuation,
                Ray &r_out, float &pdf, curandState *loc) {
   Vec3 rv = random_in_unit_sphere(loc);
-  attenuation = color_value<TEXTURE>(s, rec);
+  attenuation = color_value<TEXTURE>(s, rec, loc);
   return scatter_metal(s, r, rec, r_out, pdf, rv);
 }
 template <>
@@ -159,7 +159,7 @@ scatter<DIFFUSE_LIGHT>(const SceneObjects &s, const Ray &r,
                        Color &attenuation, Ray &r_out,
                        float &pdf, curandState *loc) {
   pdf = 1.0f;
-  attenuation = color_value<TEXTURE>(s, rec);
+  attenuation = color_value<TEXTURE>(s, rec, loc);
   return false;
 }
 template <>
@@ -180,7 +180,7 @@ scatter<ISOTROPIC>(const SceneObjects &s, const Ray &r,
                    Ray &r_out, float &pdf,
                    curandState *loc) {
   r_out = Ray(rec.p, random_in_unit_sphere(loc), r.time());
-  attenuation = color_value<TEXTURE>(s, rec);
+  attenuation = color_value<TEXTURE>(s, rec, loc);
   pdf = 1.0f;
   return true;
 }

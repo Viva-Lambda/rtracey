@@ -8,7 +8,8 @@
 
 template <TextureType t>
 __device__ Color color_value(const SceneObjects &s,
-                             const HitRecord &rec) {
+                             const HitRecord &rec,
+                             curandState *loc) {
   return Color(0.0f);
 }
 template <TextureType t>
@@ -35,7 +36,8 @@ solid_value(const SceneObjects &s, const HitRecord &rec) {
 }
 template <>
 __device__ Color color_value<SOLID_COLOR>(
-    const SceneObjects &s, const HitRecord &rec) {
+    const SceneObjects &s, const HitRecord &rec,
+    curandState *loc) {
   return solid_value(s, rec);
 }
 template <>
@@ -58,9 +60,10 @@ checker_value(const SceneObjects &s, const HitRecord &rec,
   }
 }
 template <>
-__device__ Color color_value<CHECKER>(
-    const SceneObjects &s, const HitRecord &rec) {
-  Color c = color_value<SOLID_COLOR>(s, rec);
+__device__ Color color_value<CHECKER>(const SceneObjects &s,
+                                      const HitRecord &rec,
+                                      curandState *loc) {
+  Color c = color_value<SOLID_COLOR>(s, rec, loc);
   return checker_value(s, rec, c);
 }
 template <>
@@ -90,8 +93,9 @@ __host__ __device__ Color noise_value(const SceneObjects &s,
 }
 template <>
 __device__ Color color_value<NOISE>(const SceneObjects &s,
-                                    const HitRecord &rec) {
-  Perlin noise(s.rand);
+                                    const HitRecord &rec,
+                                    curandState *loc) {
+  Perlin noise(loc);
   Point3 p = rec.p;
   float turb = noise.turb(p);
   return noise_value(s, rec, turb);
@@ -99,10 +103,10 @@ __device__ Color color_value<NOISE>(const SceneObjects &s,
 template <>
 __host__ Color h_color_value<NOISE>(const SceneObjects &s,
                                     const HitRecord &rec) {
-  Perlin noise(true);
+  PerlinCpu noise = PerlinCpu();
   Point3 p = rec.p;
-  float turb = noise.turb(p);
-  return noise_value(s, rec, turb);
+  float turb1 = noise.turb(p);
+  return noise_value(s, rec, turb1);
 }
 __host__ __device__ Color imcolor(const SceneObjects &s,
                                   const HitRecord &rec) {
@@ -147,7 +151,8 @@ __host__ __device__ Color imcolor(const SceneObjects &s,
 }
 template <>
 __device__ Color color_value<IMAGE>(const SceneObjects &s,
-                                    const HitRecord &rec) {
+                                    const HitRecord &rec,
+                                    curandState *loc) {
   return imcolor(s, rec);
 }
 template <>
@@ -156,8 +161,9 @@ __host__ Color h_color_value<IMAGE>(const SceneObjects &s,
   return imcolor(s, rec);
 }
 template <>
-__device__ Color color_value<TEXTURE>(
-    const SceneObjects &s, const HitRecord &rec) {
+__device__ Color color_value<TEXTURE>(const SceneObjects &s,
+                                      const HitRecord &rec,
+                                      curandState *loc) {
   int prim_idx;
   TextureType ttype;
   if (rec.group_scattering) {
@@ -171,13 +177,13 @@ __device__ Color color_value<TEXTURE>(
   if (ttype == NONE_TEXTURE) {
     return c;
   } else if (ttype == SOLID_COLOR) {
-    c = color_value<SOLID_COLOR>(s, rec);
+    c = color_value<SOLID_COLOR>(s, rec, loc);
   } else if (ttype == CHECKER) {
-    c = color_value<CHECKER>(s, rec);
+    c = color_value<CHECKER>(s, rec, loc);
   } else if (ttype == NOISE) {
-    c = color_value<NOISE>(s, rec);
+    c = color_value<NOISE>(s, rec, loc);
   } else if (ttype == IMAGE) {
-    c = color_value<IMAGE>(s, rec);
+    c = color_value<IMAGE>(s, rec, loc);
   }
   return c;
 }
@@ -200,15 +206,4 @@ __host__ Color h_color_value<TEXTURE>(
     c = h_color_value<IMAGE>(s, rec);
   }
   return c;
-}
-
-__host__ __device__ Color color_material(
-    const SceneObjects &s, const HitRecord &rec) {
-  int prim_idx = rec.primitive_index;
-  TextureType ttype =
-      static_cast<TextureType>(s.ttypes[prim_idx]);
-  float tp1x = s.tp1xs[prim_idx];
-  float tp1y = s.tp1ys[prim_idx];
-  float tp1z = s.tp1zs[prim_idx];
-  return Color(tp1x, tp1y, tp1z);
 }
