@@ -415,6 +415,47 @@ __host__ bool h_hit<SIMPLE_MESH>(const SceneObjects &s,
   return h_hit<NONE_GRP>(s, r, d_min, d_max, rec);
 }
 template <>
+__device__ bool hit<OBJECT>(const SceneObjects &s,
+                            const Ray &r, float d_min,
+                            float d_max, HitRecord &rec,
+                            curandState *loc) {
+  int gtype_ = s.gtypes[rec.group_index];
+  GroupType gtype = static_cast<GroupType>(gtype_);
+  bool is_hit = false;
+  if (gtype == NONE_GRP) {
+    is_hit = hit<NONE_GRP>(s, r, d_min, d_max, rec, loc);
+  } else if (gtype == BOX) {
+    is_hit = hit<BOX>(s, r, d_min, d_max, rec, loc);
+  } else if (gtype == CONSTANT_MEDIUM) {
+    is_hit =
+        hit<CONSTANT_MEDIUM>(s, r, d_min, d_max, rec, loc);
+  } else if (gtype == SIMPLE_MESH) {
+    is_hit = hit<SIMPLE_MESH>(s, r, d_min, d_max, rec, loc);
+  }
+  return is_hit;
+}
+
+template <>
+__host__ bool h_hit<OBJECT>(const SceneObjects &s,
+                            const Ray &r, float d_min,
+                            float d_max, HitRecord &rec) {
+  int gtype_ = s.gtypes[rec.group_index];
+  GroupType gtype = static_cast<GroupType>(gtype_);
+  bool is_hit = false;
+  if (gtype == NONE_GRP) {
+    is_hit = h_hit<NONE_GRP>(s, r, d_min, d_max, rec);
+  } else if (gtype == BOX) {
+    is_hit = h_hit<BOX>(s, r, d_min, d_max, rec);
+  } else if (gtype == CONSTANT_MEDIUM) {
+    is_hit =
+        h_hit<CONSTANT_MEDIUM>(s, r, d_min, d_max, rec);
+  } else if (gtype == SIMPLE_MESH) {
+    is_hit = h_hit<SIMPLE_MESH>(s, r, d_min, d_max, rec);
+  }
+  return is_hit;
+}
+
+template <>
 __device__ bool
 hit<SCENE>(const SceneObjects &s, const Ray &r, float d_min,
            float d_max, HitRecord &rec, curandState *loc) {
@@ -425,22 +466,8 @@ hit<SCENE>(const SceneObjects &s, const Ray &r, float d_min,
   float closest_so_far = d_max;
   for (int i = 0; i < nb_group; i++) {
     rec.group_index = i;
-    int gtype_ = s.gtypes[rec.group_index];
-    GroupType gtype = static_cast<GroupType>(gtype_);
-    bool is_hit = false;
-    if (gtype == NONE_GRP) {
-      is_hit = hit<NONE_GRP>(s, r, d_min, closest_so_far,
-                             rec, loc);
-    } else if (gtype == BOX) {
-      is_hit =
-          hit<BOX>(s, r, d_min, closest_so_far, rec, loc);
-    } else if (gtype == CONSTANT_MEDIUM) {
-      is_hit = hit<CONSTANT_MEDIUM>(
-          s, r, d_min, closest_so_far, rec, loc);
-    } else if (gtype == SIMPLE_MESH) {
-      is_hit = hit<SIMPLE_MESH>(s, r, d_min, closest_so_far,
-                                rec, loc);
-    }
+    bool is_hit =
+        hit<OBJECT>(s, r, d_min, closest_so_far, rec, loc);
     if (is_hit) {
       res = is_hit;
       g_index = i;
@@ -460,6 +487,7 @@ hit<SCENE>(const SceneObjects &s, const Ray &r, float d_min,
   rec.group_scattering = group_scattering;
   return res;
 }
+
 template <>
 __host__ bool h_hit<SCENE>(const SceneObjects &s,
                            const Ray &r, float d_min,
@@ -471,22 +499,8 @@ __host__ bool h_hit<SCENE>(const SceneObjects &s,
   float closest_so_far = d_max;
   for (int i = 0; i < nb_group; i++) {
     rec.group_index = i;
-    rec.group_id = s.group_ids[rec.group_index];
-    int gtype_ = s.gtypes[rec.group_index];
-    GroupType gtype = static_cast<GroupType>(gtype_);
-    bool is_hit = false;
-    if (gtype == NONE_GRP) {
-      is_hit =
-          h_hit<NONE_GRP>(s, r, d_min, closest_so_far, rec);
-    } else if (gtype == BOX) {
-      is_hit = h_hit<BOX>(s, r, d_min, closest_so_far, rec);
-    } else if (gtype == CONSTANT_MEDIUM) {
-      is_hit = h_hit<CONSTANT_MEDIUM>(s, r, d_min,
-                                      closest_so_far, rec);
-    } else if (gtype == SIMPLE_MESH) {
-      is_hit = h_hit<SIMPLE_MESH>(s, r, d_min,
-                                  closest_so_far, rec);
-    }
+    bool is_hit =
+        h_hit<OBJECT>(s, r, d_min, closest_so_far, rec);
     if (is_hit) {
       res = is_hit;
       g_index = i;

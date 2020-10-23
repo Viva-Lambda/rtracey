@@ -2,6 +2,7 @@
 #include <external.hpp>
 
 enum PdfType : int {
+  NONE_PDF = 0,
   COSINE_PDF = 1,
   HITTABLE_PDF = 2,
   MIXTURE_PDF = 3
@@ -42,5 +43,6 @@ enum GroupType : int {
   BOX = 1,
   CONSTANT_MEDIUM = 2,
   SIMPLE_MESH = 3,
-  SCENE = 4
+  OBJECT = 4,
+  SCENE = 5
 };

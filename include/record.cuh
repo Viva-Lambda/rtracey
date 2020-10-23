@@ -81,5 +81,8 @@ struct ScatterRecord {
   Ray specular_ray;
   bool is_specular;
   Color attenuation;
-  PdfType pdf_ptr;
+  PdfType pdf_type;
+  bool *is_group_indices{nullptr};
+  int *indices{nullptr};
+  int index_size = 0;
 };

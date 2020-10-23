@@ -199,30 +199,22 @@ pdf_value<SIMPLE_MESH>(const SceneObjects &s,
                        int group_idx) {
   return pdf_value<NONE_GRP>(s, o, v, group_idx);
 }
+
 template <>
 __host__ __device__ float
-pdf_value<SCENE>(const SceneObjects &s, const Point3 &o,
-                 const Point3 &v, int gindex) {
-  int nb_group = s.nb_groups;
+pdf_value<OBJECT>(const SceneObjects &s, const Point3 &o,
+                  const Point3 &v, int group_idx) {
+  int gtype_ = s.gtypes[group_idx];
+  GroupType gtype = static_cast<GroupType>(gtype_);
   float pdf_v = 1.0f;
-  for (int i = 0; i < nb_group; i++) {
-    int group_idx = i;
-    int gtype_ = s.g_ttypes[group_idx];
-    GroupType gtype = static_cast<GroupType>(gtype_);
-    if (gtype == SIMPLE_MESH) {
-      pdf_v = pdf_value<SIMPLE_MESH>(s, o, v, group_idx);
-      return pdf_v;
-    } else if (gtype == NONE_GRP) {
-      pdf_v = pdf_value<NONE_GRP>(s, o, v, group_idx);
-      return pdf_v;
-    } else if (gtype == BOX) {
-      pdf_v = pdf_value<BOX>(s, o, v, group_idx);
-      return pdf_v;
-    } else if (gtype == CONSTANT_MEDIUM) {
-      pdf_v =
-          pdf_value<CONSTANT_MEDIUM>(s, o, v, group_idx);
-      return pdf_v;
-    }
+  if (gtype == SIMPLE_MESH) {
+    pdf_v = pdf_value<SIMPLE_MESH>(s, o, v, group_idx);
+  } else if (gtype == NONE_GRP) {
+    pdf_v = pdf_value<NONE_GRP>(s, o, v, group_idx);
+  } else if (gtype == BOX) {
+    pdf_v = pdf_value<BOX>(s, o, v, group_idx);
+  } else if (gtype == CONSTANT_MEDIUM) {
+    pdf_v = pdf_value<CONSTANT_MEDIUM>(s, o, v, group_idx);
   }
   return pdf_v;
 }
