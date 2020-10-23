@@ -68,16 +68,9 @@ SceneObjects make_cornell_box() {
   const float g_dens = 0.0f;
   GroupParam sg(ps, prim_count, group_id, BOX, g_dens, mpp);
 
-  // pictures
-  std::vector<const char *> impaths = {"media/earthmap.jpg",
-                                       "media/lsjimg.png"};
-  std::vector<int> ws, hes, nbChannels, indices;
-  std::vector<unsigned char> imdata_h;
-  imread(impaths, ws, hes, nbChannels, imdata_h, indices);
   // a glass sphere
   const TextureParam tp;
-  const TextureParam tp2 = mkImageTextureParam(
-      ws[0], hes[0], nbChannels[0], indices[0]);
+  const TextureParam tp2 = mkNoiseParam(2.0f);
   MaterialParam lamb = mkLambertParam(tp2);
   HittableParam hsp1 = mkSphereHittable(
       Point3(190.0f, 350.0f, 290.0f), 90.0f);
@@ -86,14 +79,15 @@ SceneObjects make_cornell_box() {
   GroupParam sg1(ps1, 1, 1, NONE_GRP, g_dens, mpp);
 
   // second sphere
-  const TextureParam tp3 = mkImageTextureParam(
-      ws[1], hes[1], nbChannels[1], indices[1]);
+  const TextureParam tp3 =
+      mkSolidColorParam(Color(1.0f, 0.7f, 0.4f));
   MaterialParam lamb2 = mkLambertParam(tp3);
+  MaterialParam mpar(tp3, ISOTROPIC, 0.00f);
   HittableParam hsp2 = mkSphereHittable(
       Point3(370.0f, 95.0f, 265.0f), 90.0f);
   Primitive glass_sphere2(lamb2, hsp2, 0, 2);
   Primitive ps2[] = {glass_sphere2};
-  GroupParam sg2(ps2, 1, 2, NONE_GRP, g_dens, mpp);
+  GroupParam sg2(ps2, 1, 2, CONSTANT_MEDIUM, 0.01f, mpar);
 
   //
   GroupParam *sgs = new GroupParam[3];
@@ -101,8 +95,7 @@ SceneObjects make_cornell_box() {
   // sgs[2] = box2;
   sgs[1] = sg1;
   sgs[2] = sg2;
-  SceneObjects sobjs(sgs, 3, imdata_h.data(),
-                     (int)imdata_h.size());
+  SceneObjects sobjs(sgs, 3);
   // sg.g_free();
   // sg1.g_free();
   // sg2.g_free();
@@ -127,9 +120,9 @@ __global__ void make_cornell_box_k(SceneObjects world,
     const MaterialParam red_param =
         mkLambertParam(red_solid);
     //
-    const float fzz = 0.1f;
+    // const float fzz = 0.1f;
     const MaterialParam green_param =
-        mkMetalParam(green_solid, fzz);
+        mkLambertParam(green_solid);
     //
     const MaterialParam blue_param =
         mkLambertParam(blue_solid);
@@ -176,57 +169,42 @@ __global__ void make_cornell_box_k(SceneObjects world,
                   group_id)};
     const MaterialParam mpp;
     const float g_dens = 0.0f;
-    GroupParam sg(ps, prim_count, 0, BOX, g_dens, mpp);
-
-    // first box
-    const TextureParam tp;
-    MaterialParam die = mkDielectricParam(tp, 1.5f);
-
-    GroupParam box1 = makeBox(
-        Point3(130.0f, 0.0f, 65.0f),
-        Point3(295.0f, 165.0f, 230.0f), white_param, 1);
-    const ImageParam imp;
-    const TextureParam tp1(SOLID_COLOR, 0.7f, 0.2f, 0.3f,
-                           0.0f, imp);
-    MaterialParam mpar(tp1, ISOTROPIC, 0.0f);
-    GroupParam smoke(box1.prims, box1.group_size,
-                     box1.group_id, CONSTANT_MEDIUM, 0.05,
-                     mpar);
-    // rotate_y(box1, 15.0f);
-
-    // translate(box1, Point3(265.0f, 0.0f, 195.0f));
+    GroupParam sg(ps, prim_count, group_id, BOX, g_dens,
+                  mpp);
 
     // a glass sphere
-    const TextureParam tp2 = mkNoiseParam(5.0f);
+    const TextureParam tp;
+    const TextureParam tp2 = mkNoiseParam(2.0f);
     MaterialParam lamb = mkLambertParam(tp2);
     HittableParam hsp1 = mkSphereHittable(
-        Point3(190.0f, 350.0f, 190.0f), 90.0f);
-    Primitive glass_sphere(lamb, hsp1, 0, 2);
+        Point3(190.0f, 350.0f, 290.0f), 90.0f);
+    Primitive glass_sphere(lamb, hsp1, 0, 1);
     Primitive ps1[] = {glass_sphere};
-    GroupParam sg1(ps1, 1, 2, NONE_GRP, g_dens, mpp);
+    GroupParam sg1(ps1, 1, 1, NONE_GRP, g_dens, mpp);
 
-    // second box
-    GroupParam box2 = makeBox(
-        Point3(265.0f, 0.0f, 295.0f),
-        Point3(430.0f, 330.0f, 460.0f), white_param, 3);
-    // rotate_y(box2, 65.0f);
-    // translate(box2, Point3(130.0f, 0.0f, 165.0f));
+    // second sphere
+    const TextureParam tp3 =
+        mkSolidColorParam(Color(1.0f, 0.7f, 0.4f));
+    MaterialParam lamb2 = mkLambertParam(tp3);
+    MaterialParam mpar(tp3, ISOTROPIC, 0.00f);
+    HittableParam hsp2 = mkSphereHittable(
+        Point3(370.0f, 95.0f, 265.0f), 90.0f);
+    Primitive glass_sphere2(lamb2, hsp2, 0, 2);
+    Primitive ps2[] = {glass_sphere2};
+    GroupParam sg2(ps2, 1, 2, CONSTANT_MEDIUM, 0.01f, mpar);
 
     //
-    GroupParam *sgs = new GroupParam[4];
+    GroupParam *sgs = new GroupParam[3];
     sgs[0] = sg;
-    sgs[1] = smoke;
-    sgs[2] = sg1;
-    sgs[3] = box2;
-    //
-    SceneObjects sobjs(sgs, 4, loc);
-    //
+    // sgs[2] = box2;
+    sgs[1] = sg1;
+    sgs[2] = sg2;
+    SceneObjects sobjs(sgs, 3, loc);
+    // sg.g_free();
+    // sg1.g_free();
+    // sg2.g_free();
+    // smoke.g_free();
     world = sobjs;
-    box1.g_free();
-    box2.g_free();
-    sg.g_free();
-    sg1.g_free();
-    smoke.g_free();
   }
 }
 

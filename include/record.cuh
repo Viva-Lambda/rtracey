@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ray.cuh>
+#include <scenetype.cuh>
 #include <vec3.cuh>
 
 struct HitRecord {
@@ -74,4 +75,11 @@ struct AxisInfo {
       notAligned = 1;
     }
   }
+};
+
+struct ScatterRecord {
+  Ray specular_ray;
+  bool is_specular;
+  Color attenuation;
+  PdfType pdf_ptr;
 };

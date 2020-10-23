@@ -1,6 +1,11 @@
 #pragma once
 #include <external.hpp>
 
+enum PdfType : int {
+  COSINE_PDF = 1,
+  HITTABLE_PDF = 2,
+  MIXTURE_PDF = 3
+};
 enum TextureType : int {
   NONE_TEXTURE = 0,
   SOLID_COLOR = 1,
