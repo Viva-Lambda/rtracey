@@ -69,10 +69,8 @@ SceneObjects make_cornell_box() {
   GroupParam sg(ps, prim_count, group_id, BOX, g_dens, mpp);
 
   // pictures
-  std::vector<const char *> impaths = {
-      "media/earthmap.jpg"
-      // "media/lsjimg.png"
-  };
+  std::vector<const char *> impaths = {"media/earthmap.jpg",
+                                       "media/lsjimg.png"};
   std::vector<int> ws, hes, nbChannels, indices;
   std::vector<unsigned char> imdata_h;
   imread(impaths, ws, hes, nbChannels, imdata_h, indices);
@@ -82,7 +80,7 @@ SceneObjects make_cornell_box() {
       ws[0], hes[0], nbChannels[0], indices[0]);
   MaterialParam lamb = mkLambertParam(tp2);
   HittableParam hsp1 = mkSphereHittable(
-      Point3(190.0f, 350.0f, 190.0f), 90.0f);
+      Point3(190.0f, 350.0f, 290.0f), 90.0f);
   Primitive glass_sphere(lamb, hsp1, 0, 1);
   Primitive ps1[] = {glass_sphere};
   GroupParam sg1(ps1, 1, 1, NONE_GRP, g_dens, mpp);

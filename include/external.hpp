@@ -1,5 +1,4 @@
-#ifndef EXTERNAL_HPP
-#define EXTERNAL_HPP
+#pragma once
 
 #include <assert.h>
 #include <cuda_runtime.h>
@@ -24,5 +23,3 @@
 // stb image read & write
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
-
-#endif

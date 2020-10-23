@@ -12,8 +12,8 @@ __host__ __device__ void get_sphere_uv(const Vec3 &p,
                                        float &u, float &v) {
   auto phi = atan2(p.z(), p.x());
   auto theta = asin(p.y());
-  u = 1 - (phi + M_PI) / (2 * M_PI);
-  v = (theta + M_PI / 2) / M_PI;
+  u = 1.0f - (phi + M_PI) / (2.0f * M_PI);
+  v = (theta + M_PI / 2.0f) / M_PI;
 }
 
 template <HittableType h>
@@ -43,6 +43,7 @@ hit<SPHERE>(const SceneObjects &s, const Ray &r,
       rec.t = temp;
       rec.p = r.at(rec.t);
       Vec3 normal = (rec.p - center) / radius;
+      normal = to_unit(normal);
       rec.set_front_face(r, normal);
       get_sphere_uv(normal, rec.u, rec.v);
       return true;
@@ -52,6 +53,7 @@ hit<SPHERE>(const SceneObjects &s, const Ray &r,
       rec.t = temp;
       rec.p = r.at(rec.t);
       Vec3 normal = (rec.p - center) / radius;
+      normal = to_unit(normal);
       rec.set_front_face(r, normal);
       get_sphere_uv(normal, rec.u, rec.v);
       return true;
@@ -88,14 +90,21 @@ hit<MOVING_SPHERE>(const SceneObjects &s, const Ray &r,
     if (temp < d_max && temp > d_min) {
       rec.t = temp;
       rec.p = r.at(rec.t);
-      rec.normal = (rec.p - scenter) / radius;
+      Vec3 normal = (rec.p - scenter) / radius;
+      normal = to_unit(normal);
+      rec.set_front_face(r, normal);
+      get_sphere_uv(normal, rec.u, rec.v);
       return true;
     }
     temp = (-b + sqrt(discriminant)) / a;
     if (temp < d_max && temp > d_min) {
       rec.t = temp;
       rec.p = r.at(rec.t);
-      rec.normal = (rec.p - scenter) / radius;
+      Vec3 normal = (rec.p - scenter) / radius;
+      normal = to_unit(normal);
+      rec.set_front_face(r, normal);
+      get_sphere_uv(normal, rec.u, rec.v);
+
       return true;
     }
   }

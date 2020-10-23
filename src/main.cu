@@ -56,7 +56,6 @@ void make_image(thrust::device_ptr<unsigned char> &imdata,
   std::vector<const char *> impaths = {"media/earthmap.png",
                                        "media/lsjimg.png"};
   std::vector<int> ws, hes, nbChannels, indices;
-  int totalSize;
   std::vector<unsigned char> imdata_h;
   imread(impaths, ws, hes, nbChannels, imdata_h, indices);
   ////// thrust::device_ptr<unsigned char> imda =
@@ -80,12 +79,12 @@ void make_image(thrust::device_ptr<unsigned char> &imdata,
 
 int main() {
   float aspect_ratio = 16.0f / 9.0f;
-  int WIDTH = 400;
+  int WIDTH = 640;
   int HEIGHT = static_cast<int>(WIDTH / aspect_ratio);
   int BLOCK_WIDTH = 16;
   int BLOCK_HEIGHT = 8;
-  int SAMPLE_NB = 100;
-  int BOUNCE_NB = 50;
+  int SAMPLE_NB = 250;
+  int BOUNCE_NB = 150;
 
   bool gpu_io = false;
 

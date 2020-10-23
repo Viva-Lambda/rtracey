@@ -126,14 +126,14 @@ __host__ __device__ Color imcolor(const SceneObjects &s,
   }
   int start_index = end_idx - (width * height * bpp);
 
-  int u = rec.u;
-  int v = rec.v;
+  float u = rec.u;
+  float v = rec.v;
 
   if (s.tdata == nullptr) {
     return Color(1.0, 0.0, 0.0);
   }
-  u = clamp(u, 0.0, 1.0);
-  v = 1 - clamp(v, 0.0, 1.0); // flip v to im coords
+  u = clamp(u, 0.0f, 1.0f);
+  v = 1 - clamp(v, 0.0f, 1.0f); // flip v to im coords
   int w = width;
   int h = height;
   int xi = static_cast<int>(u * w);
