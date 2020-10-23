@@ -27,14 +27,14 @@ __device__ Color ray_color(const Ray &r,
     bool anyHit = hit<SCENE>(world, current_ray, 0.001f,
                              FLT_MAX, rec, loc);
     if (anyHit) {
-      // rec.mat_ptr.tparam.tdata = world.tdata;
-      Color emittedColor = emitted<MATERIAL>(world, rec, loc);
+      ScatterRecord srec;
+      Color emittedColor =
+          emitted<MATERIAL>(world, rec, loc);
       Ray scattered;
       Vec3 attenuation;
       float pdf_val = 1.0f;
       bool isScattered = scatter<MATERIAL>(
-          world, current_ray, rec, attenuation, scattered,
-          pdf_val, loc);
+          world, current_ray, rec, srec, loc);
       if (isScattered) {
         bounceNb--;
         float s_pdf = scattering_pdf<MATERIAL>(
@@ -102,24 +102,42 @@ __host__ Color h_ray_color(const Ray &r,
     bool anyHit = h_hit<SCENE>(world, current_ray, 0.001f,
                                FLT_MAX, rec);
     if (anyHit) {
+      ScatterRecord srec;
       Color emittedColor = h_emitted<MATERIAL>(world, rec);
       Ray scattered;
       Vec3 attenuation;
       float pdf_val = 1.0f;
       bool isScattered = h_scatter<MATERIAL>(
-          world, current_ray, rec, attenuation, scattered,
-          pdf_val);
-      if (isScattered) {
-        bounceNb--;
-        float s_pdf = scattering_pdf<MATERIAL>(
-            world, current_ray, rec, scattered);
-        result += (current_attenuation * emittedColor);
-        current_attenuation *=
-            attenuation * s_pdf / pdf_val;
-        current_ray = scattered;
-      } else {
+          world, current_ray, rec, srec);
+      if (!isScattered) {
+        // object does not scatter the light
+        // most probably object is a light source
+
         result += (current_attenuation * emittedColor);
         return result;
+      } else {
+        bounceNb--;
+        // object scatters the light
+        if (srec.is_specular) {
+          // object is specular
+          current_attenuation *= srec.attenuation;
+          current_ray = srec.specular_ray;
+        } else {
+          // object is not specular
+          float s_pdf = scattering_pdf<MATERIAL>(
+              world, current_ray, rec, scattered);
+          // pdf value
+
+          // scattered ray
+
+          // attenuation
+          Color attenuation = srec.attenuation;
+
+          result += (current_attenuation * emittedColor);
+          current_attenuation *=
+              attenuation * s_pdf / pdf_val;
+          current_ray = srec.specular_ray;
+        }
       }
     } else {
       return Color(0.0f);

@@ -5,7 +5,8 @@ enum PdfType : int {
   NONE_PDF = 0,
   COSINE_PDF = 1,
   HITTABLE_PDF = 2,
-  MIXTURE_PDF = 3
+  MIXTURE_PDF = 3,
+  PDF = 4
 };
 enum TextureType : int {
   NONE_TEXTURE = 0,

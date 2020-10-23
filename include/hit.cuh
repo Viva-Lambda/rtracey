@@ -1,10 +1,8 @@
 #pragma once
 // shade utils
-#include <aabb.cuh>
 #include <attenuation.cuh>
 #include <ray.cuh>
 #include <record.cuh>
-#include <scattering.cuh>
 #include <sceneobj.cuh>
 #include <scenetype.cuh>
 #include <vec3.cuh>

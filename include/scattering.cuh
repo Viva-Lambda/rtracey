@@ -159,7 +159,7 @@ scatter<DIFFUSE_LIGHT>(const SceneObjects &s, const Ray &r,
                        curandState *loc) {
   srec.attenuation = color_value<TEXTURE>(s, rec, loc);
   srec.is_specular = false;
-  srec.pdf_type = HITTABLE_PDF;
+  srec.pdf_type = NONE_PDF;
   srec.specular_ray = Ray(rec.p, r.direction(), r.time());
   return false;
 }
@@ -184,8 +184,8 @@ scatter<ISOTROPIC>(const SceneObjects &s, const Ray &r,
   srec.specular_ray =
       Ray(rec.p, random_in_unit_sphere(loc), r.time());
   srec.attenuation = color_value<TEXTURE>(s, rec, loc);
-  srec.pdf_type = NONE_PDF;
-  float pdf = 1.0f;
+  srec.pdf_type = HITTABLE_PDF;
+  srec.is_specular = false;
   return true;
 }
 template <>
@@ -196,8 +196,8 @@ __host__ bool h_scatter<ISOTROPIC>(const SceneObjects &s,
   srec.specular_ray =
       Ray(rec.p, h_random_in_unit_sphere(), r.time());
   srec.attenuation = h_color_value<TEXTURE>(s, rec);
-  srec.pdf_type = NONE_PDF;
-  pdf = 1.0f;
+  srec.pdf_type = HITTABLE_PDF;
+  srec.is_specular = false;
   return true;
 }
 

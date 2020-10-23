@@ -1,6 +1,5 @@
 #pragma once
 // surface pdf value
-#include <aabb.cuh>
 #include <hit.cuh>
 #include <ray.cuh>
 #include <record.cuh>

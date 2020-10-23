@@ -60,16 +60,33 @@ pdf_value<MIXTURE_PDF>(const SceneObjects &s,
       pdf =
           pdf_value<HITTABLE>(s, origin, direction, index);
     }
-    sum += pdf;
+    sum += weight * pdf;
   }
   return sum;
+}
+template <>
+__host__ __device__ float
+pdf_value<PDF>(const SceneObjects &s, const HitRecord &rec,
+               const ScatterRecord &srec) {
+  float pdf;
+  PdfType pdf_type = srec.pdf_type;
+  if (pdf_type == NONE_PDF) {
+    pdf = 1.0f;
+  } else if (pdf_type == COSINE_PDF) {
+    pdf = pdf_value<COSINE_PDF>(s, rec, srec);
+  } else if (pdf_type == HITTABLE_PDF) {
+    pdf = pdf_value<HITTABLE_PDF>(s, rec, srec);
+  } else if (pdf_type == MIXTURE_PDF) {
+    pdf = pdf_value<MIXTURE_PDF>(s, rec, srec);
+  }
+  return pdf;
 }
 template <PdfType p>
 __device__ Vec3 pdf_generate(const SceneObjects &s,
                              const HitRecord &rec,
                              const ScatterRecord &srec,
                              curandState *loc) {
-  return Vec3(0.0f);
+  return random_vec(loc);
 }
 template <PdfType p>
 __host__ Vec3 h_pdf_generate(const SceneObjects &s,
@@ -144,6 +161,24 @@ __device__ Vec3 pdf_generate<MIXTURE_PDF>(
   return dir;
 }
 template <>
+__device__ Vec3 pdf_generate<PDF>(const SceneObjects &s,
+                                  const HitRecord &rec,
+                                  const ScatterRecord &srec,
+                                  curandState *loc) {
+  PdfType pdf_type = srec.pdf_type;
+  Vec3 rv;
+  if (pdf_type == NONE_PDF) {
+    rv = random_vec(loc);
+  } else if (pdf_type == COSINE_PDF) {
+    rv = pdf_generate<COSINE_PDF>(s, rec, srec, loc);
+  } else if (pdf_type == HITTABLE_PDF) {
+    rv = pdf_generate<HITTABLE_PDF>(s, rec, srec, loc);
+  } else if (pdf_type == MIXTURE_PDF) {
+    rv = pdf_generate<MIXTURE_PDF>(s, rec, srec, loc);
+  }
+  return rv;
+}
+template <>
 __host__ Vec3 h_pdf_generate<MIXTURE_PDF>(
     const SceneObjects &s, const HitRecord &rec,
     const ScatterRecord &srec) {
@@ -160,4 +195,22 @@ __host__ Vec3 h_pdf_generate<MIXTURE_PDF>(
     dir = h_random<HITTABLE>(s, origin, index);
   }
   return dir;
+}
+
+template <>
+__host__ Vec3 h_pdf_generate<PDF>(
+    const SceneObjects &s, const HitRecord &rec,
+    const ScatterRecord &srec) {
+  PdfType pdf_type = srec.pdf_type;
+  Vec3 rv;
+  if (pdf_type == NONE_PDF) {
+    rv = h_random_vec();
+  } else if (pdf_type == COSINE_PDF) {
+    rv = h_pdf_generate<COSINE_PDF>(s, rec, srec);
+  } else if (pdf_type == HITTABLE_PDF) {
+    rv = h_pdf_generate<HITTABLE_PDF>(s, rec, srec);
+  } else if (pdf_type == MIXTURE_PDF) {
+    rv = h_pdf_generate<MIXTURE_PDF>(s, rec, srec);
+  }
+  return rv;
 }

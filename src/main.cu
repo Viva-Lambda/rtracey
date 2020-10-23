@@ -83,8 +83,8 @@ int main() {
   int HEIGHT = static_cast<int>(WIDTH / aspect_ratio);
   int BLOCK_WIDTH = 8;
   int BLOCK_HEIGHT = 4;
-  int SAMPLE_NB = 100;
-  int BOUNCE_NB = 50;
+  int SAMPLE_NB = 50;
+  int BOUNCE_NB = 20;
 
   bool gpu_io = false;
 

@@ -80,7 +80,7 @@ rand_msphere(const SceneObjects &s, const Point3 &o,
       moving_center(center1, center2, time0, time1, tdiff);
 
   direction = scenter - o;
-  float dsquared = direction.squared_length();
+  dsquared = direction.squared_length();
 }
 
 template <>
