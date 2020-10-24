@@ -81,12 +81,12 @@ int main() {
   float aspect_ratio = 16.0f / 9.0f;
   int WIDTH = 320;
   int HEIGHT = static_cast<int>(WIDTH / aspect_ratio);
-  int BLOCK_WIDTH = 8;
+  int BLOCK_WIDTH = 32;
   int BLOCK_HEIGHT = 4;
-  int SAMPLE_NB = 50;
-  int BOUNCE_NB = 20;
+  int SAMPLE_NB = 10;
+  int BOUNCE_NB = 10;
 
-  bool gpu_io = false;
+  bool gpu_io = true;
 
   get_device_props();
 

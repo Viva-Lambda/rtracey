@@ -85,4 +85,11 @@ struct ScatterRecord {
   bool *is_group_indices{nullptr};
   int *indices{nullptr};
   int index_size = 0;
+  __host__ __device__ ScatterRecord() {}
+  __host__ __device__ ScatterRecord(bool *is_g_indices,
+                                    int *ids, int isize)
+      : index_size(isize) {
+    deepcopy(is_group_indices, is_g_indices, isize);
+    deepcopy(indices, ids, isize);
+  }
 };
