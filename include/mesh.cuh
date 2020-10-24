@@ -96,47 +96,43 @@ Mesh Model::processMesh(aiMesh *mesh,
     }
     triangles.push_back(triangle);
   }
-  // vertice iteration done now we should deal with indices
-  for (unsigned int i = 0; i < mesh->mNumFaces; i++) {
-    aiFace face = mesh->mFaces[i];
-    for (unsigned int k = 0; k < face.mNumIndices; k++) {
-      indices.push_back(face.mIndices[k]);
-    }
-    // now deal with materials
-    if (mesh->mMaterialIndex >= 0) {
-      aiMaterial *material =
-          scene->mMaterials[mesh->mMaterialIndex];
-      // we retrieve textures
-      // 1. diffuse maps
-      std::vector<Texture> diffuseMaps =
-          this->loadMaterialTextures(material,
-                                     aiTextureType_DIFFUSE,
-                                     "texture_diffuse");
-      textures.insert(textures.end(), diffuseMaps.begin(),
-                      diffuseMaps.end());
-      // 2. specular maps
-      std::vector<Texture> specularMaps =
-          this->loadMaterialTextures(material,
-                                     aiTextureType_SPECULAR,
-                                     "texture_specular");
-      textures.insert(textures.end(), specularMaps.begin(),
-                      specularMaps.end());
-      // 3. normal maps
-      std::vector<Texture> normalMaps =
-          this->loadMaterialTextures(material,
-                                     aiTextureType_HEIGHT,
-                                     "texture_normal");
-      textures.insert(textures.end(), normalMaps.begin(),
-                      normalMaps.end());
+  // ------------ BURADA KALDIN ----------
 
-      // 4. height maps
-      std::vector<Texture> heightMaps =
-          this->loadMaterialTextures(material,
-                                     aiTextureType_AMBIENT,
-                                     "texture_height");
-      textures.insert(textures.end(), heightMaps.begin(),
-                      heightMaps.end());
-    }
+  // now deal with materials
+  if (mesh->mMaterialIndex >= 0) {
+    aiMaterial *material =
+        scene->mMaterials[mesh->mMaterialIndex];
+    // we retrieve textures
+    // 1. diffuse maps
+    std::vector<Texture> diffuseMaps =
+        this->loadMaterialTextures(material,
+                                   aiTextureType_DIFFUSE,
+                                   "texture_diffuse");
+    textures.insert(textures.end(), diffuseMaps.begin(),
+                    diffuseMaps.end());
+    // 2. specular maps
+    std::vector<Texture> specularMaps =
+        this->loadMaterialTextures(material,
+                                   aiTextureType_SPECULAR,
+                                   "texture_specular");
+    textures.insert(textures.end(), specularMaps.begin(),
+                    specularMaps.end());
+    // 3. normal maps
+    std::vector<Texture> normalMaps =
+        this->loadMaterialTextures(material,
+                                   aiTextureType_HEIGHT,
+                                   "texture_normal");
+    textures.insert(textures.end(), normalMaps.begin(),
+                    normalMaps.end());
+
+    // 4. height maps
+    std::vector<Texture> heightMaps =
+        this->loadMaterialTextures(material,
+                                   aiTextureType_AMBIENT,
+                                   "texture_height");
+    textures.insert(textures.end(), heightMaps.begin(),
+                    heightMaps.end());
   }
-  return Mesh(vertices, indices, textures);
+}
+return Mesh(vertices, indices, textures);
 }
