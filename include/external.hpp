@@ -1,6 +1,14 @@
 #pragma once
 
 #include <assert.h>
+
+#include <assimp/Importer.hpp>
+#include <assimp/material.h>
+//#include <assimp/pbrmaterial.h>
+#include <assimp/postprocess.h>
+#include <assimp/scene.h>
+#include <assimp/types.h>
+
 #include <cuda_runtime.h>
 #include <curand.h>
 #include <curand_kernel.h>

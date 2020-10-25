@@ -8,6 +8,9 @@ set(CMAKE_CXX_COMPILER "clang")
 include_directories(
     "./include/"
 )
+set (ASSIMP_LIB
+    "${PROJECT_SOURCE_DIR}/libs/assimp/libassimp.so")
+
 add_executable(
     rtracey.out
     "src/main.cu"
@@ -32,5 +35,6 @@ set_target_properties( rtracey.out
 set_target_properties(rtracey.out
     PROPERTIES LINKER_LANGUAGE CUDA)
 
+target_link_libraries(rtracey.out ${ASSIMP_LIB})
 
 install(TARGETS rtracey.out DESTINATION "${PROJECT_SOURCE_DIR}/bin")

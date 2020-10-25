@@ -2,6 +2,7 @@
 
 #include <groupparam.cuh>
 #include <matparam.cuh>
+#include <mesh.cuh>
 #include <primitive.cuh>
 #include <ray.cuh>
 #include <sceneobj.cuh>
@@ -88,14 +89,26 @@ SceneObjects make_cornell_box() {
   Primitive glass_sphere2(lamb2, hsp2, 0, 2);
   Primitive ps2[] = {glass_sphere2};
   GroupParam sg2(ps2, 1, 2, CONSTANT_MEDIUM, 0.01f, mpar);
-
   //
-  GroupParam *sgs = new GroupParam[3];
-  sgs[0] = sg;
+  // mesh, model
+  const TextureParam tp4 =
+      mkSolidColorParam(Color(0.4f, 0.2f, 0.8f));
+  MaterialParam lamb3 = mkLambertParam(tp4);
+
+  std::string mpath = "media/models/backpack/backpack.obj";
+  Model model(mpath);
+  int msize = (int)model.mcount;
+  //
+  GroupParam *sgs = new GroupParam[msize + 3];
+  model.to_groups(lamb3, sgs);
+  sgs[msize] = sg;
+  msize++;
   // sgs[2] = box2;
-  sgs[1] = sg1;
-  sgs[2] = sg2;
-  SceneObjects sobjs(sgs, 3);
+  sgs[msize] = sg1;
+  msize++;
+  sgs[msize] = sg2;
+  msize++;
+  SceneObjects sobjs(sgs, msize);
   // sg.g_free();
   // sg1.g_free();
   // sg2.g_free();

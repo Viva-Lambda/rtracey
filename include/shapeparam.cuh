@@ -94,6 +94,12 @@ mkMovingSphereHittable(Point3 cent1, Point3 cent2,
                       cent2.z(), t0, t1, 0, rad);
   return param;
 }
+__host__ __device__ HittableParam mkTriangle(Point3 p1,
+                                             Point3 p2,
+                                             Point3 p3) {
+  HittableParam h(TRIANGLE, p1, p2, p3, 0.0f);
+  return h;
+}
 
 __host__ __device__ HittableParam
 translate(const HittableParam &hparam, Point3 steps) {

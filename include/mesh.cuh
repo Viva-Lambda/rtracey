@@ -2,46 +2,64 @@
 // mesh
 #include <external.hpp>
 #include <texparam.cuh>
+#include <utils.cuh>
 #include <vec3.cuh>
 
-struct Mesh {
-  int psize;
-  Point3 *p1s, *p2s, *p3s;
-  unsigned int *indices;
-  ImageParam *imparams;
-  int imsize;
-  __host__ __device__ Mesh()
-      : p1s(nullptr), p2s(nullptr), p3s(nullptr),
-        indices(nullptr), imparams(nullptr), psize(0),
-        imsize(0) {}
-
-  __host__ __device__ Mesh(Point3 *_p1s, Point3 *_p2s,
-                           Point3 *_p3s, int _psize,
-                           unsigned int *idxs,
-                           ImageParam *imps, int ims)
-      : psize(_psize), imsize(ims) {
-    deepcopy(p1s, _p1s, psize);
-    deepcopy(p2s, _p2s, psize);
-    deepcopy(p3s, _p3s, psize);
-    deepcopy(imparams, imps, imsize);
+struct MeshTriangle {
+  Point3 p1, p2, p3;
+  __host__ __device__ MeshTriangle() {}
+  __host__ MeshTriangle(std::vector<Point3> ps) {
+    p1 = ps[0];
+    p2 = ps[1];
+    p3 = ps[2];
+  }
+  __host__ __device__ Primitive
+  to_primitive(int indx, int mesh_id, MaterialParam mpar) {
+    HittableParam tri_hparam = mkTriangle(p1, p2, p3);
+    Primitive prim(mpar, tri_hparam, indx, mesh_id);
+    return prim;
   }
 };
 
+struct Mesh {
+  int tricount;
+  MeshTriangle *tris;
+  int mesh_id;
+  __host__ __device__ Mesh()
+      : tris(nullptr), tricount(0), mesh_id(0) {}
+
+  __host__ __device__ Mesh(MeshTriangle *_tris, int _psize,
+                           int mid)
+      : tricount(_psize), mesh_id(mid) {
+    deepcopy(tris, _tris, tricount);
+  }
+  __host__ __device__ void m_free() { delete[] tris; }
+  __host__ __device__ GroupParam to_group(float d,
+                                          MaterialParam m) {
+    Primitive *prims = new Primitive[tricount];
+    for (int i = 0; i < tricount; i++) {
+      MeshTriangle mtri = tris[i];
+      prims[i] = mtri.to_primitive(i, mesh_id, m);
+    }
+    GroupParam gp(prims, tricount, mesh_id, SIMPLE_MESH, d,
+                  m);
+    return gp;
+  }
+};
 struct Model {
-  std::vector<Mesh> meshes;
-  int msize;
+  Mesh *meshes;
+  int mcount;
   __host__ void loadModel(std::string mpath);
   __host__ void processNode(aiNode *node,
-                            const aiScene *scene);
+                            const aiScene *scene,
+                            int node_id,
+                            std::vector<Mesh> msh);
   __host__ Mesh processMesh(aiMesh *mesh,
-                            const aiScene *scene);
-  __host__ std::vector<ImageParam>
-  loadMaterialTextures(aiMaterial *mat, aiTextureType type,
-                       std::string typeName);
-  __host__ Model(std::string mpath) {
-    loadModel(mpath);
-    msize = static_cast<int>(meshes.size());
-  }
+                            const aiScene *scene,
+                            int mesh_id);
+  __host__ Model(std::string mpath) { loadModel(mpath); }
+  __host__ __device__ void to_groups(MaterialParam mp,
+                                     GroupParam *gp);
 };
 void Model::loadModel(std::string mpath) {
 
@@ -55,33 +73,31 @@ void Model::loadModel(std::string mpath) {
               << importer.GetErrorString() << std::endl;
     return;
   }
-  directory = path.substr(0, path.find_last_of('/'));
-
   // start processing from root node recursively
-  processNode(scene->mRootNode, scene);
+  std::vector<Mesh> mesh;
+  processNode(scene->mRootNode, scene, 0, mesh);
+  meshes = mesh.data();
+  mcount = (int)mesh.size();
 }
-void Model::processNode(aiNode *node,
-                        const aiScene *scene) {
+void Model::processNode(aiNode *node, const aiScene *scene,
+                        int node_id,
+                        std::vector<Mesh> msh) {
   // process the meshes of the given node on scene
   for (unsigned int i = 0; i < node->mNumMeshes; i++) {
     aiMesh *mesh = scene->mMeshes[node->mMeshes[i]];
-    meshes.push_back(this->processMesh(mesh, scene));
+    msh.push_back(processMesh(mesh, scene, i + node_id));
   }
   // now all meshes of this node has been processed
   // we should continue to meshes of child nodes
   for (unsigned int k = 0; k < node->mNumChildren; k++) {
-    processNode(node->mChildren[k], scene);
+    processNode(node->mChildren[k], scene, k + node_id,
+                msh);
   }
 }
-Mesh Model::processMesh(aiMesh *mesh,
-                        const aiScene *scene) {
-  // data
-  std::vector<Vertex> vertices;
-  std::vector<unsigned int> indices;
-  std::vector<Texture> textures;
-
+Mesh Model::processMesh(aiMesh *mesh, const aiScene *scene,
+                        int mesh_id) {
   // iteratin on vertices of the mesh
-  std::vector<std::vector<Point3>> triangles;
+  std::vector<MeshTriangle> triangles;
   for (unsigned int j = 0; j < mesh->mNumFaces; j++) {
     aiFace triangle_face = mesh->mFaces[j];
     std::vector<Point3> triangle;
@@ -94,45 +110,16 @@ Mesh Model::processMesh(aiMesh *mesh,
       vec[2] = mesh->mVertices[index].z;
       triangle.push_back(vec);
     }
-    triangles.push_back(triangle);
+    MeshTriangle tri(triangle);
+    triangles.push_back(tri);
   }
-  // ------------ BURADA KALDIN ----------
-
-  // now deal with materials
-  if (mesh->mMaterialIndex >= 0) {
-    aiMaterial *material =
-        scene->mMaterials[mesh->mMaterialIndex];
-    // we retrieve textures
-    // 1. diffuse maps
-    std::vector<Texture> diffuseMaps =
-        this->loadMaterialTextures(material,
-                                   aiTextureType_DIFFUSE,
-                                   "texture_diffuse");
-    textures.insert(textures.end(), diffuseMaps.begin(),
-                    diffuseMaps.end());
-    // 2. specular maps
-    std::vector<Texture> specularMaps =
-        this->loadMaterialTextures(material,
-                                   aiTextureType_SPECULAR,
-                                   "texture_specular");
-    textures.insert(textures.end(), specularMaps.begin(),
-                    specularMaps.end());
-    // 3. normal maps
-    std::vector<Texture> normalMaps =
-        this->loadMaterialTextures(material,
-                                   aiTextureType_HEIGHT,
-                                   "texture_normal");
-    textures.insert(textures.end(), normalMaps.begin(),
-                    normalMaps.end());
-
-    // 4. height maps
-    std::vector<Texture> heightMaps =
-        this->loadMaterialTextures(material,
-                                   aiTextureType_AMBIENT,
-                                   "texture_height");
-    textures.insert(textures.end(), heightMaps.begin(),
-                    heightMaps.end());
-  }
+  Mesh m(triangles.data(), (int)triangles.size(), mesh_id);
+  return m;
 }
-return Mesh(vertices, indices, textures);
+__host__ __device__ void Model::to_groups(MaterialParam mp,
+                                          GroupParam *gp) {
+  for (int i = 0; i < mcount; i++) {
+    GroupParam g = meshes[i].to_group(0.0f, mp);
+    gp[i] = g;
+  }
 }
