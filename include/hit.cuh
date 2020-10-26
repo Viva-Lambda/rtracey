@@ -264,6 +264,20 @@ __host__ bool h_hit(const SceneObjects &s, const Ray &r,
                     HitRecord &rec) {
   return false;
 }
+__host__ __device__ bool
+hit_group_bbox(const SceneObjects &s, const Ray &r,
+               float d_min, float d_max,
+               const HitRecord &rec) {
+  int group_index = rec.group_index;
+  Point3 minp(s.g_minxs[group_index],
+              s.g_minys[group_index],
+              s.g_minzs[group_index]);
+  Point3 maxp(s.g_maxxs[group_index],
+              s.g_maxys[group_index],
+              s.g_maxzs[group_index]);
+  Aabb box(minp, maxp);
+  return box.hit(r, d_min, d_max);
+}
 __host__ __device__ bool hit_group(const SceneObjects &s,
                                    const Ray &r,
                                    float d_min, float d_max,
@@ -405,6 +419,9 @@ __device__ bool
 hit<SIMPLE_MESH>(const SceneObjects &s, const Ray &r,
                  float d_min, float d_max, HitRecord &rec,
                  curandState *loc) {
+  if (!hit_group_bbox(s, r, d_min, d_max, rec)) {
+    return false;
+  }
   return hit<NONE_GRP>(s, r, d_min, d_max, rec, loc);
 }
 template <>
@@ -412,6 +429,10 @@ __host__ bool h_hit<SIMPLE_MESH>(const SceneObjects &s,
                                  const Ray &r, float d_min,
                                  float d_max,
                                  HitRecord &rec) {
+  if (!hit_group_bbox(s, r, d_min, d_max, rec)) {
+    return false;
+  }
+
   return h_hit<NONE_GRP>(s, r, d_min, d_max, rec);
 }
 template <>

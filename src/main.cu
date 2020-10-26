@@ -84,7 +84,7 @@ int main() {
   int BLOCK_WIDTH = 32;
   int BLOCK_HEIGHT = 4;
   int SAMPLE_NB = 10;
-  int BOUNCE_NB = 10;
+  int BOUNCE_NB = 20;
 
   bool gpu_io = false;
 
