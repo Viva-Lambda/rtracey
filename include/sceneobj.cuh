@@ -44,6 +44,8 @@ struct SceneObjects {
   int *g_widths, *g_heights, *g_bpps, *g_indices;
   int *g_mtypes;
   float *g_fuzz_ref_idxs;
+  float *g_minxs, *g_minys, *g_minzs;
+  float *g_maxxs, *g_maxys, *g_maxzs;
 
   int nb_groups;
   int nb_prims;
@@ -133,6 +135,12 @@ struct SceneObjects {
     g_indices[i] = g.index;
     g_mtypes[i] = g.mtype;
     g_fuzz_ref_idxs[i] = g.fuzz_ref_idx;
+    g_minxs[i] = g.minx;
+    g_minys[i] = g.miny;
+    g_minzs[i] = g.minz;
+    g_maxxs[i] = g.maxx;
+    g_maxys[i] = g.maxy;
+    g_maxzs[i] = g.maxz;
   }
   __host__ __device__ void set_primitive(const Primitive &p,
                                          int gindex) {
@@ -183,6 +191,14 @@ struct SceneObjects {
     g_indices = new int[nb_g];
     g_mtypes = new int[nb_g];
     g_fuzz_ref_idxs = new float[nb_g];
+
+    g_minxs = new float[nb_g];
+    g_minys = new float[nb_g];
+    g_minzs = new float[nb_g];
+
+    g_maxxs = new float[nb_g];
+    g_maxys = new float[nb_g];
+    g_maxzs = new float[nb_g];
   }
   __host__ __device__ void alloc_prim_params(int nb_ps) {
     ttypes = new int[nb_ps];
@@ -219,6 +235,64 @@ struct SceneObjects {
     sobjs.nb_prims = nb_prims;
     sobjs.nb_groups = nb_groups;
 
+    to_device_g_prim_tex(sobjs);
+    to_device_g_hittable(sobjs);
+
+    thrust::device_ptr<unsigned char> d_tdata;
+    upload_thrust<unsigned char>(d_tdata, tdata, tsize);
+    sobjs.tdata = thrust::raw_pointer_cast(d_tdata);
+
+    thrust::device_ptr<int> d_mtypes;
+    upload_thrust<int>(d_mtypes, mtypes, nb_prims);
+    sobjs.mtypes = thrust::raw_pointer_cast(d_mtypes);
+
+    thrust::device_ptr<float> d_fuzzs;
+    upload_thrust<float>(d_fuzzs, fuzz_ref_idxs, nb_prims);
+    sobjs.fuzz_ref_idxs = thrust::raw_pointer_cast(d_fuzzs);
+
+    thrust::device_ptr<int> d_gstarts;
+    upload_thrust<int>(d_gstarts, group_starts, nb_groups);
+    sobjs.group_starts =
+        thrust::raw_pointer_cast(d_gstarts);
+
+    thrust::device_ptr<int> d_gsizes;
+    upload_thrust<int>(d_gsizes, group_sizes, nb_groups);
+    sobjs.group_sizes = thrust::raw_pointer_cast(d_gsizes);
+
+    thrust::device_ptr<int> d_gids;
+    upload_thrust<int>(d_gids, group_ids, nb_groups);
+    sobjs.group_ids = thrust::raw_pointer_cast(d_gids);
+
+    thrust::device_ptr<int> d_gtypes;
+    upload_thrust<int>(d_gtypes, gtypes, nb_groups);
+    sobjs.gtypes = thrust::raw_pointer_cast(d_gtypes);
+
+    thrust::device_ptr<float> d_g_dens;
+    upload_thrust<float>(d_g_dens, g_densities, nb_groups);
+    sobjs.g_densities = thrust::raw_pointer_cast(d_g_dens);
+
+    to_device_g_img(sobjs);
+
+    to_device_g_texcolor(sobjs);
+
+    thrust::device_ptr<float> d_g_scales;
+    upload_thrust<float>(d_g_scales, g_scales, nb_groups);
+    sobjs.g_scales = thrust::raw_pointer_cast(d_g_scales);
+    thrust::device_ptr<int> d_g_mtypes;
+    upload_thrust<int>(d_g_mtypes, g_mtypes, nb_groups);
+    sobjs.g_mtypes = thrust::raw_pointer_cast(d_g_mtypes);
+
+    thrust::device_ptr<float> d_g_fuzz_ref_idxs;
+    upload_thrust<float>(d_g_fuzz_ref_idxs, g_fuzz_ref_idxs,
+                         nb_groups);
+    sobjs.g_fuzz_ref_idxs =
+        thrust::raw_pointer_cast(d_g_fuzz_ref_idxs);
+
+    to_device_g_minmax(sobjs);
+
+    return sobjs;
+  }
+  __host__ void to_device_g_prim_tex(SceneObjects &sobjs) {
     thrust::device_ptr<int> d_ttypes;
     upload_thrust<int>(d_ttypes, ttypes, nb_prims);
     sobjs.ttypes = thrust::raw_pointer_cast(d_ttypes);
@@ -257,19 +331,8 @@ struct SceneObjects {
                        nb_prims);
     sobjs.image_indices =
         thrust::raw_pointer_cast(d_img_indices);
-
-    thrust::device_ptr<unsigned char> d_tdata;
-    upload_thrust<unsigned char>(d_tdata, tdata, tsize);
-    sobjs.tdata = thrust::raw_pointer_cast(d_tdata);
-
-    thrust::device_ptr<int> d_mtypes;
-    upload_thrust<int>(d_mtypes, mtypes, nb_prims);
-    sobjs.mtypes = thrust::raw_pointer_cast(d_mtypes);
-
-    thrust::device_ptr<float> d_fuzzs;
-    upload_thrust<float>(d_fuzzs, fuzz_ref_idxs, nb_prims);
-    sobjs.fuzz_ref_idxs = thrust::raw_pointer_cast(d_fuzzs);
-
+  }
+  __host__ void to_device_g_hittable(SceneObjects &sobjs) {
     thrust::device_ptr<int> d_htypes;
     upload_thrust<int>(d_htypes, htypes, nb_prims);
     sobjs.htypes = thrust::raw_pointer_cast(d_htypes);
@@ -319,48 +382,8 @@ struct SceneObjects {
                        nb_prims);
     sobjs.prim_group_indices =
         thrust::raw_pointer_cast(d_prim_g_indices);
-
-    thrust::device_ptr<int> d_gstarts;
-    upload_thrust<int>(d_gstarts, group_starts, nb_groups);
-    sobjs.group_starts =
-        thrust::raw_pointer_cast(d_gstarts);
-
-    thrust::device_ptr<int> d_gsizes;
-    upload_thrust<int>(d_gsizes, group_sizes, nb_groups);
-    sobjs.group_sizes = thrust::raw_pointer_cast(d_gsizes);
-
-    thrust::device_ptr<int> d_gids;
-    upload_thrust<int>(d_gids, group_ids, nb_groups);
-    sobjs.group_ids = thrust::raw_pointer_cast(d_gids);
-
-    thrust::device_ptr<int> d_gtypes;
-    upload_thrust<int>(d_gtypes, gtypes, nb_groups);
-    sobjs.gtypes = thrust::raw_pointer_cast(d_gtypes);
-
-    thrust::device_ptr<float> d_g_dens;
-    upload_thrust<float>(d_g_dens, g_densities, nb_groups);
-    sobjs.g_densities = thrust::raw_pointer_cast(d_g_dens);
-
-    thrust::device_ptr<int> d_g_ttypes;
-    upload_thrust<int>(d_g_ttypes, g_ttypes, nb_groups);
-    sobjs.g_ttypes = thrust::raw_pointer_cast(d_g_ttypes);
-
-    thrust::device_ptr<float> d_g_tp1xs;
-    upload_thrust<float>(d_g_tp1xs, g_tp1xs, nb_groups);
-    sobjs.g_tp1xs = thrust::raw_pointer_cast(d_g_tp1xs);
-
-    thrust::device_ptr<float> d_g_tp1ys;
-    upload_thrust<float>(d_g_tp1ys, g_tp1ys, nb_groups);
-    sobjs.g_tp1ys = thrust::raw_pointer_cast(d_g_tp1ys);
-
-    thrust::device_ptr<float> d_g_tp1zs;
-    upload_thrust<float>(d_g_tp1zs, g_tp1zs, nb_groups);
-    sobjs.g_tp1zs = thrust::raw_pointer_cast(d_g_tp1zs);
-
-    thrust::device_ptr<float> d_g_scales;
-    upload_thrust<float>(d_g_scales, g_scales, nb_groups);
-    sobjs.g_scales = thrust::raw_pointer_cast(d_g_scales);
-
+  }
+  __host__ void to_device_g_img(SceneObjects &sobjs) {
     thrust::device_ptr<int> d_g_widths;
     upload_thrust<int>(d_g_widths, g_widths, nb_groups);
     sobjs.g_widths = thrust::raw_pointer_cast(d_g_widths);
@@ -376,24 +399,123 @@ struct SceneObjects {
     thrust::device_ptr<int> d_g_indices;
     upload_thrust<int>(d_g_indices, g_indices, nb_groups);
     sobjs.g_indices = thrust::raw_pointer_cast(d_g_indices);
+  }
+  __host__ void to_device_g_texcolor(SceneObjects &sobjs) {
+    thrust::device_ptr<int> d_g_ttypes;
+    upload_thrust<int>(d_g_ttypes, g_ttypes, nb_groups);
+    sobjs.g_ttypes = thrust::raw_pointer_cast(d_g_ttypes);
 
-    thrust::device_ptr<int> d_g_mtypes;
-    upload_thrust<int>(d_g_mtypes, g_mtypes, nb_groups);
-    sobjs.g_mtypes = thrust::raw_pointer_cast(d_g_mtypes);
+    thrust::device_ptr<float> d_g_tp1xs;
+    upload_thrust<float>(d_g_tp1xs, g_tp1xs, nb_groups);
+    sobjs.g_tp1xs = thrust::raw_pointer_cast(d_g_tp1xs);
 
-    thrust::device_ptr<float> d_g_fuzz_ref_idxs;
-    upload_thrust<float>(d_g_fuzz_ref_idxs, g_fuzz_ref_idxs,
-                         nb_groups);
-    sobjs.g_fuzz_ref_idxs =
-        thrust::raw_pointer_cast(d_g_fuzz_ref_idxs);
+    thrust::device_ptr<float> d_g_tp1ys;
+    upload_thrust<float>(d_g_tp1ys, g_tp1ys, nb_groups);
+    sobjs.g_tp1ys = thrust::raw_pointer_cast(d_g_tp1ys);
 
-    return sobjs;
+    thrust::device_ptr<float> d_g_tp1zs;
+    upload_thrust<float>(d_g_tp1zs, g_tp1zs, nb_groups);
+    sobjs.g_tp1zs = thrust::raw_pointer_cast(d_g_tp1zs);
+  }
+  __host__ void to_device_g_minmax(SceneObjects &sobjs) {
+    thrust::device_ptr<float> d_g_minxs;
+    upload_thrust<float>(d_g_minxs, g_minxs, nb_groups);
+    sobjs.g_minxs = thrust::raw_pointer_cast(d_g_minxs);
+
+    thrust::device_ptr<float> d_g_minys;
+    upload_thrust<float>(d_g_minys, g_minys, nb_groups);
+    sobjs.g_minys = thrust::raw_pointer_cast(d_g_minys);
+
+    thrust::device_ptr<float> d_g_minzs;
+    upload_thrust<float>(d_g_minzs, g_minzs, nb_groups);
+    sobjs.g_minzs = thrust::raw_pointer_cast(d_g_minzs);
+
+    thrust::device_ptr<float> d_g_maxxs;
+    upload_thrust<float>(d_g_maxxs, g_maxxs, nb_groups);
+    sobjs.g_maxxs = thrust::raw_pointer_cast(d_g_maxxs);
+
+    thrust::device_ptr<float> d_g_maxys;
+    upload_thrust<float>(d_g_maxys, g_maxys, nb_groups);
+    sobjs.g_maxys = thrust::raw_pointer_cast(d_g_maxys);
+
+    thrust::device_ptr<float> d_g_maxzs;
+    upload_thrust<float>(d_g_maxzs, g_maxzs, nb_groups);
+    sobjs.g_maxzs = thrust::raw_pointer_cast(d_g_maxzs);
   }
   __host__ SceneObjects to_device() {
     SceneObjects sobjs;
     sobjs.nb_prims = nb_prims;
     sobjs.nb_groups = nb_groups;
 
+    to_d_g_texcolor(sobjs);
+    to_d_g_hittable(sobjs);
+
+    cudaError_t err;
+    unsigned char *d_tdata;
+    sobjs.tdata =
+        upload<unsigned char>(d_tdata, tdata, tsize, err);
+    CUDA_CONTROL(err);
+
+    int *d_mtypes;
+    sobjs.mtypes =
+        upload<int>(d_mtypes, mtypes, nb_prims, err);
+    CUDA_CONTROL(err);
+
+    float *d_fuzzs;
+    sobjs.fuzz_ref_idxs = upload<float>(
+        d_fuzzs, fuzz_ref_idxs, nb_prims, err);
+    CUDA_CONTROL(err);
+
+    int *d_prim_g_indices;
+    sobjs.prim_group_indices =
+        upload<int>(d_prim_g_indices, prim_group_indices,
+                    nb_prims, err);
+    CUDA_CONTROL(err);
+
+    int *d_gstarts;
+    sobjs.group_starts = upload<int>(
+        d_gstarts, group_starts, nb_groups, err);
+    CUDA_CONTROL(err);
+
+    int *d_gsizes;
+
+    sobjs.group_sizes =
+        upload<int>(d_gsizes, group_sizes, nb_groups, err);
+    CUDA_CONTROL(err);
+
+    int *d_gids;
+    sobjs.group_ids =
+        upload<int>(d_gids, group_ids, nb_groups, err);
+    CUDA_CONTROL(err);
+
+    int *d_gts;
+    sobjs.gtypes =
+        upload<int>(d_gts, gtypes, nb_groups, err);
+    CUDA_CONTROL(err);
+
+    float *d_g_dens;
+
+    sobjs.g_densities = upload<float>(d_g_dens, g_densities,
+                                      nb_groups, err);
+    CUDA_CONTROL(err);
+
+    to_d_g_g_texcolor(sobjs);
+
+    int *d_g_mtypes;
+    sobjs.g_mtypes =
+        upload<int>(d_g_mtypes, g_mtypes, nb_groups, err);
+    CUDA_CONTROL(err);
+
+    float *d_g_fuzz_ref_idxs;
+    sobjs.g_fuzz_ref_idxs = upload<float>(
+        d_g_fuzz_ref_idxs, g_fuzz_ref_idxs, nb_groups, err);
+    CUDA_CONTROL(err);
+
+    to_d_g_minmax(sobjs);
+
+    return sobjs;
+  }
+  __host__ void to_d_g_texcolor(SceneObjects &sobjs) {
     cudaError_t err;
     int *d_ttypes;
     sobjs.ttypes =
@@ -439,22 +561,9 @@ struct SceneObjects {
     sobjs.image_indices = upload<int>(
         d_img_indices, image_indices, nb_prims, err);
     CUDA_CONTROL(err);
-
-    unsigned char *d_tdata;
-    sobjs.tdata =
-        upload<unsigned char>(d_tdata, tdata, tsize, err);
-    CUDA_CONTROL(err);
-
-    int *d_mtypes;
-    sobjs.mtypes =
-        upload<int>(d_mtypes, mtypes, nb_prims, err);
-    CUDA_CONTROL(err);
-
-    float *d_fuzzs;
-    sobjs.fuzz_ref_idxs = upload<float>(
-        d_fuzzs, fuzz_ref_idxs, nb_prims, err);
-    CUDA_CONTROL(err);
-
+  }
+  __host__ void to_d_g_hittable(SceneObjects &sobjs) {
+    cudaError_t err;
     int *d_htypes;
     sobjs.htypes =
         upload<int>(d_htypes, htypes, nb_prims, err);
@@ -499,40 +608,9 @@ struct SceneObjects {
     float *d_rads;
     sobjs.rads = upload<float>(d_rads, rads, nb_prims, err);
     CUDA_CONTROL(err);
-
-    int *d_prim_g_indices;
-    sobjs.prim_group_indices =
-        upload<int>(d_prim_g_indices, prim_group_indices,
-                    nb_prims, err);
-    CUDA_CONTROL(err);
-
-    int *d_gstarts;
-    sobjs.group_starts = upload<int>(
-        d_gstarts, group_starts, nb_groups, err);
-    CUDA_CONTROL(err);
-
-    int *d_gsizes;
-
-    sobjs.group_sizes =
-        upload<int>(d_gsizes, group_sizes, nb_groups, err);
-    CUDA_CONTROL(err);
-
-    int *d_gids;
-    sobjs.group_ids =
-        upload<int>(d_gids, group_ids, nb_groups, err);
-    CUDA_CONTROL(err);
-
-    int *d_gts;
-    sobjs.gtypes =
-        upload<int>(d_gts, gtypes, nb_groups, err);
-    CUDA_CONTROL(err);
-
-    float *d_g_dens;
-
-    sobjs.g_densities = upload<float>(d_g_dens, g_densities,
-                                      nb_groups, err);
-    CUDA_CONTROL(err);
-
+  }
+  __host__ void to_d_g_g_texcolor(SceneObjects &sobjs) {
+    cudaError_t err;
     int *d_g_ttypes;
     sobjs.g_ttypes =
         upload<int>(d_g_ttypes, g_ttypes, nb_groups, err);
@@ -579,18 +657,38 @@ struct SceneObjects {
     sobjs.g_indices =
         upload<int>(d_g_indices, g_indices, nb_groups, err);
     CUDA_CONTROL(err);
-
-    int *d_g_mtypes;
-    sobjs.g_mtypes =
-        upload<int>(d_g_mtypes, g_mtypes, nb_groups, err);
+  }
+  __host__ void to_d_g_minmax(SceneObjects &sobjs) {
+    cudaError_t err;
+    float *d_g_minxs;
+    sobjs.g_minxs =
+        upload<float>(d_g_minxs, g_minxs, nb_groups, err);
     CUDA_CONTROL(err);
 
-    float *d_g_fuzz_ref_idxs;
-    sobjs.g_fuzz_ref_idxs = upload<float>(
-        d_g_fuzz_ref_idxs, g_fuzz_ref_idxs, nb_groups, err);
+    float *d_g_minys;
+    sobjs.g_minys =
+        upload<float>(d_g_minys, g_minys, nb_groups, err);
     CUDA_CONTROL(err);
 
-    return sobjs;
+    float *d_g_minzs;
+    sobjs.g_minzs =
+        upload<float>(d_g_minzs, g_minzs, nb_groups, err);
+    CUDA_CONTROL(err);
+
+    float *d_g_maxxs;
+    sobjs.g_maxxs =
+        upload<float>(d_g_maxxs, g_maxxs, nb_groups, err);
+    CUDA_CONTROL(err);
+
+    float *d_g_maxys;
+    sobjs.g_maxys =
+        upload<float>(d_g_maxys, g_maxys, nb_groups, err);
+    CUDA_CONTROL(err);
+
+    float *d_g_maxzs;
+    sobjs.g_maxzs =
+        upload<float>(d_g_maxzs, g_maxzs, nb_groups, err);
+    CUDA_CONTROL(err);
   }
   __host__ SceneObjects to_host() {
     SceneObjects sobjs;
@@ -802,6 +900,36 @@ struct SceneObjects {
         d_g_fuzz_ref_idxs, g_fuzz_ref_idxs, nb_groups, err);
     CUDA_CONTROL(err);
 
+    float *d_g_minxs;
+    sobjs.g_minxs =
+        download<float>(d_g_minxs, g_minxs, nb_groups, err);
+    CUDA_CONTROL(err);
+
+    float *d_g_minys;
+    sobjs.g_minys =
+        download<float>(d_g_minys, g_minys, nb_groups, err);
+    CUDA_CONTROL(err);
+
+    float *d_g_minzs;
+    sobjs.g_minzs =
+        download<float>(d_g_minzs, g_minzs, nb_groups, err);
+    CUDA_CONTROL(err);
+
+    float *d_g_maxzs;
+    sobjs.g_maxzs =
+        download<float>(d_g_maxzs, g_maxzs, nb_groups, err);
+    CUDA_CONTROL(err);
+
+    float *d_g_maxys;
+    sobjs.g_maxys =
+        download<float>(d_g_maxys, g_maxys, nb_groups, err);
+    CUDA_CONTROL(err);
+
+    float *d_g_maxxs;
+    sobjs.g_maxxs =
+        download<float>(d_g_maxxs, g_maxxs, nb_groups, err);
+    CUDA_CONTROL(err);
+
     return sobjs;
   }
   __host__ __device__ Primitive get_prim(int index,
@@ -838,7 +966,6 @@ struct SceneObjects {
                      fuzz_ref_idxs[idx]);
     return mp;
   }
-
   __host__ void d_free() {
     cudaFree(ttypes);
     cudaFree(tp1xs);

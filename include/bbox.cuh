@@ -1,10 +1,11 @@
 #pragma once
 //
 #include <aabb.cuh>
+#include <groupparam.cuh>
+#include <minmax.cuh>
 #include <ray.cuh>
 #include <record.cuh>
 #include <sceneobj.cuh>
-#include <sceneshape.cuh>
 #include <scenetype.cuh>
 #include <vec3.cuh>
 
@@ -12,210 +13,34 @@ template <HittableType h>
 __host__ __device__ bool
 bounding_box(const SceneObjects &s, float t0, float t1,
              Aabb &output_box, int prim_idx) {
-  return true;
-}
-template <>
-__host__ __device__ bool
-bounding_box<SPHERE>(const SceneObjects &s, float t0,
-                     float t1, Aabb &output_box,
-                     int prim_idx) {
-  Point3 center(s.p1xs[prim_idx], s.p1ys[prim_idx],
-                s.p1zs[prim_idx]);
-  float radius = s.rads[prim_idx];
+  HittableParam hs = s.get_hparam(prim_idx);
   output_box =
-      Aabb(center - Vec3(radius), center + Vec3(radius));
+      Aabb(min_vec<HITTABLE>(hs), max_vec<HITTABLE>(hs));
   return true;
-}
-
-template <>
-__host__ __device__ bool
-bounding_box<MOVING_SPHERE>(const SceneObjects &s, float t0,
-                            float t1, Aabb &output_box,
-                            int prim_idx) {
-  Point3 center1(s.p1xs[prim_idx], s.p1ys[prim_idx],
-                 s.p1zs[prim_idx]);
-  Point3 center2(s.p2xs[prim_idx], s.p2ys[prim_idx],
-                 s.p2zs[prim_idx]);
-  Point3 center = (center1 + center2) / 2.0f;
-
-  float radius = s.rads[prim_idx];
-  output_box =
-      Aabb(center - Vec3(radius), center + Vec3(radius));
-  return true;
-}
-template <>
-__host__ __device__ bool
-bounding_box<TRIANGLE>(const SceneObjects &s, float t0,
-                       float t1, Aabb &output_box,
-                       int prim_idx) {
-  Point3 p1(s.p1xs[prim_idx], s.p1ys[prim_idx],
-            s.p1zs[prim_idx]);
-  Point3 p2(s.p2xs[prim_idx], s.p2ys[prim_idx],
-            s.p2zs[prim_idx]);
-  Point3 p3(s.n1xs[prim_idx], s.n1ys[prim_idx],
-            s.n1zs[prim_idx]);
-  Point3 pmin = min_vec(p1, p2);
-  pmin = min_vec(pmin, p3);
-  Point3 pmax = max_vec(p1, p2);
-  pmax = max_vec(pmax, p3);
-  output_box = Aabb(pmin, pmax);
-  return true;
-}
-template <>
-__host__ __device__ bool
-bounding_box<XY_TRIANGLE>(const SceneObjects &s, float t0,
-                          float t1, Aabb &output_box,
-                          int prim_idx) {
-  return bounding_box<TRIANGLE>(s, t0, t1, output_box,
-                                prim_idx);
-}
-template <>
-__host__ __device__ bool
-bounding_box<XZ_TRIANGLE>(const SceneObjects &s, float t0,
-                          float t1, Aabb &output_box,
-                          int prim_idx) {
-  return bounding_box<TRIANGLE>(s, t0, t1, output_box,
-                                prim_idx);
-}
-template <>
-__host__ __device__ bool
-bounding_box<YZ_TRIANGLE>(const SceneObjects &s, float t0,
-                          float t1, Aabb &output_box,
-                          int prim_idx) {
-  return bounding_box<TRIANGLE>(s, t0, t1, output_box,
-                                prim_idx);
-}
-
-template <>
-__host__ __device__ bool
-bounding_box<RECTANGLE>(const SceneObjects &s, float t0,
-                        float t1, Aabb &output_box,
-                        int prim_idx) {
-  float k = s.rads[prim_idx];
-  float a0 = s.p1xs[prim_idx];
-  float a1 = s.p1ys[prim_idx];
-  float b0 = s.p2xs[prim_idx];
-  float b1 = s.p2ys[prim_idx];
-  Vec3 anormal = Vec3(s.n1xs[prim_idx], s.n1ys[prim_idx],
-                      s.n1zs[prim_idx]);
-  AxisInfo ax = AxisInfo(anormal);
-
-  Point3 p1, p2;
-  // choose points with axis
-  switch (ax.notAligned) {
-  case 2: {
-    p1 = Point3(a0, b0, k - 0.0001);
-    p2 = Point3(a1, b1, k + 0.0001);
-    break;
-  }
-  case 1: {
-    p1 = Point3(a0, k - 0.0001, b0);
-    p2 = Point3(a1, k + 0.0001, b1);
-    break;
-  }
-  case 0: {
-    p1 = Point3(k - 0.0001, a0, b0);
-    p2 = Point3(k + 0.0001, a1, b1);
-    break;
-  }
-  }
-  output_box = Aabb(p1, p2);
-  return true;
-}
-
-template <>
-__host__ __device__ bool
-bounding_box<XY_RECT>(const SceneObjects &s, float t0,
-                      float t1, Aabb &output_box,
-                      int prim_idx) {
-  return bounding_box<RECTANGLE>(s, t0, t1, output_box,
-                                 prim_idx);
-}
-
-template <>
-__host__ __device__ bool
-bounding_box<XZ_RECT>(const SceneObjects &s, float t0,
-                      float t1, Aabb &output_box,
-                      int prim_idx) {
-  return bounding_box<RECTANGLE>(s, t0, t1, output_box,
-                                 prim_idx);
-}
-
-template <>
-__host__ __device__ bool
-bounding_box<YZ_RECT>(const SceneObjects &s, float t0,
-                      float t1, Aabb &output_box,
-                      int prim_idx) {
-  return bounding_box<RECTANGLE>(s, t0, t1, output_box,
-                                 prim_idx);
 }
 template <>
 __host__ __device__ bool
 bounding_box<HITTABLE>(const SceneObjects &s, float t0,
                        float t1, Aabb &output_box,
                        int prim_idx) {
-  int htype_ = s.htypes[prim_idx];
-  HittableType htype = static_cast<HittableType>(htype);
-  bool res = false;
-  switch (htype) {
-  case NONE_HITTABLE: {
-    break;
-  }
-  case SPHERE: {
-    res = bounding_box<SPHERE>(s, t0, t1, output_box,
-                               prim_idx);
-    break;
-  }
-  case MOVING_SPHERE: {
-    res = bounding_box<MOVING_SPHERE>(s, t0, t1, output_box,
-                                      prim_idx);
-    break;
-  }
-  case XY_RECT: {
-    res = bounding_box<XY_RECT>(s, t0, t1, output_box,
-                                prim_idx);
-    break;
-  }
-  case XZ_RECT: {
-    res = bounding_box<XZ_RECT>(s, t0, t1, output_box,
-                                prim_idx);
-    break;
-  }
-  case YZ_RECT: {
-    res = bounding_box<YZ_RECT>(s, t0, t1, output_box,
-                                prim_idx);
-    break;
-  }
-  case YZ_TRIANGLE: {
-    res = bounding_box<YZ_TRIANGLE>(s, t0, t1, output_box,
-                                    prim_idx);
-    break;
-  }
-  case XZ_TRIANGLE: {
-    res = bounding_box<XZ_TRIANGLE>(s, t0, t1, output_box,
-                                    prim_idx);
-    break;
-  }
-  case XY_TRIANGLE: {
-    res = bounding_box<XY_TRIANGLE>(s, t0, t1, output_box,
-                                    prim_idx);
-    break;
-  }
-  }
-  return res;
+  HittableParam h = s.get_hparam(prim_idx);
+  output_box =
+      Aabb(min_vec<HITTABLE>(h), max_vec<HITTABLE>(h));
+  return true;
 }
 
 template <GroupType g>
-__host__ __device__ bool bounding_box(const SceneObjects &s,
-                                      float t0, float t1,
-                                      Aabb &output_box) {
-  return false;
-}
-template <NONE_GRP>
 __host__ __device__ bool
 bounding_box(const SceneObjects &s, float t0, float t1,
              Aabb &output_box, int group_idx) {
+  return false;
+}
 
+template <>
+__host__ __device__ bool
+bounding_box<NONE_GRP>(const SceneObjects &s, float t0,
+                       float t1, Aabb &output_box,
+                       int group_idx) {
   int group_start = s.group_starts[group_idx];
   int group_size = s.group_sizes[group_idx];
   int group_end = group_start + group_size;
@@ -224,9 +49,8 @@ bounding_box(const SceneObjects &s, float t0, float t1,
   bool first_box = true;
   for (int i = group_start; i < group_end; i++) {
     int prim_idx = i;
-    int htype_ = s.htypes[prim_idx];
-    res = bounding_box<HITTABLE>(s, t0, t1, output_box,
-                                 prim_idx);
+    is_bounding = bounding_box<HITTABLE>(
+        s, t0, t1, output_box, prim_idx);
     if (is_bounding == false) {
       return false;
     }
@@ -236,27 +60,64 @@ bounding_box(const SceneObjects &s, float t0, float t1,
     first_box = false;
     // center = output_box.center;
   }
-  return res;
+  return is_bounding;
+}
+
+template <>
+__host__ __device__ bool
+bounding_box<BOX>(const SceneObjects &s, float t0, float t1,
+                  Aabb &output_box, int group_idx) {
+  return bounding_box<NONE_GRP>(s, t0, t1, output_box,
+                                group_idx);
+}
+template <>
+__host__ __device__ bool bounding_box<CONSTANT_MEDIUM>(
+    const SceneObjects &s, float t0, float t1,
+    Aabb &output_box, int group_idx) {
+  return bounding_box<NONE_GRP>(s, t0, t1, output_box,
+                                group_idx);
 }
 template <>
 __host__ __device__ bool
-bounding_box<BOX_GRP>(const SceneObjects &s, float t0,
-                      float t1, Aabb &output_box,
-                      int group_idx) {
+bounding_box<SIMPLE_MESH>(const SceneObjects &s, float t0,
+                          float t1, Aabb &output_box,
+                          int group_idx) {
   return bounding_box<NONE_GRP>(s, t0, t1, output_box,
                                 group_idx);
 }
 template <>
-__host__ __device__ bool bounding_box<CONSTANT_MEDIUM_GRP>(
-    const SceneObjects &s, float t0, float t1,
-    Aabb &output_box, int group_idx) {
-  return bounding_box<NONE_GRP>(s, t0, t1, output_box,
-                                group_idx);
+__host__ __device__ bool
+bounding_box<OBJECT>(const SceneObjects &s, float t0,
+                     float t1, Aabb &output_box,
+                     int group_idx) {
+  GroupType gtype =
+      static_cast<GroupType>(s.gtypes[group_idx]);
+  bool res = false;
+  if (gtype == NONE_GRP) {
+    res = bounding_box<NONE_GRP>(s, t0, t1, output_box,
+                                 group_idx);
+  } else if (gtype == BOX) {
+    res =
+        bounding_box<BOX>(s, t0, t1, output_box, group_idx);
+  } else if (gtype == CONSTANT_MEDIUM) {
+    res = bounding_box<CONSTANT_MEDIUM>(
+        s, t0, t1, output_box, group_idx);
+  } else if (gtype == SIMPLE_MESH) {
+    res = bounding_box<SIMPLE_MESH>(s, t0, t1, output_box,
+                                    group_idx);
+  }
+  return res;
+}
+
+template <typename T>
+__host__ __device__ bool bounding_box(const T &obj,
+                                      Aabb &o) {
+  return false;
 }
 template <>
-__host__ __device__ bool bounding_box<SIMPLE_MESH_GRP>(
-    const SceneObjects &s, float t0, float t1,
-    Aabb &output_box, int group_idx) {
-  return bounding_box<NONE_GRP>(s, t0, t1, output_box,
-                                group_idx);
+__host__ __device__ bool
+bounding_box<GroupParam>(const GroupParam &o, Aabb &obj) {
+  obj =
+      Aabb(min_vec<GroupParam>(o), max_vec<GroupParam>(o));
+  return true;
 }

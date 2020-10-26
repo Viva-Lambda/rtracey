@@ -1,5 +1,6 @@
 #pragma once
 
+#include <as.cuh>
 #include <groupparam.cuh>
 #include <matparam.cuh>
 #include <mesh.cuh>
@@ -108,6 +109,7 @@ SceneObjects make_cornell_box() {
   msize++;
   sgs[msize] = sg2;
   msize++;
+  order_scene(sgs, msize);
   SceneObjects sobjs(sgs, msize);
   // sg.g_free();
   // sg1.g_free();

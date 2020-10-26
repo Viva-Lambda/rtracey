@@ -1,5 +1,6 @@
 #pragma once
 #include <matparam.cuh>
+#include <minmax.cuh>
 #include <ray.cuh>
 #include <shapeparam.cuh>
 #include <vec3.cuh>
@@ -85,6 +86,19 @@ struct Primitive {
     radius = hp.radius;
   }
 };
+
+template <>
+__host__ __device__ Vec3
+min_vec<Primitive>(const Primitive &p) {
+  HittableParam h = p.get_hparam();
+  return min_vec<HITTABLE>(h);
+}
+template <>
+__host__ __device__ Vec3
+max_vec<Primitive>(const Primitive &p) {
+  HittableParam h = p.get_hparam();
+  return max_vec<HITTABLE>(h);
+}
 
 __host__ __device__ Primitive translate(Primitive &p,
                                         Point3 steps) {

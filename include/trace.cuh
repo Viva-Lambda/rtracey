@@ -119,9 +119,6 @@ __host__ Color h_ray_color(const Ray &r,
   Ray current_ray = r;
   Vec3 current_attenuation = Vec3(1.0f, 1.0f, 1.0f);
   Vec3 result = Vec3(0.0f, 0.0f, 0.0f);
-  bool is_gs[] = {true, false};
-  int inds[] = {1, 2};
-  ScatterRecord srec(is_gs, inds, 2);
   // delete[] is_gs;
   // delete[] inds;
   while (bounceNb > 0) {
@@ -131,6 +128,7 @@ __host__ Color h_ray_color(const Ray &r,
     if (!anyHit) {
       return Color(0.0f);
     }
+    ScatterRecord srec;
 
     Color emittedColor = h_emitted<MATERIAL>(world, rec);
     bool isScattered =
@@ -153,11 +151,9 @@ __host__ Color h_ray_color(const Ray &r,
       // float s_pdf = scattering_pdf<MATERIAL>(
       //    world, current_ray, rec, scattered);
       // pdf value
-      float pdf_val =
-          pdf_value<MIXTURE_PDF>(world, rec, srec);
+      float pdf_val = pdf_value<PDF>(world, rec, srec);
       Ray r_out =
-          Ray(rec.p,
-              h_pdf_generate<MIXTURE_PDF>(world, rec, srec),
+          Ray(rec.p, h_pdf_generate<PDF>(world, rec, srec),
               current_ray.time());
       float s_pdf = scattering_pdf<MATERIAL>(
           world, current_ray, rec, r_out);

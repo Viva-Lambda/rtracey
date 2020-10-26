@@ -124,7 +124,7 @@ hit<TRIANGLE>(const SceneObjects &s, const Ray &r,
   Vec3 edge2 = p3 - p2;
   Vec3 h = cross(r.direction(), edge2);
   float a = dot(edge1, h);
-  if (a > eps && a < eps)
+  if (a > -eps && a < eps)
     return false; // ray parallel to triangle
   float f = 1.0f / a;
   Vec3 rToP2 = r.origin() - p2;
@@ -134,7 +134,7 @@ hit<TRIANGLE>(const SceneObjects &s, const Ray &r,
 
   Vec3 q = cross(rToP2, edge1);
   float v = f * dot(edge2, q);
-  if (v < 0.0f || v > 1.0f)
+  if (v < 0.0f || u + v > 1.0f)
     return false;
 
   float t = f * dot(r.direction(), q);
@@ -240,6 +240,8 @@ hit<HITTABLE>(const SceneObjects &s, const Ray &r,
     res = hit<XZ_RECT>(s, r, d_min, d_max, rec);
   } else if (htype == YZ_RECT) {
     res = hit<YZ_RECT>(s, r, d_min, d_max, rec);
+  } else if (htype == TRIANGLE) {
+    res = hit<TRIANGLE>(s, r, d_min, d_max, rec);
   } else if (htype == YZ_TRIANGLE) {
     res = hit<YZ_TRIANGLE>(s, r, d_min, d_max, rec);
   } else if (htype == XZ_TRIANGLE) {
