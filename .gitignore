@@ -53,4 +53,4 @@ CTestTestfile.cmake
 
 # custom
 **/bin/**
-**/include/assimp/**
+**/include/assimp/*
