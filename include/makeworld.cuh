@@ -208,18 +208,18 @@ SceneObjects make_cornell_box2() {
   //
   // box for translating and rotating
 
-  // const TextureParam tp = mkSolidColorParam(Color(1.0f));
-  // MaterialParam white = mkLambertParam(tp);
-  // GroupParam box2 =
-  //    makeBox(Point3(0.0f), Point3(165.0f), white, 3);
-  // translate(box2, Vec3(130.0f, 0.0f, 65.0f));
-  // rotate_y(box2, -18.0f);
+  const TextureParam tp = mkSolidColorParam(Color(1.0f));
+  MaterialParam white = mkLambertParam(tp);
+  GroupParam box2 =
+      makeBox(Point3(0.0f), Point3(165.0f), white, 3);
+  translate(box2, Vec3(130.0f, 0.0f, 65.0f));
+  rotate_y(box2, 45.0f);
 
   // Model model(mpath);
   // int msize = (int)model.mcount;
   int msize = 0;
   //
-  GroupParam *sgs = new GroupParam[msize + 3];
+  GroupParam *sgs = new GroupParam[msize + 4];
   // model.to_groups(lamb3, sgs);
   sgs[msize] = sg;
   msize++;
@@ -228,8 +228,8 @@ SceneObjects make_cornell_box2() {
   msize++;
   sgs[msize] = sg2;
   msize++;
-  // sgs[msize] = box2;
-  // msize++;
+  sgs[msize] = box2;
+  msize++;
   order_scene(sgs, msize);
   SceneObjects sobjs(sgs, msize);
   // sg.g_free();

@@ -23,7 +23,7 @@ struct HittableParam {
                                     const Point3 &p1,
                                     const Point3 &p2,
                                     const Vec3 &n1,
-                                    const float r)
+                                    const float &r)
       : htype(ht), p1x(p1.x()), p1y(p1.y()), p1z(p1.z()),
         p2x(p2.x()), p2y(p2.y()), p2z(p2.z()), n1x(n1.x()),
         n1y(n1.y()), n1z(n1.z()), radius(r) {}
@@ -64,8 +64,9 @@ __host__ __device__ HittableParam mkRectHittable(
   float nx = anormal.x();
   float ny = anormal.y();
   float nz = anormal.z();
-  HittableParam param(htype, a0, b0, k, a1, b1, k, nx, ny,
-                      nz, k);
+  Point3 p1(a0, b0, k);
+  Point3 p2(a1, b1, k);
+  HittableParam param(htype, p1, p2, anormal, k);
   return param;
 }
 __host__ __device__ HittableParam mkYZRectHittable(
@@ -114,7 +115,6 @@ translate(const HittableParam &hparam, Point3 steps) {
 }
 __host__ __device__ HittableParam
 rotate(const HittableParam &hparam, Matrix rotMat) {
-  //
   Point3 p1 = hparam.get_point1();
   Point3 p2 = hparam.get_point2();
   Vec3 n1 = hparam.get_normal();

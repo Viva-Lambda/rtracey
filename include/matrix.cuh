@@ -219,23 +219,18 @@ operator*(const Matrix &left_op, const Matrix &right_op) {
 __host__ __device__ Vec3 operator*(const Matrix &left_op,
                                    const Vec3 &right_op) {
   Vec3 ret;
-  float temp;
-  ret[0] = (right_op[0] * left_op.x[0][0]) +
-           (right_op[1] * left_op.x[0][1]) +
-           (right_op[2] * left_op.x[0][2]) +
-           left_op.x[0][3];
-  ret[1] = (right_op[0] * left_op.x[1][0]) +
-           (right_op[1] * left_op.x[1][1]) +
-           (right_op[2] * left_op.x[1][2]) +
-           left_op.x[1][3];
-  ret[2] = (right_op[0] * left_op.x[2][0]) +
-           (right_op[1] * left_op.x[2][1]) +
-           (right_op[2] * left_op.x[2][2]) +
-           left_op.x[2][3];
-  temp = (right_op[0] * left_op.x[3][0]) +
-         (right_op[1] * left_op.x[3][1]) +
-         (right_op[2] * left_op.x[3][2]) + left_op.x[3][3];
-  ret /= temp;
+  float varr[4] = {right_op.x(), right_op.y(), right_op.z(),
+                   1.0f};
+  float res[4];
+  for (int i = 0; i < 4; i++) {
+    float temp = 0.0f;
+    for (int j = 0; j < 4; j++)
+      temp += left_op.x[i][j] * varr[j];
+    res[i] = temp;
+  }
+  ret[0] = res[0];
+  ret[1] = res[1];
+  ret[2] = res[2];
   return ret;
 }
 
@@ -270,7 +265,7 @@ __host__ __device__ Matrix zeroMatrix() {
   Matrix ret;
   for (int i = 0; i < 4; i++)
     for (int j = 0; j < 4; j++)
-      ret.x[i][j] = 0.0;
+      ret.x[i][j] = 0.0f;
   return ret;
 }
 __host__ __device__ Matrix identityMatrix() {
@@ -320,7 +315,7 @@ __host__ __device__ Matrix rotate(const Vec3 &axis,
   float z = _axis.z();
   float cosine = cos(angle);
   float sine = sin(angle);
-  float t = 1 - cosine;
+  float t = 1.0f - cosine;
   ret.x[0][0] = t * x * x + cosine;
   ret.x[0][1] = t * x * y - sine * y;
   ret.x[0][2] = t * x * z + sine * y;
@@ -341,12 +336,12 @@ __host__ __device__ Matrix rotate(const Vec3 &axis,
 }
 __host__ __device__ Matrix rotateX(float angle) {
   Matrix ret = identityMatrix();
-  float cosine = cos(angle);
-  float sine = sin(angle);
-  ret.x[1][1] = cosine;
-  ret.x[1][2] = -sine;
-  ret.x[2][1] = sine;
-  ret.x[2][2] = cosine;
+  float costheta = cos(angle);
+  float sintheta = sin(angle);
+  ret.x[1][1] = costheta;
+  ret.x[1][2] = -sintheta;
+  ret.x[2][1] = sintheta;
+  ret.x[2][2] = costheta;
   return ret;
 }
 __host__ __device__ Matrix rotateY(float angle) {
@@ -361,7 +356,6 @@ __host__ __device__ Matrix rotateY(float angle) {
   return ret;
 }
 __host__ __device__ Matrix rotateZ(float angle) {
-  //
   Matrix ret = identityMatrix();
   float cosine = cos(angle);
   float sine = sin(angle);
