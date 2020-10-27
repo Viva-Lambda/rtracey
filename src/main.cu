@@ -83,7 +83,7 @@ int main() {
   int HEIGHT = static_cast<int>(WIDTH / aspect_ratio);
   int BLOCK_WIDTH = 32;
   int BLOCK_HEIGHT = 4;
-  int SAMPLE_NB = 10;
+  int SAMPLE_NB = 100;
   int BOUNCE_NB = 20;
 
   bool gpu_io = false;
@@ -97,7 +97,7 @@ int main() {
             << " bloklar halinde" << std::endl;
 
   // declare world
-  SceneObjects sobjs = make_cornell_box();
+  SceneObjects sobjs = make_cornell_box2();
 
   // declare camera
   Camera cam = makeCam(WIDTH, HEIGHT);

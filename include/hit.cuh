@@ -172,34 +172,61 @@ __host__ __device__ bool
 hit<RECTANGLE>(const SceneObjects &s, const Ray &r,
                float d_min, float d_max, HitRecord &rec) {
   int prim_idx = rec.primitive_index;
+  HittableType htype =
+      static_cast<HittableType>(s.htypes[prim_idx]);
+  int aligned1, aligned2, not_aligned;
+  if (htype == XY_RECT) {
+    aligned1 = 0;
+    aligned2 = 1;
+    not_aligned = 2;
+  } else if (htype == XZ_RECT) {
+    aligned1 = 0;
+    aligned2 = 2;
+    not_aligned = 1;
+  } else if (htype == YZ_RECT) {
+    aligned1 = 1;
+    aligned2 = 2;
+    not_aligned = 0;
+  }
   float k = s.p1zs[prim_idx];
   float a0 = s.p1xs[prim_idx];
   float b0 = s.p1ys[prim_idx];
-  Point3 p1(a0, b0, k);
   float a1 = s.p2xs[prim_idx];
   float b1 = s.p2ys[prim_idx];
-  Vec3 anormal = Vec3(s.n1xs[prim_idx], s.n1ys[prim_idx],
-                      s.n1zs[prim_idx]);
-  AxisInfo ax = AxisInfo(anormal);
+  Vec3 anormal =
+      to_unit(Vec3(s.n1xs[prim_idx], s.n1ys[prim_idx],
+                   s.n1zs[prim_idx]));
+  Point3 p1, p2, p3;
+  p1[aligned1] = a0;
+  p1[aligned2] = b0;
+  p1[not_aligned] = k;
+  p2[aligned1] = a1;
+  p2[aligned2] = b0;
+  p2[not_aligned] = k;
+  p3[aligned1] = a1;
+  p3[aligned2] = b1;
+  p3[not_aligned] = k;
+  anormal = to_unit(cross(p2 - p1, p3 - p1));
 
-  float t = (k - r.origin()[ax.notAligned]) /
-            r.direction()[ax.notAligned];
+  float t = (k - r.origin()[not_aligned]) /
+            r.direction()[not_aligned];
   if (t < d_min || t > d_max)
     return false;
-  float a = r.origin()[ax.aligned1] +
-            t * r.direction()[ax.aligned1];
-  float b = r.origin()[ax.aligned2] +
-            t * r.direction()[ax.aligned2];
+  float a =
+      r.origin()[aligned1] + t * r.direction()[aligned1];
+  float b =
+      r.origin()[aligned2] + t * r.direction()[aligned2];
+
   bool c1 = a0 < a and a < a1;
   bool c2 = b0 < b and b < b1;
   if ((c1 and c2) == false) {
     return false;
   }
+
   rec.u = (a - a0) / (a1 - a0);
   rec.v = (b - b0) / (b1 - b0);
   rec.t = t;
-  Vec3 outward_normal = anormal;
-  rec.set_front_face(r, outward_normal);
+  rec.set_front_face(r, anormal);
   rec.p = r.at(t);
   return true;
 }
