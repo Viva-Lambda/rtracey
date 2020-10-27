@@ -199,7 +199,7 @@ SceneObjects make_cornell_box2() {
   MaterialParam lamb2 = mkLambertParam(tp3);
   HittableParam hsp2 = mkSphereHittable(
       Point3(190.0f, 350.0f, 290.0f), 90.0f);
-  HittableParam hsp22 = scale(hsp2, 2.2f);
+  HittableParam hsp22 = scale(hsp2, 1.2f);
 
   //
   Primitive glass_sphere2(lamb2, hsp22, 0, 2);
@@ -208,18 +208,18 @@ SceneObjects make_cornell_box2() {
   //
   // box for translating and rotating
 
-  const TextureParam tp = mkSolidColorParam(Color(1.0f));
-  MaterialParam white = mkLambertParam(tp);
-  GroupParam box2 =
-      makeBox(Point3(0.0f), Point3(165.0f), white, 3);
-  rotate_y(box2, -18.0f);
-  translate(box2, Vec3(130.0f, 0.0f, 65.0f));
+  // const TextureParam tp = mkSolidColorParam(Color(1.0f));
+  // MaterialParam white = mkLambertParam(tp);
+  // GroupParam box2 =
+  //    makeBox(Point3(0.0f), Point3(165.0f), white, 3);
+  // translate(box2, Vec3(130.0f, 0.0f, 65.0f));
+  // rotate_y(box2, -18.0f);
 
   // Model model(mpath);
   // int msize = (int)model.mcount;
   int msize = 0;
   //
-  GroupParam *sgs = new GroupParam[msize + 4];
+  GroupParam *sgs = new GroupParam[msize + 3];
   // model.to_groups(lamb3, sgs);
   sgs[msize] = sg;
   msize++;
@@ -228,8 +228,8 @@ SceneObjects make_cornell_box2() {
   msize++;
   sgs[msize] = sg2;
   msize++;
-  sgs[msize] = box2;
-  msize++;
+  // sgs[msize] = box2;
+  // msize++;
   order_scene(sgs, msize);
   SceneObjects sobjs(sgs, msize);
   // sg.g_free();
