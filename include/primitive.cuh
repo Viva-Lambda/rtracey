@@ -100,32 +100,32 @@ max_vec<Primitive>(const Primitive &p) {
   return max_vec<HITTABLE>(h);
 }
 
-__host__ __device__ Primitive translate(Primitive &p,
+__host__ __device__ Primitive translate(const Primitive &p,
                                         Point3 steps) {
   HittableParam hp = translate(p.get_hparam(), steps);
   Primitive pr(p.mparam, hp, p.group_index, p.group_id);
   return pr;
 }
-__host__ __device__ Primitive rotate(Primitive &p,
+__host__ __device__ Primitive rotate(const Primitive &p,
                                      Vec3 axis,
                                      float degree) {
   HittableParam hp = rotate(p.get_hparam(), axis, degree);
   Primitive pr(p.mparam, hp, p.group_index, p.group_id);
   return pr;
 }
-__host__ __device__ Primitive rotate_y(Primitive &p,
+__host__ __device__ Primitive rotate_y(const Primitive &p,
                                        float degree) {
   HittableParam hp = rotate_y(p.get_hparam(), degree);
   Primitive pr(p.mparam, hp, p.group_index, p.group_id);
   return pr;
 }
-__host__ __device__ Primitive rotate_x(Primitive &p,
+__host__ __device__ Primitive rotate_x(const Primitive &p,
                                        float degree) {
   HittableParam hp = rotate_x(p.get_hparam(), degree);
   Primitive pr(p.mparam, hp, p.group_index, p.group_id);
   return pr;
 }
-__host__ __device__ Primitive rotate_z(Primitive &p,
+__host__ __device__ Primitive rotate_z(const Primitive &p,
                                        float degree) {
   HittableParam hp = rotate_z(p.get_hparam(), degree);
   Primitive pr(p.mparam, hp, p.group_index, p.group_id);

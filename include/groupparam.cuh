@@ -48,6 +48,10 @@ struct GroupParam {
         tp1y(mp.tparam.tp1y), tp1z(mp.tparam.tp1z),
         scale(mp.tparam.scale), ttype(mp.tparam.ttype) {
     deepcopy(prims, prm, group_size);
+    update_max_vec();
+    update_min_vec();
+  }
+  __host__ __device__ void update_max_vec() {
     Vec3 maxv(FLT_MIN);
     for (int i = 0; i < group_size; i++) {
       Primitive p = prims[i];
@@ -61,6 +65,8 @@ struct GroupParam {
     maxx = maxv.x();
     maxy = maxv.y();
     maxz = maxv.z();
+  }
+  __host__ __device__ void update_min_vec() {
     Vec3 minv(FLT_MAX);
     for (int i = 0; i < group_size; i++) {
       Primitive p = prims[i];
@@ -74,6 +80,20 @@ struct GroupParam {
     minx = minv.x();
     miny = minv.y();
     minz = minv.z();
+  }
+  __host__ __device__ void update_minmax() {
+    update_max_vec();
+    update_min_vec();
+  }
+  __host__ __device__ MaterialParam get_mparam() const {
+    TextureParam tp = get_tparam();
+    MaterialParam mp(tp, mtype, fuzz_ref_idx);
+    return mp;
+  }
+  __host__ __device__ TextureParam get_tparam() const {
+    TextureParam tp(ttype, tp1x, tp1y, tp1z, scale, width,
+                    height, bytes_per_pixel, index);
+    return tp;
   }
   __host__ __device__ GroupParam(const GroupParam &g)
       : group_size(g.group_size), group_id(g.group_id),
@@ -139,10 +159,9 @@ max_vec<GroupParam>(const GroupParam &g) {
   Vec3 maxv(g.maxx, g.maxy, g.maxz);
   return maxv;
 }
-__host__ __device__ GroupParam makeBox(const Point3 &p0,
-                                       const Point3 &p1,
-                                       MaterialParam mp,
-                                       int g_id) {
+__host__ __device__ GroupParam
+makeBox(const Point3 &p0, const Point3 &p1,
+        const MaterialParam &mp, int g_id) {
   HittableParam h_xyr1 = mkXYRectHittable(
       p0.x(), p1.x(), p0.y(), p1.y(), p1.z());
   Primitive side1(mp, h_xyr1, 0, g_id);
@@ -177,38 +196,64 @@ __host__ __device__ GroupParam makeBox(const Point3 &p0,
   return sg;
 }
 
-__host__ __device__ void translate(GroupParam &gp,
-                                   Point3 steps) {
+__host__ __device__ GroupParam
+translate(const GroupParam &gp, Point3 steps) {
+  Primitive *ps = new Primitive[gp.group_size];
   for (int i = 0; i < gp.group_size; i++) {
     Primitive p = gp.prims[i];
-    gp.prims[i] = translate(p, steps);
+    ps[i] = translate(p, steps);
   }
+  GroupParam g(ps, gp.group_size, gp.group_id, gp.gtype,
+               gp.density, gp.get_mparam());
+  delete[] ps;
+  return g;
 }
-__host__ __device__ void rotate(GroupParam &gp, Vec3 axis,
-                                float degree) {
+__host__ __device__ GroupParam rotate(const GroupParam &gp,
+                                      Vec3 axis,
+                                      float degree) {
+  Primitive *ps = new Primitive[gp.group_size];
   for (int i = 0; i < gp.group_size; i++) {
     Primitive p = gp.prims[i];
-    gp.prims[i] = rotate(p, axis, degree);
+    ps[i] = rotate(p, axis, degree);
   }
+  GroupParam g(ps, gp.group_size, gp.group_id, gp.gtype,
+               gp.density, gp.get_mparam());
+  delete[] ps;
+  return g;
 }
-__host__ __device__ void rotate_y(GroupParam &gp,
-                                  float degree) {
+__host__ __device__ GroupParam rotate_y(GroupParam &gp,
+                                        float degree) {
+  Primitive *ps = new Primitive[gp.group_size];
   for (int i = 0; i < gp.group_size; i++) {
     Primitive p = gp.prims[i];
-    gp.prims[i] = rotate_y(p, degree);
+    ps[i] = rotate_y(p, degree);
   }
+  GroupParam g(ps, gp.group_size, gp.group_id, gp.gtype,
+               gp.density, gp.get_mparam());
+  delete[] ps;
+  return g;
 }
-__host__ __device__ void rotate_x(GroupParam &gp,
-                                  float degree) {
+__host__ __device__ GroupParam rotate_x(GroupParam &gp,
+                                        float degree) {
+  Primitive *ps = new Primitive[gp.group_size];
   for (int i = 0; i < gp.group_size; i++) {
     Primitive p = gp.prims[i];
-    gp.prims[i] = rotate_x(p, degree);
+    ps[i] = rotate_x(p, degree);
   }
+  GroupParam g(ps, gp.group_size, gp.group_id, gp.gtype,
+               gp.density, gp.get_mparam());
+  delete[] ps;
+  return g;
 }
-__host__ __device__ void rotate_z(const GroupParam &gp,
-                                  float degree) {
+__host__ __device__ GroupParam
+rotate_z(const GroupParam &gp, float degree) {
+  Primitive *ps = new Primitive[gp.group_size];
   for (int i = 0; i < gp.group_size; i++) {
     Primitive p = gp.prims[i];
-    gp.prims[i] = rotate_z(p, degree);
+    ps[i] = rotate_z(p, degree);
   }
+  GroupParam g(ps, gp.group_size, gp.group_id, gp.gtype,
+               gp.density, gp.get_mparam());
+  delete[] ps;
+  return g;
 }

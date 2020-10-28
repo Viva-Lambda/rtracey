@@ -46,7 +46,6 @@ struct HittableParam {
     return Point3(n1x, n1y, n1z);
   }
 };
-
 __host__ __device__ HittableParam mkRectHittable(
     const float a0, const float a1, const float b0,
     const float b1, Vec3 anormal, const float k) {
@@ -101,8 +100,8 @@ __host__ __device__ HittableParam mkTriangle(Point3 p1,
   HittableParam h(TRIANGLE, p1, p2, p3, 0.0f);
   return h;
 }
-__host__ __device__ HittableParam
-translate(const HittableParam &hparam, Point3 steps) {
+__host__ __device__ HittableParam translate(
+    const HittableParam &hparam, const Point3 &steps) {
   Point3 p1(hparam.p1x, hparam.p1y, hparam.p1z);
   Point3 p2(hparam.p2x, hparam.p2y, hparam.p2z);
   Matrix transMat =
@@ -114,7 +113,7 @@ translate(const HittableParam &hparam, Point3 steps) {
   return hp;
 }
 __host__ __device__ HittableParam
-rotate(const HittableParam &hparam, Matrix rotMat) {
+rotate(const HittableParam &hparam, const Matrix &rotMat) {
   Point3 p1 = hparam.get_point1();
   Point3 p2 = hparam.get_point2();
   Vec3 n1 = hparam.get_normal();
