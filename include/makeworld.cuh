@@ -213,9 +213,9 @@ SceneObjects make_cornell_box2() {
   GroupParam box2 =
       makeBox(Point3(0.0f), Point3(165.0f, 330.0f, 165.0f),
               white, 3);
-  GroupParam box3 =
-      translate(box2, Vec3(265.0f, 0.0f, 195.0f));
-  box3.update_minmax();
+  const TransParam transp =
+      mkTranslation(Point3(265.0f, 0.0f, 195.0f));
+  box2.set_transparam(transp);
   // rotate_y(box2, 45.0f);
 
   // Model model(mpath);
@@ -231,7 +231,7 @@ SceneObjects make_cornell_box2() {
   msize++;
   sgs[msize] = sg2;
   msize++;
-  sgs[msize] = box3;
+  sgs[msize] = box2;
   msize++;
   order_scene(sgs, msize);
   SceneObjects sobjs(sgs, msize);
@@ -304,33 +304,61 @@ __global__ void make_cornell_box_k(SceneObjects world,
   GroupParam sg(ps, prim_count, group_id, BOX, g_dens, mpp);
 
   // a glass sphere
-  const TextureParam tp;
-  const TextureParam tp2 = mkNoiseParam(2.0f);
+  const TextureParam tp2 =
+      mkSolidColorParam(Color(0.2f, 0.5f, 0.9f));
   MaterialParam lamb = mkLambertParam(tp2);
   HittableParam hsp1 = mkSphereHittable(
       Point3(190.0f, 350.0f, 290.0f), 90.0f);
-  Primitive glass_sphere(lamb, hsp1, 0, 1);
+  HittableParam hsp11 = scale(hsp1, 0.8f);
+  HittableParam hsp111 =
+      translate(hsp11, Point3(10.0f, 5.0f, 0.0f));
+  //
+  Primitive glass_sphere(lamb, hsp111, 0, 1);
   Primitive ps1[] = {glass_sphere};
   GroupParam sg1(ps1, 1, 1, NONE_GRP, g_dens, mpp);
 
   // second sphere
   const TextureParam tp3 =
-      mkSolidColorParam(Color(1.0f, 0.7f, 0.4f));
+      mkSolidColorParam(Color(1.0f, 0.7f, 0.2f));
   MaterialParam lamb2 = mkLambertParam(tp3);
-  MaterialParam mpar(tp3, ISOTROPIC, 0.00f);
   HittableParam hsp2 = mkSphereHittable(
-      Point3(370.0f, 95.0f, 265.0f), 90.0f);
-  Primitive glass_sphere2(lamb2, hsp2, 0, 2);
-  Primitive ps2[] = {glass_sphere2};
-  GroupParam sg2(ps2, 1, 2, CONSTANT_MEDIUM, 0.01f, mpar);
+      Point3(190.0f, 350.0f, 290.0f), 90.0f);
+  HittableParam hsp22 = scale(hsp2, 1.2f);
 
   //
-  GroupParam *sgs = new GroupParam[3];
-  sgs[0] = sg;
+  Primitive glass_sphere2(lamb2, hsp22, 0, 2);
+  Primitive ps2[] = {glass_sphere2};
+  GroupParam sg2(ps2, 1, 2, NONE_GRP, 0.0f, mpp);
+  //
+  // box for translating and rotating
+
+  const TextureParam tp = mkSolidColorParam(Color(1.0f));
+  MaterialParam white = mkLambertParam(tp);
+  GroupParam box2 =
+      makeBox(Point3(0.0f), Point3(165.0f, 330.0f, 165.0f),
+              white, 3);
+  const TransParam transp =
+      mkTranslation(Point3(265.0f, 0.0f, 195.0f));
+  box2.set_transparam(transp);
+  // rotate_y(box2, 45.0f);
+
+  // Model model(mpath);
+  // int msize = (int)model.mcount;
+  int msize = 0;
+  //
+  GroupParam *sgs = new GroupParam[msize + 4];
+  // model.to_groups(lamb3, sgs);
+  sgs[msize] = sg;
+  msize++;
   // sgs[2] = box2;
-  sgs[1] = sg1;
-  sgs[2] = sg2;
-  SceneObjects sobjs(sgs, 3, loc);
+  sgs[msize] = sg1;
+  msize++;
+  sgs[msize] = sg2;
+  msize++;
+  sgs[msize] = box2;
+  msize++;
+  order_scene(sgs, msize);
+  SceneObjects sobjs(sgs, msize, loc);
   // sg.g_free();
   // sg1.g_free();
   // sg2.g_free();

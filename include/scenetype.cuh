@@ -47,3 +47,9 @@ enum GroupType : int {
   OBJECT = 4,
   SCENE = 5
 };
+enum TransformationType : int {
+  NONE_TRANSFORMATION = 0,
+  ROTATE_Y = 1,
+  TRANSLATE = 2,
+  TRANSFORMATION = 3
+};

@@ -503,6 +503,149 @@ __host__ bool h_hit<OBJECT>(const SceneObjects &s,
   return is_hit;
 }
 
+template <TransformationType T>
+__host__ bool h_hit(const SceneObjects &s, const Ray &r,
+                    float d_min, float d_max,
+                    HitRecord &rec) {
+  return false;
+}
+template <TransformationType T>
+__device__ bool hit(const SceneObjects &s, const Ray &r,
+                    float d_min, float d_max,
+                    HitRecord &rec, curandState *loc) {
+  return false;
+}
+template <>
+__host__ bool
+h_hit<NONE_TRANSFORMATION>(const SceneObjects &s,
+                           const Ray &r, float d_min,
+                           float d_max, HitRecord &rec) {
+  return h_hit<OBJECT>(s, r, d_min, d_max, rec);
+}
+template <>
+__device__ bool hit<NONE_TRANSFORMATION>(
+    const SceneObjects &s, const Ray &r, float d_min,
+    float d_max, HitRecord &rec, curandState *loc) {
+  return hit<OBJECT>(s, r, d_min, d_max, rec, loc);
+}
+template <>
+__host__ bool
+h_hit<TRANSLATE>(const SceneObjects &s, const Ray &r,
+                 float d_min, float d_max, HitRecord &rec) {
+  int g_index = rec.group_index;
+  Point3 disp(s.g_stepxs[g_index], s.g_stepys[g_index],
+              s.g_stepzs[g_index]);
+  Ray nr(r.origin() - disp, r.direction(), r.time());
+  if (!h_hit<OBJECT>(s, nr, d_min, d_max, rec))
+    return false;
+
+  rec.p += disp;
+  rec.set_front_face(nr, rec.normal);
+  return true;
+}
+template <>
+__device__ bool hit<TRANSLATE>(const SceneObjects &s,
+                               const Ray &r, float d_min,
+                               float d_max, HitRecord &rec,
+                               curandState *loc) {
+  int g_index = rec.group_index;
+  Point3 disp(s.g_stepxs[g_index], s.g_stepys[g_index],
+              s.g_stepzs[g_index]);
+  Ray nr(r.origin() - disp, r.direction(), r.time());
+  if (!hit<OBJECT>(s, nr, d_min, d_max, rec, loc))
+    return false;
+
+  rec.p += disp;
+  rec.set_front_face(nr, rec.normal);
+  return true;
+}
+
+template <>
+__host__ bool h_hit<ROTATE_Y>(const SceneObjects &s,
+                              const Ray &r, float d_min,
+                              float d_max, HitRecord &rec) {
+  int g_index = rec.group_index;
+  float deg = s.g_degrees[g_index];
+  float rad = degree_to_radian(deg);
+  Matrix rotMax = rotateY(rad);
+  Point3 neworig = rotMax * r.origin();
+  Vec3 ndir = rotMax * r.direction();
+  Ray rotated_r(neworig, ndir, r.time());
+  if (!h_hit<OBJECT>(s, rotated_r, d_min, d_max, rec))
+    return false;
+
+  rotMax = rotateY(-rad);
+  Point3 p = rec.p;
+  Vec3 norm = rec.normal;
+  Point3 np = rotMax * p;
+  Vec3 nnorm = rotMax * norm;
+  rec.p = np;
+  rec.set_front_face(rotated_r, nnorm);
+  return true;
+}
+template <>
+__device__ bool hit<ROTATE_Y>(const SceneObjects &s,
+                              const Ray &r, float d_min,
+                              float d_max, HitRecord &rec,
+                              curandState *loc) {
+  int g_index = rec.group_index;
+  float deg = s.g_degrees[g_index];
+  float rad = degree_to_radian(deg);
+  Matrix rotMax = rotateY(rad);
+  Point3 neworig = rotMax * r.origin();
+  Vec3 ndir = rotMax * r.direction();
+  Ray rotated_r(neworig, ndir, r.time());
+  if (!hit<OBJECT>(s, rotated_r, d_min, d_max, rec, loc))
+    return false;
+
+  rotMax = rotateY(-rad);
+  Point3 p = rec.p;
+  Vec3 norm = rec.normal;
+  Point3 np = rotMax * p;
+  Vec3 nnorm = rotMax * norm;
+  rec.p = np;
+  rec.set_front_face(rotated_r, nnorm);
+  return true;
+}
+
+template <>
+__host__ bool
+h_hit<TRANSFORMATION>(const SceneObjects &s, const Ray &r,
+                      float d_min, float d_max,
+                      HitRecord &rec) {
+  TransformationType ttype =
+      static_cast<TransformationType>(
+          s.g_transtypes[rec.group_index]);
+  bool res = false;
+  if (ttype == TRANSLATE) {
+    res = h_hit<TRANSLATE>(s, r, d_min, d_max, rec);
+  } else {
+    res =
+        h_hit<NONE_TRANSFORMATION>(s, r, d_min, d_max, rec);
+  }
+  return res;
+}
+
+template <>
+__device__ bool
+hit<TRANSFORMATION>(const SceneObjects &s, const Ray &r,
+                    float d_min, float d_max,
+                    HitRecord &rec, curandState *loc) {
+  TransformationType ttype =
+      static_cast<TransformationType>(
+          s.g_transtypes[rec.group_index]);
+  bool res = false;
+  if (ttype == TRANSLATE) {
+    res = hit<TRANSLATE>(s, r, d_min, d_max, rec, loc);
+  } else if (ttype == ROTATE_Y) {
+    res = hit<ROTATE_Y>(s, r, d_min, d_max, rec, loc);
+  } else {
+    res = hit<NONE_TRANSFORMATION>(s, r, d_min, d_max, rec,
+                                   loc);
+  }
+  return res;
+}
+
 template <>
 __device__ bool
 hit<SCENE>(const SceneObjects &s, const Ray &r, float d_min,
@@ -514,8 +657,8 @@ hit<SCENE>(const SceneObjects &s, const Ray &r, float d_min,
   float closest_so_far = d_max;
   for (int i = 0; i < nb_group; i++) {
     rec.group_index = i;
-    bool is_hit =
-        hit<OBJECT>(s, r, d_min, closest_so_far, rec, loc);
+    bool is_hit = hit<TRANSFORMATION>(
+        s, r, d_min, closest_so_far, rec, loc);
     if (is_hit) {
       res = is_hit;
       g_index = i;
@@ -547,8 +690,8 @@ __host__ bool h_hit<SCENE>(const SceneObjects &s,
   float closest_so_far = d_max;
   for (int i = 0; i < nb_group; i++) {
     rec.group_index = i;
-    bool is_hit =
-        h_hit<OBJECT>(s, r, d_min, closest_so_far, rec);
+    bool is_hit = h_hit<TRANSFORMATION>(
+        s, r, d_min, closest_so_far, rec);
     if (is_hit) {
       res = is_hit;
       g_index = i;

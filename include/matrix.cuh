@@ -12,7 +12,6 @@ public:
         x[i][j] = orig.x[i][j];
   }
   __host__ __device__ void invert() {
-    //
     float det = determinant();
     Matrix inverse;
     inverse.x[0][0] =

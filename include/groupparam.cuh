@@ -2,6 +2,7 @@
 #include <group.cuh>
 #include <minmax.cuh>
 #include <scenetype.cuh>
+#include <transparam.cuh>
 #include <utils.cuh>
 #include <vec3.cuh>
 
@@ -25,6 +26,13 @@ struct GroupParam {
   float minx, miny, minz;
   float maxx, maxy, maxz;
 
+  //
+  TransformationType transtype;
+  float stepx;
+  float stepy;
+  float stepz;
+  float degree;
+
   __host__ __device__ GroupParam()
       : gtype(NONE_GRP), group_size(0), group_id(0),
         density(0.0f), prims(nullptr), width(0), height(0),
@@ -32,7 +40,9 @@ struct GroupParam {
         tp1z(0), scale(0), ttype(NONE_TEXTURE),
         mtype(NONE_MATERIAL), fuzz_ref_idx(0.0f),
         minx(0.0f), miny(0.0f), minz(0.0f), maxx(0.0f),
-        maxy(0.0f), maxz(0.0f) {}
+        maxy(0.0f), maxz(0.0f), stepx(0.0f), stepy(0.0f),
+        stepz(0.0f), degree(0.0f),
+        transtype(NONE_TRANSFORMATION) {}
   __host__ __device__ GroupParam(Primitive *prm,
                                  const int gsize,
                                  const int gid,
@@ -46,10 +56,41 @@ struct GroupParam {
         bytes_per_pixel(mp.tparam.bytes_per_pixel),
         index(mp.tparam.index), tp1x(mp.tparam.tp1x),
         tp1y(mp.tparam.tp1y), tp1z(mp.tparam.tp1z),
-        scale(mp.tparam.scale), ttype(mp.tparam.ttype) {
+        scale(mp.tparam.scale), ttype(mp.tparam.ttype),
+        stepx(0.0f), stepy(0.0f), stepz(0.0f), degree(0.0f),
+        transtype(NONE_TRANSFORMATION) {
     deepcopy(prims, prm, group_size);
     update_max_vec();
     update_min_vec();
+  }
+  __host__ __device__ GroupParam(
+      Primitive *prm, const int gsize, const int gid,
+      const GroupType gtp, const float d,
+      const MaterialParam &mp, const TransParam &transp)
+      : group_size(gsize), group_id(gid), gtype(gtp),
+        density(d), width(mp.tparam.width),
+        height(mp.tparam.height), mtype(mp.mtype),
+        fuzz_ref_idx(mp.fuzz_ref_idx),
+        bytes_per_pixel(mp.tparam.bytes_per_pixel),
+        index(mp.tparam.index), tp1x(mp.tparam.tp1x),
+        tp1y(mp.tparam.tp1y), tp1z(mp.tparam.tp1z),
+        scale(mp.tparam.scale), ttype(mp.tparam.ttype),
+        stepx(transp.displacement.x()),
+        stepy(transp.displacement.y()),
+        stepz(transp.displacement.y()),
+        degree(transp.degree), transtype(transp.transtype) {
+    deepcopy(prims, prm, group_size);
+    update_max_vec();
+    update_min_vec();
+  }
+  __host__ __device__ void
+  set_transparam(const TransParam &tp) {
+    //
+    stepx = tp.displacement.x();
+    stepy = tp.displacement.y();
+    stepz = tp.displacement.z();
+    transtype = tp.transtype;
+    degree = tp.degree;
   }
   __host__ __device__ void update_max_vec() {
     Vec3 maxv(FLT_MIN);
@@ -104,7 +145,9 @@ struct GroupParam {
         ttype(g.ttype), mtype(g.mtype), minx(g.minx),
         miny(g.miny), minz(g.minz), maxx(g.maxx),
         maxy(g.maxy), maxz(g.maxz),
-        fuzz_ref_idx(g.fuzz_ref_idx) {
+        fuzz_ref_idx(g.fuzz_ref_idx),
+        transtype(g.transtype), stepx(g.stepx),
+        stepy(g.stepy), stepz(g.stepz), degree(g.degree) {
     Primitive *prm = g.prims;
     deepcopy(prims, prm, group_size);
   }
@@ -143,6 +186,13 @@ struct GroupParam {
     maxx = g.maxx;
     maxy = g.maxy;
     maxz = g.maxz;
+
+    //
+    transtype = g.transtype;
+    stepx = g.stepx;
+    stepy = g.stepy;
+    stepz = g.stepz;
+    degree = g.degree;
     return *this;
   }
 };
@@ -205,7 +255,7 @@ translate(const GroupParam &gp, Point3 steps) {
   }
   GroupParam g(ps, gp.group_size, gp.group_id, gp.gtype,
                gp.density, gp.get_mparam());
-  delete[] ps;
+  // delete[] ps;
   return g;
 }
 __host__ __device__ GroupParam rotate(const GroupParam &gp,
