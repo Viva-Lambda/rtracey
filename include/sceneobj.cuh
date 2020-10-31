@@ -49,11 +49,18 @@ struct SceneObjects {
 
   // transformation params
   int *g_transtypes;
+  //
   float *g_stepxs;
   float *g_stepys;
   float *g_stepzs;
   //
   float *g_degrees;
+  //
+  float *g_axis_xs;
+  float *g_axis_ys;
+  float *g_axis_zs;
+  //
+  float *g_tscales;
 
   int nb_groups;
   int nb_prims;
@@ -158,6 +165,11 @@ struct SceneObjects {
     g_stepzs[i] = g.stepz;
 
     g_degrees[i] = g.degree;
+    //
+    g_axis_xs[i] = g.axis_x;
+    g_axis_ys[i] = g.axis_y;
+    g_axis_zs[i] = g.axis_z;
+    g_tscales[i] = g.tscale;
   }
   __host__ __device__ void set_primitive(const Primitive &p,
                                          int gindex) {
@@ -223,6 +235,12 @@ struct SceneObjects {
     g_stepys = new float[nb_g];
     g_stepzs = new float[nb_g];
     g_degrees = new float[nb_g];
+    //
+    g_axis_xs = new float[nb_g];
+    g_axis_ys = new float[nb_g];
+    g_axis_zs = new float[nb_g];
+    //
+    g_tscales = new float[nb_g];
   }
   __host__ __device__ void alloc_prim_params(int nb_ps) {
     ttypes = new int[nb_ps];
@@ -314,28 +332,7 @@ struct SceneObjects {
 
     to_device_g_minmax(sobjs);
     //
-    thrust::device_ptr<int> d_g_trans_types;
-    upload_thrust<int>(d_g_trans_types, g_transtypes,
-                       nb_groups);
-    sobjs.g_transtypes =
-        thrust::raw_pointer_cast(d_g_trans_types);
-
-    //
-    thrust::device_ptr<float> d_g_stepxs;
-    upload_thrust<float>(d_g_stepxs, g_stepxs, nb_groups);
-    sobjs.g_stepxs = thrust::raw_pointer_cast(d_g_stepxs);
-
-    thrust::device_ptr<float> d_g_stepys;
-    upload_thrust<float>(d_g_stepys, g_stepys, nb_groups);
-    sobjs.g_stepys = thrust::raw_pointer_cast(d_g_stepys);
-
-    thrust::device_ptr<float> d_g_stepzs;
-    upload_thrust<float>(d_g_stepzs, g_stepzs, nb_groups);
-    sobjs.g_stepzs = thrust::raw_pointer_cast(d_g_stepzs);
-
-    thrust::device_ptr<float> d_g_degrees;
-    upload_thrust<float>(d_g_degrees, g_degrees, nb_groups);
-    sobjs.g_degrees = thrust::raw_pointer_cast(d_g_degrees);
+    to_device_transparam_thrust(sobjs);
 
     return sobjs;
   }
@@ -559,12 +556,18 @@ struct SceneObjects {
     CUDA_CONTROL(err);
 
     to_d_g_minmax(sobjs);
+    //
+    to_device_transparam(sobjs);
 
+    return sobjs;
+  }
+  __host__ void to_device_transparam(SceneObjects &sobjs) {
+    //
+    cudaError_t err;
     int *d_g_trans_types;
     sobjs.g_transtypes = upload<int>(
         d_g_trans_types, g_transtypes, nb_groups, err);
     CUDA_CONTROL(err);
-
     //
     float *d_g_stepxs;
     sobjs.g_stepxs =
@@ -586,7 +589,65 @@ struct SceneObjects {
                                     nb_groups, err);
     CUDA_CONTROL(err);
 
-    return sobjs;
+    float *d_g_axis_xs;
+    sobjs.g_axis_xs = upload<float>(d_g_axis_xs, g_axis_xs,
+                                    nb_groups, err);
+    CUDA_CONTROL(err);
+    float *d_g_axis_ys;
+    sobjs.g_axis_ys = upload<float>(d_g_axis_ys, g_axis_ys,
+                                    nb_groups, err);
+    CUDA_CONTROL(err);
+    float *d_g_axis_zs;
+    sobjs.g_axis_zs = upload<float>(d_g_axis_zs, g_axis_zs,
+                                    nb_groups, err);
+    CUDA_CONTROL(err);
+
+    float *d_g_tscales;
+    sobjs.g_tscales = upload<float>(d_g_tscales, g_tscales,
+                                    nb_groups, err);
+    CUDA_CONTROL(err);
+  }
+  __host__ void
+  to_device_transparam_thrust(SceneObjects &sobjs) {
+
+    thrust::device_ptr<int> d_g_trans_types;
+    upload_thrust<int>(d_g_trans_types, g_transtypes,
+                       nb_groups);
+    sobjs.g_transtypes =
+        thrust::raw_pointer_cast(d_g_trans_types);
+
+    //
+    thrust::device_ptr<float> d_g_stepxs;
+    upload_thrust<float>(d_g_stepxs, g_stepxs, nb_groups);
+    sobjs.g_stepxs = thrust::raw_pointer_cast(d_g_stepxs);
+
+    thrust::device_ptr<float> d_g_stepys;
+    upload_thrust<float>(d_g_stepys, g_stepys, nb_groups);
+    sobjs.g_stepys = thrust::raw_pointer_cast(d_g_stepys);
+
+    thrust::device_ptr<float> d_g_stepzs;
+    upload_thrust<float>(d_g_stepzs, g_stepzs, nb_groups);
+    sobjs.g_stepzs = thrust::raw_pointer_cast(d_g_stepzs);
+
+    thrust::device_ptr<float> d_g_degrees;
+    upload_thrust<float>(d_g_degrees, g_degrees, nb_groups);
+    sobjs.g_degrees = thrust::raw_pointer_cast(d_g_degrees);
+
+    thrust::device_ptr<float> d_g_axis_xs;
+    upload_thrust<float>(d_g_axis_xs, g_axis_xs, nb_groups);
+    sobjs.g_axis_xs = thrust::raw_pointer_cast(d_g_axis_xs);
+
+    thrust::device_ptr<float> d_g_axis_ys;
+    upload_thrust<float>(d_g_axis_ys, g_axis_ys, nb_groups);
+    sobjs.g_axis_ys = thrust::raw_pointer_cast(d_g_axis_ys);
+
+    thrust::device_ptr<float> d_g_axis_zs;
+    upload_thrust<float>(d_g_axis_zs, g_axis_zs, nb_groups);
+    sobjs.g_axis_zs = thrust::raw_pointer_cast(d_g_axis_zs);
+
+    thrust::device_ptr<float> d_g_tscales;
+    upload_thrust<float>(d_g_tscales, g_tscales, nb_groups);
+    sobjs.g_tscales = thrust::raw_pointer_cast(d_g_tscales);
   }
   __host__ void to_d_g_texcolor(SceneObjects &sobjs) {
     cudaError_t err;
@@ -1001,6 +1062,31 @@ struct SceneObjects {
     float *d_g_maxxs;
     sobjs.g_maxxs =
         download<float>(d_g_maxxs, g_maxxs, nb_groups, err);
+    CUDA_CONTROL(err);
+
+    int *d_g_trans_types;
+    sobjs.g_transtypes = download<int>(
+        d_g_trans_types, g_transtypes, nb_groups, err);
+    CUDA_CONTROL(err);
+    //
+    float *d_g_stepxs;
+    sobjs.g_stepxs = download<float>(d_g_stepxs, g_stepxs,
+                                     nb_groups, err);
+    CUDA_CONTROL(err);
+
+    float *d_g_stepys;
+    sobjs.g_stepys = download<float>(d_g_stepys, g_stepys,
+                                     nb_groups, err);
+    CUDA_CONTROL(err);
+
+    float *d_g_stepzs;
+    sobjs.g_stepzs = download<float>(d_g_stepzs, g_stepzs,
+                                     nb_groups, err);
+    CUDA_CONTROL(err);
+
+    float *d_g_degrees;
+    sobjs.g_degrees = download<float>(
+        d_g_degrees, g_degrees, nb_groups, err);
     CUDA_CONTROL(err);
 
     return sobjs;

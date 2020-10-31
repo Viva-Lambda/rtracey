@@ -33,6 +33,11 @@ struct GroupParam {
   float stepz;
   float degree;
 
+  float axis_x;
+  float axis_y;
+  float axis_z;
+  float tscale;
+
   __host__ __device__ GroupParam()
       : gtype(NONE_GRP), group_size(0), group_id(0),
         density(0.0f), prims(nullptr), width(0), height(0),
@@ -42,7 +47,8 @@ struct GroupParam {
         minx(0.0f), miny(0.0f), minz(0.0f), maxx(0.0f),
         maxy(0.0f), maxz(0.0f), stepx(0.0f), stepy(0.0f),
         stepz(0.0f), degree(0.0f),
-        transtype(NONE_TRANSFORMATION) {}
+        transtype(NONE_TRANSFORMATION), tscale(0.0f),
+        axis_x(0.0f), axis_y(0.0f), axis_z(0.0f) {}
   __host__ __device__ GroupParam(Primitive *prm,
                                  const int gsize,
                                  const int gid,
@@ -58,7 +64,8 @@ struct GroupParam {
         tp1y(mp.tparam.tp1y), tp1z(mp.tparam.tp1z),
         scale(mp.tparam.scale), ttype(mp.tparam.ttype),
         stepx(0.0f), stepy(0.0f), stepz(0.0f), degree(0.0f),
-        transtype(NONE_TRANSFORMATION) {
+        transtype(NONE_TRANSFORMATION), tscale(0.0f),
+        axis_x(0.0f), axis_y(0.0f), axis_z(0.0f) {
     deepcopy(prims, prm, group_size);
     update_max_vec();
     update_min_vec();
@@ -78,7 +85,9 @@ struct GroupParam {
         stepx(transp.displacement.x()),
         stepy(transp.displacement.y()),
         stepz(transp.displacement.y()),
-        degree(transp.degree), transtype(transp.transtype) {
+        degree(transp.degree), transtype(transp.transtype),
+        axis_x(transp.axis.x()), axis_y(transp.axis.y()),
+        axis_z(transp.axis.z()), tscale(transp.scale) {
     deepcopy(prims, prm, group_size);
     update_max_vec();
     update_min_vec();
@@ -91,6 +100,10 @@ struct GroupParam {
     stepz = tp.displacement.z();
     transtype = tp.transtype;
     degree = tp.degree;
+    axis_x = tp.axis.x();
+    axis_y = tp.axis.y();
+    axis_z = tp.axis.z();
+    tscale = tp.scale;
   }
   __host__ __device__ void update_max_vec() {
     Vec3 maxv(FLT_MIN);

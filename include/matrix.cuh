@@ -149,7 +149,15 @@ public:
   __host__ __device__ friend Matrix
   translate(float _x, float _y, float _z);
   __host__ __device__ friend Matrix
+  translate(const Point3 &disp);
+  __host__ __device__ friend Matrix
   scale(float _x, float _y, float _z);
+  __host__ __device__ friend Matrix scale(const Vec3 &d);
+  __host__ __device__ friend Matrix
+  scale_translate(const Point3 &disp, const Vec3 &s);
+  __host__ __device__ friend Matrix
+  rotate_translate(const Point3 &disp, const Vec3 &s,
+                   float angle);
   __host__ __device__ friend Matrix rotate(const Vec3 &axis,
                                            float angle);
   __host__ __device__ friend Matrix rotateX(float angle);
@@ -232,7 +240,6 @@ __host__ __device__ Vec3 operator*(const Matrix &left_op,
   ret[2] = res[2];
   return ret;
 }
-
 __host__ __device__ Matrix operator*(const Matrix &left_op,
                                      float right_op) {
   Matrix ret;
@@ -296,6 +303,10 @@ __host__ __device__ Matrix translate(float _x, float _y,
   ret.x[2][3] = _z;
   return ret;
 }
+__host__ __device__ Matrix translate(const Point3 &disp) {
+  return translate(disp.x(), disp.y(), disp.z());
+}
+
 __host__ __device__ Matrix scale(float _x, float _y,
                                  float _z) {
   Matrix ret = zeroMatrix();
@@ -305,6 +316,10 @@ __host__ __device__ Matrix scale(float _x, float _y,
   ret.x[3][3] = 1.0;
   return ret;
 }
+__host__ __device__ Matrix scale(const Vec3 &d) {
+  return scale(d.x(), d.y(), d.z());
+}
+
 __host__ __device__ Matrix rotate(const Vec3 &axis,
                                   float angle) {
   Vec3 _axis = to_unit(axis);
@@ -318,19 +333,19 @@ __host__ __device__ Matrix rotate(const Vec3 &axis,
   ret.x[0][0] = t * x * x + cosine;
   ret.x[0][1] = t * x * y - sine * y;
   ret.x[0][2] = t * x * z + sine * y;
-  ret.x[0][3] = 0.0;
+  ret.x[0][3] = 0.0f;
   ret.x[1][0] = t * x * y + sine * z;
   ret.x[1][1] = t * y * y + cosine;
   ret.x[1][2] = t * y * z - sine * x;
-  ret.x[1][3] = 0.0;
+  ret.x[1][3] = 0.0f;
   ret.x[2][0] = t * x * z - sine * y;
   ret.x[2][1] = t * y * z + sine * x;
   ret.x[2][2] = t * z * z + cosine;
-  ret.x[2][3] = 0.0;
-  ret.x[3][0] = 0.0;
-  ret.x[3][1] = 0.0;
-  ret.x[3][2] = 0.0;
-  ret.x[3][3] = 1.0;
+  ret.x[2][3] = 0.0f;
+  ret.x[3][0] = 0.0f;
+  ret.x[3][1] = 0.0f;
+  ret.x[3][2] = 0.0f;
+  ret.x[3][3] = 1.0f;
   return ret;
 }
 __host__ __device__ Matrix rotateX(float angle) {
@@ -362,6 +377,22 @@ __host__ __device__ Matrix rotateZ(float angle) {
   ret.x[0][1] = -sine;
   ret.x[1][0] = sine;
   ret.x[1][1] = cosine;
+  return ret;
+}
+__host__ __device__ Matrix
+scale_translate(const Point3 &disp, const Vec3 &s) {
+  Matrix ret = scale(s);
+  ret.x[0][3] = disp.x();
+  ret.x[1][3] = disp.y();
+  ret.x[2][3] = disp.z();
+  return ret;
+}
+__host__ __device__ Matrix rotate_translate(
+    const Point3 &p, const Vec3 &axis, float angle) {
+  Matrix ret = rotate(axis, angle);
+  ret.x[0][3] = p.x();
+  ret.x[1][3] = p.y();
+  ret.x[2][3] = p.z();
   return ret;
 }
 __host__ __device__ Matrix viewMatrix(const Vec3 &eye,
